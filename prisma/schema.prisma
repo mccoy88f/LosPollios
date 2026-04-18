@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Elezione ────────────────────────────────────────────────────────────────
+
+model Election {
+  id           Int      @id @default(autoincrement())
+  name         String
+  commune      String
+  date         DateTime
+  // "large" = comuni >15.000 (doppio turno, soglia 3%), "small" = comuni <15.000
+  type         String   @default("large")
+  totalSeats   Int      @default(32)
+  threshold    Float    @default(3.0)
+  // setup | active | closed
+  status       String   @default("setup")
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sections     Section[]
+  lists        ElectionList[]
+  turnouts     SectionTurnout[]
+  users        User[]
+}
+
+// ─── Sezione elettorale ───────────────────────────────────────────────────────
+
+model Section {
+  id                Int      @id @default(autoincrement())
+  electionId        Int
+  election          Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  number            Int
+  name              String?
+  location          String?
+  theoreticalVoters Int      @default(0)
+  order             Int      @default(0)
+
+  turnout           SectionTurnout?
+  listResults       SectionListResult[]
+
+  @@unique([electionId, number])
+  @@index([electionId])
+}
+
+// ─── Lista elettorale ────────────────────────────────────────────────────────
+
+model ElectionList {
+  id             Int      @id @default(autoincrement())
+  electionId     Int
+  election       Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  name           String
+  shortName      String?
+  color          String   @default("#6366f1")
+  candidateMayor String?
+  coalition      String?
+  order          Int      @default(0)
+  notes          String?
+
+  candidates     Candidate[]
+  sectionResults SectionListResult[]
+  users          User[]
+
+  @@index([electionId])
+}
+
+// ─── Candidato ───────────────────────────────────────────────────────────────
+
+model Candidate {
+  id        Int          @id @default(autoincrement())
+  listId    Int
+  list      ElectionList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName  String
+  order     Int          @default(0)
+  gender    String?
+
+  preferences CandidatePreference[]
+
+  @@index([listId])
+}
+
+// ─── Affluenza per sezione ───────────────────────────────────────────────────
+
+model SectionTurnout {
+  id            Int      @id @default(autoincrement())
+  sectionId     Int      @unique
+  section       Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  electionId    Int
+  election      Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  votersActual  Int      @default(0)
+  ballotsValid  Int?
+  ballotsNull   Int?
+  ballotsBlank  Int?
+  enteredBy     String?
+  enteredAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Risultato lista per sezione ─────────────────────────────────────────────
+
+model SectionListResult {
+  id          Int          @id @default(autoincrement())
+  sectionId   Int
+  section     Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  listId      Int
+  list        ElectionList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listVotes   Int          @default(0)
+  enteredBy   String?
+  enteredAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  preferences CandidatePreference[]
+
+  @@unique([sectionId, listId])
+  @@index([sectionId])
+  @@index([listId])
+}
+
+// ─── Preferenze candidato ────────────────────────────────────────────────────
+
+model CandidatePreference {
+  id              Int               @id @default(autoincrement())
+  sectionResultId Int
+  sectionResult   SectionListResult @relation(fields: [sectionResultId], references: [id], onDelete: Cascade)
+  candidateId     Int
+  candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  votes           Int               @default(0)
+
+  @@unique([sectionResultId, candidateId])
+}
+
+// ─── Utenti ──────────────────────────────────────────────────────────────────
+
+model User {
+  id         Int           @id @default(autoincrement())
+  username   String        @unique
+  password   String
+  name       String?
+  // admin | entry | viewer
+  role       String        @default("entry")
+  electionId Int?
+  election   Election?     @relation(fields: [electionId], references: [id])
+  listId     Int?
+  list       ElectionList? @relation(fields: [listId], references: [id])
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+}
+
+// ─── Elezioni storiche ───────────────────────────────────────────────────────
+
+model HistoricalElection {
+  id        Int                    @id @default(autoincrement())
+  name      String
+  commune   String
+  year      Int
+  notes     String?
+  createdAt DateTime               @default(now())
+
+  results   HistoricalListResult[]
+}
+
+model HistoricalListResult {
+  id             Int                @id @default(autoincrement())
+  electionId     Int
+  election       HistoricalElection @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  listName       String
+  coalition      String?
+  candidateMayor String?
+  votes          Int
+  percentage     Float
+  seats          Int?
+  notes          String?
+}
