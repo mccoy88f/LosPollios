@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { EntryContextNav } from '@/components/EntryContextNav'
 
 type Props = { params: Promise<{ electionId: string }> }
 
@@ -30,17 +31,11 @@ export default async function EntryIndexPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-blue-800 text-white shadow">
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-14">
-          <Link href="/" className="font-bold flex items-center gap-2">🗳️ LosPollios</Link>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-blue-200">{session.username}</span>
-            <form onSubmit={async (e) => { e.preventDefault(); await fetch('/api/auth/logout', { method: 'POST' }); window.location.href = '/login' }}>
-              <button className="text-blue-200 hover:text-white">Esci</button>
-            </form>
-          </div>
-        </div>
-      </nav>
+      <EntryContextNav
+        username={session.username}
+        electionId={election.id}
+        electionName={election.name}
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8">

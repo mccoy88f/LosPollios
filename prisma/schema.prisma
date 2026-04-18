@@ -49,6 +49,22 @@ model Section {
   @@index([electionId])
 }
 
+// ─── Anagrafica (tracciamento stesso individuo tra elezioni) ─────────────────
+
+model Person {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  notes     String?
+  createdAt DateTime @default(now())
+
+  candidates       Candidate[]
+  mayorForLists    ElectionList[]         @relation("ListMayorPerson")
+  historicalMayors HistoricalListResult[]
+
+  @@index([lastName, firstName])
+}
+
 // ─── Lista elettorale ────────────────────────────────────────────────────────
 
 model ElectionList {
@@ -58,7 +74,13 @@ model ElectionList {
   name           String
   shortName      String?
   color          String   @default("#6366f1")
+  /** URL assoluto simbolo lista (es. da Eligendo o upload) */
+  listLogoUrl    String?
+  /** URL logo coalizione (stesso valore consigliato per tutte le liste della stessa coalizione) */
+  coalitionLogoUrl String?
   candidateMayor String?
+  mayorPersonId  Int?
+  mayorPerson    Person?  @relation("ListMayorPerson", fields: [mayorPersonId], references: [id], onDelete: SetNull)
   coalition      String?
   order          Int      @default(0)
   notes          String?
@@ -68,6 +90,7 @@ model ElectionList {
   users          User[]
 
   @@index([electionId])
+  @@index([mayorPersonId])
 }
 
 // ─── Candidato ───────────────────────────────────────────────────────────────
@@ -80,10 +103,13 @@ model Candidate {
   lastName  String
   order     Int          @default(0)
   gender    String?
+  personId  Int?
+  person    Person?      @relation(fields: [personId], references: [id], onDelete: SetNull)
 
   preferences CandidatePreference[]
 
   @@index([listId])
+  @@index([personId])
 }
 
 // ─── Affluenza per sezione ───────────────────────────────────────────────────
@@ -173,8 +199,14 @@ model HistoricalListResult {
   listName       String
   coalition      String?
   candidateMayor String?
+  mayorPersonId  Int?
+  mayorPerson    Person?            @relation(fields: [mayorPersonId], references: [id], onDelete: SetNull)
+  listLogoUrl    String?
+  coalitionLogoUrl String?
   votes          Int
   percentage     Float
   seats          Int?
   notes          String?
+
+  @@index([mayorPersonId])
 }

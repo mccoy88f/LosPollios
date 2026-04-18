@@ -56,10 +56,22 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:text-blue-800 text-sm">← Elezione</Link>
-        <h1 className="text-xl font-bold text-gray-900">Gestione accessi</h1>
-      </div>
+      <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Link href="/admin" className="text-blue-600 hover:underline">
+          Elezioni
+        </Link>
+        <span className="text-gray-300" aria-hidden>
+          /
+        </span>
+        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:underline">
+          Scheda elezione
+        </Link>
+        <span className="text-gray-300" aria-hidden>
+          /
+        </span>
+        <span className="text-gray-900 font-medium">Accessi</span>
+      </nav>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Gestione accessi</h1>
 
       {msg && <div className="bg-blue-50 text-blue-700 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
 

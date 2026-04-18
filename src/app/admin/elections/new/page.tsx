@@ -32,10 +32,16 @@ export default function NewElectionPage() {
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center gap-3 mb-8">
-        <Link href="/admin" className="text-blue-600 hover:text-blue-800">← Elezioni</Link>
-        <h1 className="text-2xl font-bold text-gray-900">Nuova elezione</h1>
-      </div>
+      <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Link href="/admin" className="text-blue-600 hover:underline">
+          Elezioni
+        </Link>
+        <span className="text-gray-300" aria-hidden>
+          /
+        </span>
+        <span className="text-gray-900 font-medium">Nuova elezione</span>
+      </nav>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">Nuova elezione</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
         <div className="grid grid-cols-2 gap-4">

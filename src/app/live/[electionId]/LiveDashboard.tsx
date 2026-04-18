@@ -3,9 +3,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
+import { SiteTopNav } from '@/components/SiteTopNav'
 
 interface ListResult {
   listId: number; listName: string; shortName: string | null; color: string
+  listLogoUrl?: string | null
+  coalitionLogoUrl?: string | null
   candidateMayor: string | null; coalition: string | null; votes: number
   candidates: { candidateId: number; name: string; votes: number; listId: number }[]
 }
@@ -105,7 +108,15 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
   )
 }
 
-export default function LiveDashboard({ electionId }: { electionId: number }) {
+export default function LiveDashboard({
+  electionId,
+  electionName,
+  commune,
+}: {
+  electionId: number
+  electionName: string
+  commune: string
+}) {
   const [data, setData] = useState<ResultsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastPulse, setLastPulse] = useState<Date | null>(null)
@@ -140,10 +151,20 @@ export default function LiveDashboard({ electionId }: { electionId: number }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center text-gray-400">
-          <div className="text-4xl mb-3 animate-spin">⏳</div>
-          <p>Caricamento risultati...</p>
+      <div className="min-h-screen bg-gray-50">
+        <SiteTopNav
+          crumbs={[
+            { label: 'Home', href: '/' },
+            { label: electionName },
+            { label: 'Live' },
+          ]}
+          contextLinks={[{ label: 'Analisi', href: `/dashboard/${electionId}` }]}
+        />
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center text-gray-400">
+            <div className="text-4xl mb-3 animate-spin">⏳</div>
+            <p>Caricamento risultati...</p>
+          </div>
         </div>
       </div>
     )
@@ -166,13 +187,20 @@ export default function LiveDashboard({ electionId }: { electionId: number }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-800 text-white py-6 px-4">
+      <SiteTopNav
+        crumbs={[
+          { label: 'Home', href: '/' },
+          { label: electionName },
+          { label: 'Live' },
+        ]}
+        contextLinks={[{ label: 'Analisi', href: `/dashboard/${electionId}` }]}
+      />
+      <div className="bg-blue-900 text-white py-6 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold">{election.name}</h1>
-              <p className="text-blue-200">{election.commune}</p>
+              <p className="text-blue-200">{commune}</p>
             </div>
             <div className="flex items-center gap-6">
               <div className="text-center">
@@ -233,7 +261,16 @@ export default function LiveDashboard({ electionId }: { electionId: number }) {
                   <div key={list.listId}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: list.color }} />
+                        {list.listLogoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={list.listLogoUrl} alt="" className="w-8 h-8 object-contain rounded shrink-0 bg-white border border-gray-100" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: list.color }} />
+                        )}
+                        {list.coalitionLogoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={list.coalitionLogoUrl} alt="" title="Coalizione" className="w-6 h-6 object-contain rounded shrink-0 opacity-90" />
+                        ) : null}
                         <span className="font-medium text-sm text-gray-900">{list.listName}</span>
                         {list.candidateMayor && <span className="text-xs text-gray-400 hidden sm:inline">{list.candidateMayor}</span>}
                         {list.coalition && <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hidden sm:inline">{list.coalition}</span>}

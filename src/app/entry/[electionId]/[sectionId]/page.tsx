@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import SectionEntryForm from './SectionEntryForm'
+import { EntryContextNav } from '@/components/EntryContextNav'
 
 type Props = { params: Promise<{ electionId: string; sectionId: string }> }
 
@@ -43,16 +44,12 @@ export default async function SectionEntryPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-blue-800 text-white shadow">
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <a href={`/entry/${electionId}`} className="text-blue-200 hover:text-white text-sm">← Sezioni</a>
-            <span className="text-white font-semibold">Sezione {section.number}</span>
-            {section.name && <span className="text-blue-200 text-sm">· {section.name}</span>}
-          </div>
-          <div className="text-blue-200 text-sm">{session.username}</div>
-        </div>
-      </nav>
+      <EntryContextNav
+        username={session.username}
+        electionId={election.id}
+        electionName={election.name}
+        section={{ number: section.number, name: section.name }}
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">

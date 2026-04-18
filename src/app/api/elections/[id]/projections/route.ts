@@ -60,12 +60,29 @@ export async function GET(_req: NextRequest, { params }: Params) {
     election.threshold
   )
 
+  const logos = new Map(
+    election.lists.map(l => [
+      l.id,
+      { listLogoUrl: l.listLogoUrl, coalitionLogoUrl: l.coalitionLogoUrl },
+    ])
+  )
+  const enrich = (proj: ReturnType<typeof calculateProjection>) => ({
+    ...proj,
+    seats: proj.seats.map(s => ({
+      ...s,
+      ...logos.get(s.listId),
+    })),
+  })
+
   return NextResponse.json({
     totalSections,
     sectionsCounted,
     coverage: totalSections > 0 ? (sectionsCounted / totalSections) * 100 : 0,
-    current:  currentProjection,
-    projected: projectedProjection,
-    projectedLists,
+    current: enrich(currentProjection),
+    projected: enrich(projectedProjection),
+    projectedLists: projectedLists.map(l => ({
+      ...l,
+      ...logos.get(l.listId),
+    })),
   })
 }

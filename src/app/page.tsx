@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { LogoutButton } from '@/components/LogoutButton'
 
 export default async function HomePage() {
   const session = await getSession()
@@ -111,11 +112,7 @@ export default async function HomePage() {
           <p className="text-center text-blue-300 text-sm mt-8">
             Connesso come <strong className="text-white">{session.username}</strong> ({session.role})
             {' · '}
-            <a href="/api/auth/logout" className="underline hover:text-white" onClick={async (e) => {
-              e.preventDefault()
-              await fetch('/api/auth/logout', { method: 'POST' })
-              window.location.reload()
-            }}>Esci</a>
+            <LogoutButton className="underline hover:text-white text-blue-300 bg-transparent border-0 p-0 cursor-pointer text-sm font-inherit inline" />
           </p>
         )}
       </div>

@@ -84,6 +84,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     listName:      l.name,
     shortName:     l.shortName,
     color:         l.color,
+    listLogoUrl:   l.listLogoUrl,
+    coalitionLogoUrl: l.coalitionLogoUrl,
     candidateMayor: l.candidateMayor,
     coalition:     l.coalition,
     votes:         listVotesMap.get(l.id) ?? 0,

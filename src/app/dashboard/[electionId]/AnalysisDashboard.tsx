@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
+import { SiteTopNav } from '@/components/SiteTopNav'
 
 interface HistResult { id: number; listName: string; coalition: string | null; candidateMayor: string | null; votes: number; percentage: number; seats: number | null }
 interface HistElection { id: number; name: string; commune: string; year: number; results: HistResult[] }
@@ -122,9 +123,13 @@ function HistoricalComparison({ current, historical }: { current: SeatProjection
 
 export default function AnalysisDashboard({
   electionId,
+  electionName,
+  commune,
   historicalElections,
 }: {
   electionId: number
+  electionName: string
+  commune: string
   historicalElections: HistElection[]
 }) {
   const [proj, setProj] = useState<ProjectionData | null>(null)
@@ -147,25 +152,65 @@ export default function AnalysisDashboard({
     return () => { es.close(); clearInterval(t) }
   }, [electionId, fetchProj])
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Caricamento...</div>
-  if (!proj) return <div className="p-8 text-center text-red-500">Dati non disponibili</div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <SiteTopNav
+          crumbs={[
+            { label: 'Home', href: '/' },
+            { label: electionName },
+            { label: 'Analisi' },
+          ]}
+          contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
+        />
+        <div className="flex items-center justify-center py-24 text-gray-400">Caricamento...</div>
+      </div>
+    )
+  }
+  if (!proj) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <SiteTopNav
+          crumbs={[
+            { label: 'Home', href: '/' },
+            { label: electionName },
+            { label: 'Analisi' },
+          ]}
+          contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
+        />
+        <div className="p-8 text-center text-red-500">Dati non disponibili</div>
+      </div>
+    )
+  }
 
   const totalSeats = proj.current.seats.reduce((s, l) => s + l.seats, 0) || 32
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-900 to-indigo-800 text-white py-5 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <a href={`/live/${electionId}`} className="text-purple-200 text-sm hover:text-white">← Live</a>
-            <h1 className="text-xl font-bold mt-1">Analisi & Proiezioni</h1>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="bg-white/10 px-3 py-1.5 rounded-lg">
+      <SiteTopNav
+        crumbs={[
+          { label: 'Home', href: '/' },
+          { label: electionName },
+          { label: 'Analisi e proiezioni' },
+        ]}
+        contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
+      />
+      <div className="bg-slate-100 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-gray-700">
+            <span className="font-medium text-gray-900">{electionName}</span>
+            <span className="text-gray-400 mx-2">·</span>
+            {commune}
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700">
               {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
             </span>
-            <button onClick={fetchProj} className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors">
+            <button
+              type="button"
+              onClick={fetchProj}
+              className="bg-blue-800 hover:bg-blue-900 text-white px-3 py-1.5 rounded-lg transition-colors"
+            >
               ↻ Aggiorna
             </button>
           </div>
@@ -177,7 +222,7 @@ export default function AnalysisDashboard({
         <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-6 w-fit">
           {[['seats', '🏛️ Seggi attuali'], ['projection', '📈 Proiezione finale'], ['history', '📅 Confronto storico']].map(([key, label]) => (
             <button key={key} onClick={() => setTab(key as typeof tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-blue-700 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
               {label}
             </button>
           ))}

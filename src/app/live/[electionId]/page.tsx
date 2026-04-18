@@ -9,5 +9,11 @@ export default async function LivePage({ params }: Props) {
   const election = await prisma.election.findUnique({ where: { id: Number(electionId) } })
   if (!election) notFound()
 
-  return <LiveDashboard electionId={Number(electionId)} />
+  return (
+    <LiveDashboard
+      electionId={Number(electionId)}
+      electionName={election.name}
+      commune={election.commune}
+    />
+  )
 }

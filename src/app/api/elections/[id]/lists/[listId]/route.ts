@@ -8,7 +8,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { listId } = await params
   const list = await prisma.electionList.findUnique({
     where: { id: Number(listId) },
-    include: { candidates: { orderBy: { order: 'asc' } } },
+    include: {
+      mayorPerson: true,
+      candidates: { orderBy: { order: 'asc' }, include: { person: true } },
+    },
   })
   if (!list) return NextResponse.json({ error: 'Non trovata' }, { status: 404 })
   return NextResponse.json(list)
@@ -27,7 +30,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(body.name !== undefined && { name: body.name }),
       ...(body.shortName !== undefined && { shortName: body.shortName }),
       ...(body.color !== undefined && { color: body.color }),
+      ...(body.listLogoUrl !== undefined && { listLogoUrl: body.listLogoUrl?.trim() || null }),
+      ...(body.coalitionLogoUrl !== undefined && { coalitionLogoUrl: body.coalitionLogoUrl?.trim() || null }),
       ...(body.candidateMayor !== undefined && { candidateMayor: body.candidateMayor }),
+      ...(body.mayorPersonId !== undefined && {
+        mayorPersonId: body.mayorPersonId === null || body.mayorPersonId === '' ? null : Number(body.mayorPersonId),
+      }),
       ...(body.coalition !== undefined && { coalition: body.coalition }),
       ...(body.order !== undefined && { order: Number(body.order) }),
       ...(body.notes !== undefined && { notes: body.notes }),

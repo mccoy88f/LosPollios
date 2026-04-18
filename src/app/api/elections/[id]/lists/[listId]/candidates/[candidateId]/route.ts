@@ -18,6 +18,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(body.lastName !== undefined && { lastName: body.lastName }),
       ...(body.order !== undefined && { order: Number(body.order) }),
       ...(body.gender !== undefined && { gender: body.gender }),
+      ...(body.personId !== undefined && {
+        personId: body.personId === null || body.personId === '' ? null : Number(body.personId),
+      }),
     },
   })
   return NextResponse.json(c)

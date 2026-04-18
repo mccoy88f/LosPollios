@@ -5,18 +5,48 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { DEFAULT_COLORS } from '@/lib/utils'
 
-interface Candidate { id: number; firstName: string; lastName: string; order: number; gender: string | null }
+interface PersonMini { id: number; firstName: string; lastName: string }
+interface Candidate {
+  id: number
+  firstName: string
+  lastName: string
+  order: number
+  gender: string | null
+  personId?: number | null
+  person?: PersonMini | null
+}
 interface ElectionList {
-  id: number; name: string; shortName: string | null; color: string
-  candidateMayor: string | null; coalition: string | null; order: number
+  id: number
+  name: string
+  shortName: string | null
+  color: string
+  listLogoUrl?: string | null
+  coalitionLogoUrl?: string | null
+  candidateMayor: string | null
+  coalition: string | null
+  order: number
+  mayorPersonId?: number | null
+  mayorPerson?: PersonMini | null
   candidates: Candidate[]
 }
 
-const emptyList = { name: '', shortName: '', color: DEFAULT_COLORS[0], candidateMayor: '', coalition: '', order: '0', notes: '' }
+const emptyList = {
+  name: '',
+  shortName: '',
+  color: DEFAULT_COLORS[0],
+  listLogoUrl: '',
+  coalitionLogoUrl: '',
+  candidateMayor: '',
+  mayorPersonId: '',
+  coalition: '',
+  order: '0',
+  notes: '',
+}
 
 export default function ListsPage() {
   const { id } = useParams<{ id: string }>()
   const [lists, setLists] = useState<ElectionList[]>([])
+  const [persons, setPersons] = useState<PersonMini[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ ...emptyList })
   const [editId, setEditId] = useState<number | null>(null)
@@ -27,8 +57,12 @@ export default function ListsPage() {
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })) }
 
   async function load() {
-    const res = await fetch(`/api/elections/${id}/lists`)
-    setLists(await res.json())
+    const [lr, pr] = await Promise.all([
+      fetch(`/api/elections/${id}/lists`).then(r => r.json()),
+      fetch('/api/persons').then(r => r.json()),
+    ])
+    setLists(lr)
+    setPersons(Array.isArray(pr) ? pr.map((p: PersonMini & { _count?: unknown }) => ({ id: p.id, firstName: p.firstName, lastName: p.lastName })) : [])
     setLoading(false)
   }
   useEffect(() => { load() }, [id])
@@ -40,7 +74,11 @@ export default function ListsPage() {
     await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, order: parseInt(form.order) || 0 }),
+      body: JSON.stringify({
+        ...form,
+        order: parseInt(form.order) || 0,
+        mayorPersonId: form.mayorPersonId ? parseInt(form.mayorPersonId, 10) : null,
+      }),
     })
     setForm({ ...emptyList })
     setEditId(null)
@@ -73,12 +111,79 @@ export default function ListsPage() {
     load()
   }
 
+  async function suggestMayorPerson() {
+    if (!form.candidateMayor.trim()) return
+    const res = await fetch(`/api/persons/suggestions?mayorLabel=${encodeURIComponent(form.candidateMayor)}`)
+    const data = await res.json()
+    if (data.persons?.length === 1) {
+      setForm(f => ({ ...f, mayorPersonId: String(data.persons[0].id) }))
+    } else if (!data.persons?.length) {
+      window.alert('Nessuna anagrafica con lo stesso nome. Creane una da «Anagrafica» nel menu oppure scegli a mano.')
+    } else {
+      window.alert(`${data.persons.length} anagrafiche possibili: scegli dal menu «Anagrafica sindaco».`)
+    }
+  }
+
+  async function updateCandidatePerson(listId: number, candId: number, personId: string) {
+    await fetch(`/api/elections/${id}/lists/${listId}/candidates/${candId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personId: personId ? parseInt(personId, 10) : null }),
+    })
+    load()
+  }
+
+  async function suggestCandidatePerson(c: Candidate, listId: number) {
+    const res = await fetch(
+      `/api/persons/suggestions?firstName=${encodeURIComponent(c.firstName)}&lastName=${encodeURIComponent(c.lastName)}`
+    )
+    const data = await res.json()
+    if (data.persons?.length === 1) {
+      await fetch(`/api/elections/${id}/lists/${listId}/candidates/${c.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId: data.persons[0].id }),
+      })
+      load()
+    } else if (!data.persons?.length) {
+      if (!window.confirm(`Creare anagrafica «${c.firstName} ${c.lastName}» e collegarla?`)) return
+      const pr = await fetch('/api/persons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: c.firstName, lastName: c.lastName }),
+      })
+      const p = await pr.json()
+      if (p.id) {
+        await fetch(`/api/elections/${id}/lists/${listId}/candidates/${c.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personId: p.id }),
+        })
+        load()
+      }
+    } else {
+      window.alert(`${data.persons.length} omonimi in anagrafica: scegli dal menu Persona.`)
+    }
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:text-blue-800 text-sm">← Elezione</Link>
-        <h1 className="text-xl font-bold text-gray-900">Liste & Candidati</h1>
-      </div>
+      <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Link href="/admin" className="text-blue-600 hover:underline">
+          Elezioni
+        </Link>
+        <span className="text-gray-300" aria-hidden>
+          /
+        </span>
+        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:underline">
+          Scheda elezione
+        </Link>
+        <span className="text-gray-300" aria-hidden>
+          /
+        </span>
+        <span className="text-gray-900 font-medium">Liste e candidati</span>
+      </nav>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Liste e candidati</h1>
 
       {/* Add/edit list form */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
@@ -98,6 +203,28 @@ export default function ListsPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           ))}
+          <div className="col-span-2 md:col-span-3">
+            <label className="block text-xs text-gray-500 mb-1">Anagrafica sindaco (tracciamento nel tempo)</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              <select
+                value={form.mayorPersonId}
+                onChange={e => setF('mayorPersonId', e.target.value)}
+                className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">— Nessuna —</option>
+                {persons.map(p => (
+                  <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => suggestMayorPerson()}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1"
+              >
+                Suggerisci da nome sindaco
+              </button>
+            </div>
+          </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Colore</label>
             <div className="flex items-center gap-2">
@@ -110,6 +237,28 @@ export default function ListsPage() {
                     style={{ backgroundColor: c, borderColor: form.color === c ? '#1d4ed8' : 'transparent' }} />
                 ))}
               </div>
+            </div>
+          </div>
+          <div className="col-span-2 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">URL logo lista (simbolo)</label>
+              <input
+                type="url"
+                value={form.listLogoUrl}
+                onChange={e => setF('listLogoUrl', e.target.value)}
+                placeholder="https://…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">URL logo coalizione (opz.)</label>
+              <input
+                type="url"
+                value={form.coalitionLogoUrl}
+                onChange={e => setF('coalitionLogoUrl', e.target.value)}
+                placeholder="Stesso URL per tutte le liste della coalizione"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
         </div>
@@ -139,17 +288,31 @@ export default function ListsPage() {
               {/* List header */}
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
+                  {list.listLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={list.listLogoUrl} alt="" className="w-10 h-10 object-contain rounded border border-gray-100 bg-white" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
+                  )}
+                  {list.coalitionLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={list.coalitionLogoUrl} alt="" title="Coalizione" className="w-8 h-8 object-contain rounded opacity-90" />
+                  ) : null}
                   <div>
                     <span className="font-semibold text-gray-900">{list.name}</span>
                     {list.shortName && <span className="text-gray-400 text-sm ml-2">({list.shortName})</span>}
                     {list.candidateMayor && <span className="text-gray-500 text-sm ml-3">Sindaco: {list.candidateMayor}</span>}
+                    {list.mayorPerson && (
+                      <span className="text-indigo-700 text-xs ml-2 bg-indigo-50 px-2 py-0.5 rounded">
+                        Anagrafica: {list.mayorPerson.lastName} {list.mayorPerson.firstName}
+                      </span>
+                    )}
                     {list.coalition && <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded ml-3">{list.coalition}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-400">{list.candidates.length} candidati</span>
-                  <button onClick={() => { setEditId(list.id); setForm({ name: list.name, shortName: list.shortName || '', color: list.color, candidateMayor: list.candidateMayor || '', coalition: list.coalition || '', order: String(list.order), notes: '' }) }}
+                  <button onClick={() => { setEditId(list.id); setForm({ name: list.name, shortName: list.shortName || '', color: list.color, listLogoUrl: list.listLogoUrl || '', coalitionLogoUrl: list.coalitionLogoUrl || '', candidateMayor: list.candidateMayor || '', mayorPersonId: list.mayorPersonId ? String(list.mayorPersonId) : '', coalition: list.coalition || '', order: String(list.order), notes: '' }) }}
                     className="text-blue-600 text-xs hover:text-blue-800 font-medium">Modifica</button>
                   <button onClick={() => setExpandId(expandId === list.id ? null : list.id)}
                     className="text-indigo-600 text-xs hover:text-indigo-800 font-medium">
@@ -164,7 +327,8 @@ export default function ListsPage() {
                 <div className="border-t border-gray-100 p-4">
                   <table className="w-full text-sm mb-4">
                     <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-100">
-                      <th className="pb-2 w-10">#</th><th className="pb-2">Cognome</th><th className="pb-2">Nome</th><th className="pb-2">Sesso</th><th className="pb-2"></th>
+                      <th className="pb-2 w-10">#</th><th className="pb-2">Cognome</th><th className="pb-2">Nome</th><th className="pb-2">Sesso</th>
+                      <th className="pb-2 min-w-[160px]">Anagrafica</th><th className="pb-2"></th>
                     </tr></thead>
                     <tbody>
                       {list.candidates.map(c => (
@@ -173,6 +337,27 @@ export default function ListsPage() {
                           <td className="py-1.5 font-medium">{c.lastName}</td>
                           <td className="py-1.5">{c.firstName}</td>
                           <td className="py-1.5 text-gray-400">{c.gender || '—'}</td>
+                          <td className="py-1.5">
+                            <div className="flex flex-wrap items-center gap-1">
+                              <select
+                                value={c.personId ?? ''}
+                                onChange={e => updateCandidatePerson(list.id, c.id, e.target.value)}
+                                className="text-xs border border-gray-200 rounded px-1 py-1 max-w-[140px]"
+                              >
+                                <option value="">—</option>
+                                {persons.map(p => (
+                                  <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => suggestCandidatePerson(c, list.id)}
+                                className="text-indigo-600 text-xs whitespace-nowrap"
+                              >
+                                Suggerisci
+                              </button>
+                            </div>
+                          </td>
                           <td className="py-1.5 text-right">
                             <button onClick={() => deleteCandidate(list.id, c.id)} className="text-red-400 hover:text-red-600 text-xs">Elimina</button>
                           </td>

@@ -16,5 +16,12 @@ export default async function DashboardPage({ params }: Props) {
     take: 5,
   })
 
-  return <AnalysisDashboard electionId={Number(electionId)} historicalElections={historical} />
+  return (
+    <AnalysisDashboard
+      electionId={Number(electionId)}
+      electionName={election.name}
+      commune={election.commune}
+      historicalElections={historical}
+    />
+  )
 }
