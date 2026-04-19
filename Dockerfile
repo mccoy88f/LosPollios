@@ -43,6 +43,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_module
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
+# CLI Prisma completa (dipendenze transitive) per `db push` all'avvio — la copia parziale di node_modules non basta
+RUN npm install -g prisma@6.19.3
+
 RUN apk add --no-cache wget
 
 USER nextjs

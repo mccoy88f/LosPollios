@@ -9,7 +9,8 @@ services:
     image: lospollios:latest
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # porta esterna standard 3522 → app in ascolto su 3000 nel container
+      - "3522:3000"
     environment:
       NODE_ENV: production
       # URL assoluto del DB SQLite sul volume persistente

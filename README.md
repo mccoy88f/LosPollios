@@ -104,14 +104,16 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
    JWT_SECRET=incolla-qui-una-stringa-lunga-e-casuale
    ```
 
-2. Avvio: `docker compose up -d --build`
+2. Avvio: `docker compose up -d --build` — l’interfaccia è sulla **porta 3522** (vedi sotto).
 
-**Portainer (Stacks):** nello stack, apri **Environment** e aggiungi `JWT_SECRET` con un valore generato (non lasciare vuoto). Stesso stack può mappare la porta (es. `8080:3000`). Il volume `lospollios-data` mantiene il file SQLite tra i riavvii.
+**Portainer (Stacks):** nello stack, apri **Environment** e aggiungi `JWT_SECRET` con un valore generato (non lasciare vuoto). Il `docker-compose.yml` del repo espone l’app sulla **porta esterna standard 3522** (`3522:3000`). Puoi cambiarla nello stack se serve. Il volume `lospollios-data` mantiene il file SQLite tra i riavvii.
+
+Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522` sul server).
 
 **Eseguire il container a mano:**
 
 ```bash
-docker run -p 3000:3000 -e JWT_SECRET='la-tua-chiave-segreta' -v lospollios-data:/data lospollios
+docker run -p 3522:3000 -e JWT_SECRET='la-tua-chiave-segreta' -v lospollios-data:/data lospollios
 ```
 
 Senza `-e JWT_SECRET=...` il processo parte comunque, ma **non** è una configurazione sicura per un ambiente esposto in rete.
