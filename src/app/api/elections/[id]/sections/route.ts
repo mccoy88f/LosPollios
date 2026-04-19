@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { assertEligibleSectionsWithinCap } from '@/lib/eligibleVotersCap'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -23,40 +24,65 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
   }
   const { id } = await params
+  const electionId = Number(id)
   const body = await req.json()
 
   // Bulk creation: { sections: [{number, name, location, theoreticalVoters}] }
   if (Array.isArray(body.sections)) {
-    const created = await prisma.$transaction(
-      body.sections.map((s: { number: number; name?: string; location?: string; theoreticalVoters?: number }) =>
-        prisma.section.upsert({
-          where: { electionId_number: { electionId: Number(id), number: s.number } },
-          update: { name: s.name, location: s.location, theoreticalVoters: s.theoreticalVoters ?? 0 },
-          create: {
-            electionId: Number(id),
-            number: s.number,
-            name: s.name,
-            location: s.location,
-            theoreticalVoters: s.theoreticalVoters ?? 0,
-            order: s.number,
-          },
+    try {
+      const created = await prisma.$transaction(async tx => {
+        for (const s of body.sections as {
+          number: number
+          name?: string
+          location?: string
+          theoreticalVoters?: number
+        }[]) {
+          await tx.section.upsert({
+            where: { electionId_number: { electionId, number: s.number } },
+            update: { name: s.name, location: s.location, theoreticalVoters: s.theoreticalVoters ?? 0 },
+            create: {
+              electionId,
+              number: s.number,
+              name: s.name,
+              location: s.location,
+              theoreticalVoters: s.theoreticalVoters ?? 0,
+              order: s.number,
+            },
+          })
+        }
+        await assertEligibleSectionsWithinCap(electionId, tx)
+        return tx.section.findMany({
+          where: { electionId },
+          orderBy: { number: 'asc' },
         })
-      )
-    )
-    return NextResponse.json(created, { status: 201 })
+      })
+      return NextResponse.json(created, { status: 201 })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Operazione non consentita'
+      return NextResponse.json({ error: msg }, { status: 400 })
+    }
   }
 
   // Single creation
   const { number, name, location, theoreticalVoters } = body
-  const section = await prisma.section.create({
-    data: {
-      electionId: Number(id),
-      number: Number(number),
-      name,
-      location,
-      theoreticalVoters: Number(theoreticalVoters ?? 0),
-      order: Number(number),
-    },
-  })
-  return NextResponse.json(section, { status: 201 })
+  try {
+    const section = await prisma.$transaction(async tx => {
+      const sec = await tx.section.create({
+        data: {
+          electionId,
+          number: Number(number),
+          name,
+          location,
+          theoreticalVoters: Number(theoreticalVoters ?? 0),
+          order: Number(number),
+        },
+      })
+      await assertEligibleSectionsWithinCap(electionId, tx)
+      return sec
+    })
+    return NextResponse.json(section, { status: 201 })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Operazione non consentita'
+    return NextResponse.json({ error: msg }, { status: 400 })
+  }
 }

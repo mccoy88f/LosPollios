@@ -1,0 +1,23 @@
+# Stack per Portainer: Stacks → Add stack → incolla questo file.
+# Imposta JWT_SECRET (obbligatorio in produzione) nelle variabili d'ambiente dello stack.
+
+services:
+  lospollios:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lospollios:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # URL assoluto del DB SQLite sul volume persistente
+      DATABASE_URL: file:/data/lospollios.db
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - lospollios-data:/data
+
+volumes:
+  lospollios-data:
+    driver: local

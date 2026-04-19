@@ -12,12 +12,22 @@ export type EligendoParsedRow = {
   coalition: null
 }
 
+/** Dati affluenza / schede come in pagina risultati comunali Eligendo */
+export type EligendoAffluenza = {
+  registeredVoters: number | null
+  turnoutVoters: number | null
+  turnoutPercent: number | null
+  ballotsBlank: number | null
+  ballotsInvalidInclBlank: number | null
+}
+
 export type EligendoParseResult = {
   sourceUrl: string
   titleRaw: string
   name: string
   commune: string
   year: number
+  affluenza: EligendoAffluenza
   results: EligendoParsedRow[]
 }
 
@@ -74,17 +84,97 @@ function parseHeadMeta($: ReturnType<typeof load>): { titleRaw: string; name: st
 }
 
 /**
+ * Estrae affluenza e schede (Elettori, Votanti %, Bianche, Non valide) da tabella o testo pagina.
+ */
+export function parseEligendoAffluenza($: ReturnType<typeof load>, plainText: string): EligendoAffluenza {
+  let registeredVoters: number | null = null
+  let turnoutVoters: number | null = null
+  let turnoutPercent: number | null = null
+  let ballotsBlank: number | null = null
+  let ballotsInvalidInclBlank: number | null = null
+
+  $('tr').each((_, el) => {
+    const $row = $(el)
+    const cells = $row
+      .find('th, td')
+      .toArray()
+      .map(n => $(n).text().replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+    if (cells.length < 2) return
+
+    const label = cells[0].toLowerCase()
+    const rest = cells.slice(1).join(' ')
+
+    if (label.includes('elettor') && !label.includes('votant')) {
+      const m = rest.match(/[\d.]+/)
+      if (m) registeredVoters = parseEligendoIntIt(m[0])
+      return
+    }
+    if (/^votant/i.test(label)) {
+      const countM = rest.match(/^([\d.]+)/)
+      if (countM) turnoutVoters = parseEligendoIntIt(countM[1])
+      const pctM = rest.match(/([\d.,]+)\s*%/)
+      if (pctM) turnoutPercent = parseEligendoPercentIt(pctM[1])
+      return
+    }
+    if (label.includes('bianche') && !/non\s+valide/.test(label)) {
+      const m = rest.match(/[\d.]+/)
+      if (m) ballotsBlank = parseEligendoIntIt(m[0])
+      return
+    }
+    if (/non\s+valide/i.test(cells[0])) {
+      const lastNum = [...rest.matchAll(/[\d.]+/g)]
+      if (lastNum.length) ballotsInvalidInclBlank = parseEligendoIntIt(lastNum[lastNum.length - 1][0])
+    }
+  })
+
+  if (
+    registeredVoters === null &&
+    turnoutVoters === null &&
+    ballotsBlank === null &&
+    ballotsInvalidInclBlank === null
+  ) {
+    const t = plainText.replace(/\s+/g, ' ')
+    const affIdx = t.toLowerCase().indexOf('affluenza')
+    const chunkAff = affIdx >= 0 ? t.slice(affIdx, affIdx + 1500) : t
+    const elM = chunkAff.match(/Elettori\s+([\d.]+)/i)
+    if (elM) registeredVoters = parseEligendoIntIt(elM[1])
+    const voM = chunkAff.match(/Votanti\s+([\d.]+)(?:\s+([\d.,]+)\s*%)?/i)
+    if (voM) {
+      turnoutVoters = parseEligendoIntIt(voM[1])
+      if (voM[2]) turnoutPercent = parseEligendoPercentIt(voM[2])
+    }
+    const scIdx = t.toLowerCase().indexOf('schede')
+    const chunkSc = scIdx >= 0 ? t.slice(scIdx, scIdx + 800) : chunkAff
+    const blM = chunkSc.match(/Bianche\s+([\d.]+)/i)
+    if (blM) ballotsBlank = parseEligendoIntIt(blM[1])
+    const nvM = chunkSc.match(/Non\s+valide[^\d]*([\d.]+)/i)
+    if (nvM) ballotsInvalidInclBlank = parseEligendoIntIt(nvM[1])
+  }
+
+  return {
+    registeredVoters,
+    turnoutVoters,
+    turnoutPercent,
+    ballotsBlank,
+    ballotsInvalidInclBlank,
+  }
+}
+
+/**
  * Parser pagina risultato comunali Eligendo Archivio (tabella .dati.table-striped).
  * @see https://elezionistorico.interno.gov.it/
  */
 export function parseEligendoResultsHtml(html: string, pageUrl: string): EligendoParseResult {
   const $ = load(html)
   const meta = parseHeadMeta($)
+  const plainText = $('body').text()
+  const affluenza = parseEligendoAffluenza($, plainText)
   const results: EligendoParsedRow[] = []
 
   const table = $('table.dati.table-striped').first()
   if (!table.length) {
-    return { sourceUrl: pageUrl, ...meta, results: [] }
+    return { sourceUrl: pageUrl, ...meta, affluenza, results: [] }
   }
 
   let pendingMayor = ''
@@ -131,7 +221,7 @@ export function parseEligendoResultsHtml(html: string, pageUrl: string): Eligend
     })
   })
 
-  return { sourceUrl: pageUrl, ...meta, results }
+  return { sourceUrl: pageUrl, ...meta, affluenza, results }
 }
 
 export async function fetchEligendoPage(url: string): Promise<string> {

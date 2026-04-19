@@ -2,7 +2,8 @@ import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import ElectionStatusForm from './ElectionStatusForm'
+import DeleteElectionButton from './DeleteElectionButton'
+import ElectionDetailInfoCard from './ElectionDetailInfoCard'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -34,29 +35,32 @@ export default async function ElectionDetailPage({ params }: Props) {
       </nav>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">{election.name}</h1>
 
-      {/* Info card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="font-semibold text-gray-900 text-lg">{election.name}</h2>
-            <p className="text-gray-500 text-sm mt-0.5">{election.commune} · {formatDate(election.date)}</p>
-          </div>
-          <ElectionStatusForm electionId={election.id} currentStatus={election.status} />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-          {[
-            ['Sezioni', `${sectionsCounted} / ${election._count.sections}`],
-            ['Votanti teorici', totalVoters.toLocaleString('it-IT')],
-            ['Votanti reali', actualVoters.toLocaleString('it-IT')],
-            ['Liste', election._count.lists],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-              <p className="text-xl font-bold text-gray-900">{value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ElectionDetailInfoCard
+        electionId={election.id}
+        name={election.name}
+        commune={election.commune}
+        dateLabel={formatDate(election.date)}
+        archivedNotice={election.archived}
+        status={election.status}
+        archived={election.archived}
+        sectionsCounted={sectionsCounted}
+        sectionsTotal={election._count.sections}
+        totalVoters={totalVoters}
+        actualVoters={actualVoters}
+        listsCount={election._count.lists}
+        eligibleVotersTotal={election.eligibleVotersTotal}
+        metadataKey={election.updatedAt.toISOString()}
+        metadataInitial={{
+          name: election.name,
+          commune: election.commune,
+          date: election.date,
+          type: election.type,
+          totalSeats: election.totalSeats,
+          threshold: election.threshold,
+          notes: election.notes,
+          eligibleVotersTotal: election.eligibleVotersTotal,
+        }}
+      />
 
       {/* Management sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -78,6 +82,15 @@ export default async function ElectionDetailPage({ params }: Props) {
             <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-10 rounded-xl border border-red-100 bg-red-50/50 p-5">
+        <h2 className="text-sm font-semibold text-red-900 mb-1">Zona pericolosa</h2>
+        <p className="text-xs text-red-800/90 mb-3 max-w-2xl">
+          L’eliminazione è irreversibile. Puoi eliminare un’elezione in qualsiasi stato (configurazione, attiva o chiusa); i dati
+          operativi collegati vengono rimossi dal database.
+        </p>
+        <DeleteElectionButton electionId={election.id} electionName={election.name} />
       </div>
     </div>
   )

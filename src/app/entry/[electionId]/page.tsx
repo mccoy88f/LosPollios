@@ -17,6 +17,10 @@ export default async function EntryIndexPage({ params }: Props) {
   })
   if (!election) notFound()
 
+  if (session.role === 'entry' && election.archived) {
+    redirect('/')
+  }
+
   const sections = await prisma.section.findMany({
     where: { electionId: election.id },
     orderBy: { number: 'asc' },
@@ -66,7 +70,13 @@ export default async function EntryIndexPage({ params }: Props) {
               >
                 <div className="text-2xl font-bold">{s.number}</div>
                 <div className="text-xs mt-1 font-medium">
-                  {status === 'complete' ? '✓ Completata' : status === 'partial' ? '◐ Affluenza' : 'Da compilare'}
+                  {session.role === 'entry' && s.locked
+                    ? '🔒 Chiusa'
+                    : status === 'complete'
+                      ? '✓ Completata'
+                      : status === 'partial'
+                        ? '◐ Affluenza'
+                        : 'Da compilare'}
                 </div>
                 {s.turnout && (
                   <div className="text-xs mt-1 opacity-70">{s.turnout.votersActual} votanti</div>

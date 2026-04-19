@@ -3,11 +3,27 @@ import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
 export async function GET() {
-  const elections = await prisma.historicalElection.findMany({
-    orderBy: { year: 'desc' },
-    include: { results: { orderBy: { votes: 'desc' }, include: { mayorPerson: true } } },
-  })
-  return NextResponse.json(elections)
+  const [flat, archivedOperational] = await Promise.all([
+    prisma.historicalElection.findMany({
+      orderBy: { year: 'desc' },
+      include: { results: { orderBy: { votes: 'desc' }, include: { mayorPerson: true } } },
+    }),
+    prisma.election.findMany({
+      where: { archived: true },
+      orderBy: { date: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        commune: true,
+        date: true,
+        status: true,
+        registeredVoters: true,
+        turnoutVoters: true,
+        turnoutPercent: true,
+      },
+    }),
+  ])
+  return NextResponse.json({ flat, archivedOperational })
 }
 
 export async function POST(req: NextRequest) {

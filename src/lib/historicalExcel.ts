@@ -20,6 +20,17 @@ export type HistoricalParsedRow = {
   seats: number | null
 }
 
+export const HISTORICAL_CANDIDATES_SHEET = 'Candidati'
+
+export type HistoricalCandidateRow = {
+  listName: string
+  lastName: string
+  firstName: string
+  order: number
+  /** Preferenze sulla sezione sintesi (n. 0); null = non aggiornare voti */
+  preferenceVotes: number | null
+}
+
 function cellStr(v: unknown): string {
   if (v == null || v === '') return ''
   if (typeof v === 'number') return String(v)
@@ -73,13 +84,23 @@ export function downloadHistoricalExcelTemplate(filename = 'lospollios-modello-e
   ws['!cols'] = [{ wch: 26 }, { wch: 20 }, { wch: 22 }, { wch: 10 }, { wch: 12 }, { wch: 12 }]
   XLSX.utils.book_append_sheet(wb, ws, HISTORICAL_SHEET_NAME)
 
+  const candidati: (string | number)[][] = [
+    ['Nome lista', 'Cognome', 'Nome', 'Ordine', 'Voti preferenza (opz.)'],
+    ['Lista Civica Esempio', 'Rossi', 'Mario', 1, 120],
+    ['Lista Civica Esempio', 'Bianchi', 'Laura', 2, 85],
+  ]
+  const wsCand = XLSX.utils.aoa_to_sheet(candidati)
+  wsCand['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 22 }]
+  XLSX.utils.book_append_sheet(wb, wsCand, HISTORICAL_CANDIDATES_SHEET)
+
   const note = XLSX.utils.aoa_to_sheet([
     ['Istruzioni'],
-    ['Compilare il foglio «Risultati»: una riga per lista.'],
+    ['Foglio «Risultati»: macro per lista (come Eligendo).'],
+    ['Foglio «Candidati»: dettaglio candidati e preferenze sulla sintesi comunale (dopo il macro).'],
     ['Coalizione, candidato sindaco e seggi sono facoltativi (celle vuote).'],
     ['Percentuale: accettati formato italiano (es. 28,5) o numero.'],
     ['Voti: numeri interi; separatore migliaia opzionale (es. 3.200).'],
-    ['Importare il file salvato dalla pagina «Elezioni storiche».'],
+    ['Import: pagina «Dati storici» o elezione archiviata.'],
   ])
   note['!cols'] = [{ wch: 72 }]
   XLSX.utils.book_append_sheet(wb, note, 'Istruzioni')
@@ -138,4 +159,63 @@ export function historicalRowsToSemicolonLines(rows: HistoricalParsedRow[]): str
       ].join(';')
     )
     .join('\n')
+}
+
+function candidateHeaderRow(cells: string[]): boolean {
+  const j = cells.join(' ').toLowerCase()
+  return j.includes('cognome') && j.includes('nome') && j.includes('lista')
+}
+
+export function parseHistoricalCandidatesSheet(buffer: ArrayBuffer): HistoricalCandidateRow[] {
+  const wb = XLSX.read(buffer, { type: 'array' })
+  const sheetName = wb.SheetNames.find(n => n === HISTORICAL_CANDIDATES_SHEET)
+  if (!sheetName) return []
+
+  const sheet = wb.Sheets[sheetName]
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: '',
+    raw: true,
+  }) as unknown[][]
+
+  const out: HistoricalCandidateRow[] = []
+  let start = 0
+  if (rows.length > 0) {
+    const first = (rows[0] as unknown[]).map(c => cellStr(c))
+    if (candidateHeaderRow(first)) start = 1
+  }
+
+  for (let i = start; i < rows.length; i++) {
+    const r = rows[i] as unknown[]
+    const listName = cellStr(r[0])
+    const lastName = cellStr(r[1])
+    if (!listName || !lastName) continue
+    const firstName = cellStr(r[2])
+    const orderRaw = r[3]
+    const order =
+      typeof orderRaw === 'number' && !Number.isNaN(orderRaw)
+        ? Math.round(orderRaw)
+        : parseInt(cellStr(orderRaw), 10) || 1
+    const pv = r[4]
+    let preferenceVotes: number | null = null
+    if (pv !== '' && pv != null) {
+      const n = parseVotes(pv)
+      preferenceVotes = n
+    }
+
+    out.push({ listName, lastName, firstName: firstName || '—', order, preferenceVotes })
+  }
+
+  return out
+}
+
+/** Legge foglio Risultati + opzionale Candidati */
+export function parseHistoricalExcelFull(buffer: ArrayBuffer): {
+  lists: HistoricalParsedRow[]
+  candidates: HistoricalCandidateRow[]
+} {
+  return {
+    lists: parseHistoricalExcel(buffer),
+    candidates: parseHistoricalCandidatesSheet(buffer),
+  }
 }

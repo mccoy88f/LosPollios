@@ -45,6 +45,22 @@ export async function POST(req: NextRequest, { params }: Params) {
   const secId = Number(sectionId)
   const body = await req.json()
 
+  const sectionRow = await prisma.section.findUnique({
+    where: { id: secId },
+    include: { election: true },
+  })
+  if (!sectionRow || sectionRow.electionId !== electionId) {
+    return NextResponse.json({ error: 'Sezione non trovata' }, { status: 404 })
+  }
+  if (session.role === 'entry') {
+    if (sectionRow.election.archived || sectionRow.locked) {
+      return NextResponse.json(
+        { error: sectionRow.election.archived ? 'Elezione archiviata: modifiche non consentite' : 'Sezione chiusa dall’amministratore: modifiche non consentite' },
+        { status: 403 }
+      )
+    }
+  }
+
   /*
     Expected body:
     {

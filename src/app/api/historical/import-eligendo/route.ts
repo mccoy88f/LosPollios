@@ -6,12 +6,13 @@ import {
   isAllowedEligendoUrl,
   parseEligendoResultsHtml,
 } from '@/lib/eligendoImport'
+import { applyEligendoMacroToElection, canImportMacroToElection } from '@/lib/archivedElectionImport'
 
 /**
  * Importa risultati da una pagina dell'Archivio Eligendo (Ministero dell'Interno).
  * POST { url: string, preview?: boolean, notes?: string }
  * - preview true: restituisce solo meta + results senza salvare
- * - preview false/omit: crea HistoricalElection + risultati (con URL loghi lista)
+ * - preview false/omit: crea HistoricalElection + risultati, oppure se targetElectionId (elezione archiviata) applica macro lì
  */
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
   }
 
-  const { url, preview, notes } = await req.json()
+  const { url, preview, notes, targetElectionId } = await req.json()
   if (!url || typeof url !== 'string') {
     return NextResponse.json({ error: 'URL obbligatorio' }, { status: 400 })
   }
@@ -52,21 +53,51 @@ export async function POST(req: NextRequest) {
   }
 
   if (preview === true) {
+    let macroTarget: { electionId: number; canImport: boolean; reason?: string } | undefined
+    if (targetElectionId != null && Number.isFinite(Number(targetElectionId))) {
+      const chk = await canImportMacroToElection(Number(targetElectionId))
+      macroTarget = {
+        electionId: Number(targetElectionId),
+        canImport: chk.ok,
+        reason: chk.reason,
+      }
+    }
     return NextResponse.json({
       preview: true,
       ...parsed,
       notesSuggested: `Import da Eligendo\n${trimmed}\n${parsed.titleRaw}`,
+      macroTarget,
     })
   }
 
   const noteBlock = [notes?.trim(), `Fonte: ${trimmed}`, parsed.titleRaw].filter(Boolean).join('\n')
 
+  if (targetElectionId != null && Number.isFinite(Number(targetElectionId))) {
+    const eid = Number(targetElectionId)
+    try {
+      const election = await applyEligendoMacroToElection(eid, parsed, noteBlock)
+      return NextResponse.json(
+        { preview: false, targetElectionId: eid, election, parsed, mode: 'archived_election' },
+        { status: 200 }
+      )
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Import non riuscito'
+      return NextResponse.json({ error: msg }, { status: 400 })
+    }
+  }
+
+  const a = parsed.affluenza
   const election = await prisma.historicalElection.create({
     data: {
       name: parsed.name,
       commune: parsed.commune,
       year: parsed.year,
       notes: noteBlock,
+      ...(a.registeredVoters != null && { registeredVoters: a.registeredVoters }),
+      ...(a.turnoutVoters != null && { turnoutVoters: a.turnoutVoters }),
+      ...(a.turnoutPercent != null && { turnoutPercent: a.turnoutPercent }),
+      ...(a.ballotsBlank != null && { ballotsBlank: a.ballotsBlank }),
+      ...(a.ballotsInvalidInclBlank != null && { ballotsInvalidInclBlank: a.ballotsInvalidInclBlank }),
       results: {
         create: parsed.results.map(r => ({
           listName: r.listName,

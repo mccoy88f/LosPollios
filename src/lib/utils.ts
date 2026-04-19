@@ -19,6 +19,15 @@ export function formatDateTime(d: string | Date) {
   }).format(new Date(d))
 }
 
+/** Valore per `<input type="date">` nel fuso locale (evita shift UTC). */
+export function toElectionDateInputValue(d: string | Date): string {
+  const x = new Date(d)
+  const y = x.getFullYear()
+  const m = String(x.getMonth() + 1).padStart(2, '0')
+  const day = String(x.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 // Palette colori di default per le liste
 export const DEFAULT_COLORS = [
   '#2563eb', '#16a34a', '#dc2626', '#ea580c', '#9333ea',

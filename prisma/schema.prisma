@@ -20,7 +20,17 @@ model Election {
   threshold    Float    @default(3.0)
   // setup | active | closed
   status       String   @default("setup")
+  /** Solo admin: nasconde l’elezione dall’elenco principale e blocca l’inserimento dati (entry) */
+  archived     Boolean  @default(false)
   notes        String?
+  /** Totale aventi diritto al voto a livello comunale (tetto). La somma delle sezioni non può superarlo. */
+  eligibleVotersTotal         Int?
+  /** Affluenza / schede (snapshot da Eligendo o manuale) — utile per elezioni archiviate */
+  registeredVoters            Int?
+  turnoutVoters               Int?
+  turnoutPercent              Float?
+  ballotsBlank                Int?
+  ballotsInvalidInclBlank     Int?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -41,6 +51,8 @@ model Section {
   location          String?
   theoreticalVoters Int      @default(0)
   order             Int      @default(0)
+  /** Solo admin: i rappresentanti non possono più modificare i dati di questa sezione */
+  locked            Boolean  @default(false)
 
   turnout           SectionTurnout?
   listResults       SectionListResult[]
@@ -84,6 +96,8 @@ model ElectionList {
   coalition      String?
   order          Int      @default(0)
   notes          String?
+  /** Seggi da fonte ufficiale (es. import Eligendo) se diversi dal calcolo proiezioni */
+  importedSeats  Int?
 
   candidates     Candidate[]
   sectionResults SectionListResult[]
@@ -172,9 +186,9 @@ model User {
   // admin | entry | viewer
   role       String        @default("entry")
   electionId Int?
-  election   Election?     @relation(fields: [electionId], references: [id])
+  election   Election?     @relation(fields: [electionId], references: [id], onDelete: SetNull)
   listId     Int?
-  list       ElectionList? @relation(fields: [listId], references: [id])
+  list       ElectionList? @relation(fields: [listId], references: [id], onDelete: SetNull)
   active     Boolean       @default(true)
   createdAt  DateTime      @default(now())
 }
@@ -187,6 +201,13 @@ model HistoricalElection {
   commune   String
   year      Int
   notes     String?
+  /** Affluenza (es. import Eligendo): elettori aventi diritto */
+  registeredVoters            Int?
+  turnoutVoters               Int?
+  turnoutPercent              Float?
+  ballotsBlank                Int?
+  /** Schede non valide, bianche incluse (testo Eligendo) */
+  ballotsInvalidInclBlank     Int?
   createdAt DateTime               @default(now())
 
   results   HistoricalListResult[]

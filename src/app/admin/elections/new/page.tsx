@@ -7,7 +7,14 @@ import Link from 'next/link'
 export default function NewElectionPage() {
   const router = useRouter()
   const [form, setForm] = useState({
-    name: '', commune: '', date: '', type: 'large', totalSeats: '32', threshold: '3.0', notes: '',
+    name: '',
+    commune: '',
+    date: '',
+    type: 'large',
+    totalSeats: '32',
+    threshold: '3.0',
+    eligibleVotersTotal: '',
+    notes: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +29,14 @@ export default function NewElectionPage() {
       const res = await fetch('/api/elections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, totalSeats: Number(form.totalSeats), threshold: Number(form.threshold) }),
+        body: JSON.stringify({
+          ...form,
+          totalSeats: Number(form.totalSeats),
+          threshold: Number(form.threshold),
+          ...(form.eligibleVotersTotal.trim() !== ''
+            ? { eligibleVotersTotal: Math.max(0, parseInt(form.eligibleVotersTotal, 10) || 0) }
+            : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Errore'); return }
@@ -82,6 +96,20 @@ export default function NewElectionPage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           )}
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Totale aventi diritto al voto (comune){' '}
+              <span className="font-normal text-gray-400 text-xs">— tetto opzionale per la somma delle sezioni</span>
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={form.eligibleVotersTotal}
+              onChange={e => set('eligibleVotersTotal', e.target.value)}
+              className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Opzionale — es. elettori registrati"
+            />
+          </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2}

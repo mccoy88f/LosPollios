@@ -19,11 +19,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { name, commune, date, type, totalSeats, threshold, notes } = body
+  const { name, commune, date, type, totalSeats, threshold, notes, eligibleVotersTotal } = body
 
   if (!name || !commune || !date) {
     return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
   }
+
+  const cap =
+    eligibleVotersTotal === undefined || eligibleVotersTotal === null || eligibleVotersTotal === ''
+      ? null
+      : Math.max(0, Number(eligibleVotersTotal))
 
   const election = await prisma.election.create({
     data: {
@@ -34,6 +39,7 @@ export async function POST(req: NextRequest) {
       totalSeats: Number(totalSeats ?? 32),
       threshold: Number(threshold ?? 3.0),
       notes,
+      ...(cap != null ? { eligibleVotersTotal: cap } : {}),
     },
   })
   return NextResponse.json(election, { status: 201 })

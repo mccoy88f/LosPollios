@@ -14,9 +14,19 @@ interface Props {
   existingTurnout: { votersActual: number; ballotsValid?: number; ballotsNull?: number; ballotsBlank?: number } | null
   existingListResults: ListResult[]
   theoreticalVoters: number
+  /** Solo per ruolo entry: sezione bloccata dall’admin */
+  readOnly?: boolean
 }
 
-export default function SectionEntryForm({ electionId, sectionId, lists, existingTurnout, existingListResults, theoreticalVoters }: Props) {
+export default function SectionEntryForm({
+  electionId,
+  sectionId,
+  lists,
+  existingTurnout,
+  existingListResults,
+  theoreticalVoters,
+  readOnly = false,
+}: Props) {
   const router = useRouter()
 
   const [turnout, setTurnout] = useState({
@@ -56,6 +66,7 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (readOnly) return
     setSaving(true)
     setMsg('')
     setError('')
@@ -110,7 +121,8 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
             <input
               type="number" min="0" value={turnout.votersActual}
               onChange={e => setTurn('votersActual', e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
+              disabled={readOnly}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="0" required
             />
           </div>
@@ -119,7 +131,8 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
               <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
               <input type="number" min="0" value={(turnout as Record<string, string | number>)[key]}
                 onChange={e => setTurn(key, e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="—" />
             </div>
           ))}
@@ -167,7 +180,8 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
                   <input
                     type="number" min="0" value={listVotes[list.id]}
                     onChange={e => setListVotes(m => ({ ...m, [list.id]: e.target.value }))}
-                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={readOnly}
+                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="0"
                   />
                 </div>
@@ -189,7 +203,8 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
                               onChange={e => setPreferences(m => ({
                                 ...m, [list.id]: { ...(m[list.id] || {}), [c.id]: e.target.value }
                               }))}
-                              className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              disabled={readOnly}
+                              className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                               placeholder="0"
                             />
                           </div>
@@ -208,9 +223,9 @@ export default function SectionEntryForm({ electionId, sectionId, lists, existin
       {error && <div className="bg-red-50   text-red-700   rounded-lg px-4 py-3">{error}</div>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving}
+        <button type="submit" disabled={saving || readOnly}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors text-lg">
-          {saving ? 'Salvataggio...' : '💾 Salva dati sezione'}
+          {readOnly ? 'Sola lettura' : saving ? 'Salvataggio...' : '💾 Salva dati sezione'}
         </button>
         <a href={`/entry/${electionId}`}
           className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium">

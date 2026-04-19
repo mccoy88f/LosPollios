@@ -17,6 +17,10 @@ export default async function SectionEntryPage({ params }: Props) {
   })
   if (!election) notFound()
 
+  if (session.role === 'entry' && election.archived) {
+    redirect('/')
+  }
+
   const section = await prisma.section.findUnique({
     where: { id: Number(sectionId) },
     include: {
@@ -27,6 +31,8 @@ export default async function SectionEntryPage({ params }: Props) {
     },
   })
   if (!section) notFound()
+
+  const readOnly = session.role === 'entry' && section.locked
 
   // Existing data
   const existingTurnout = section.turnout ? {
@@ -59,15 +65,22 @@ export default async function SectionEntryPage({ params }: Props) {
               {section.location && <p className="text-blue-700 text-sm">{section.location}</p>}
             </div>
             <div className="text-right">
-              <p className="text-xs text-blue-600">Votanti teorici</p>
+              <p className="text-xs text-blue-600">Aventi diritto al voto</p>
               <p className="text-2xl font-bold text-blue-900">{section.theoreticalVoters.toLocaleString('it-IT')}</p>
             </div>
           </div>
         </div>
 
+        {readOnly && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-900 text-sm">
+            Questa sezione è stata chiusa dall’amministratore: i dati sono in sola lettura.
+          </div>
+        )}
+
         <SectionEntryForm
           electionId={Number(electionId)}
           sectionId={Number(sectionId)}
+          readOnly={readOnly}
           lists={election.lists.map(l => ({
             id: l.id,
             name: l.name,

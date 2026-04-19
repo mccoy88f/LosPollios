@@ -1,0 +1,25 @@
+# Dipendenze e build locali
+node_modules
+.next
+out
+
+# Git e IDE
+.git
+.gitignore
+.cursor
+*.md
+
+# Env locali (in Portainer si usano variabili stack / secrets)
+.env
+.env.*
+!.env.example
+
+# DB locale (in container si usa volume /data)
+*.db
+*.db-journal
+*.sqlite
+
+# Test e tooling
+coverage
+.vscode
+*.log
