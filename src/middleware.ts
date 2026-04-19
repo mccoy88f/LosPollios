@@ -11,6 +11,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // PWA: manifest, service worker, icone generate (senza sessione)
+  if (
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/sw.js' ||
+    pathname.startsWith('/icons/') ||
+    pathname === '/icon' ||
+    pathname === '/icon.png' ||
+    pathname.startsWith('/apple-icon')
+  ) {
+    return NextResponse.next()
+  }
+
   if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.next()
   }
