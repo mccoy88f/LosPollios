@@ -33,8 +33,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+    <div className="min-h-[100dvh] w-full box-border bg-gradient-to-br from-blue-900 to-indigo-900 grid place-items-center p-4 sm:p-6">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm shrink-0">
         <div className="text-center mb-8">
           <span className="text-5xl">🗳️</span>
           <h1 className="text-2xl font-bold text-gray-900 mt-3">LosPollios</h1>

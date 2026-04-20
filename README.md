@@ -96,6 +96,8 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 |-----------|----------------|
 | **`DATABASE_URL`** | `file:/data/lospollios.db` — database SQLite sul volume Docker `lospollios-data` montato in `/data`. |
 
+**Primo avvio:** l’entrypoint del container, dopo `db push`, esegue automaticamente il seed (come `npm run db:seed`). Così puoi accedere subito con **admin** / **admin123**. Il seed è **idempotente** (upsert): ai riavvii non azzera i dati; per l’utente `admin`, `update: {}` in Prisma **non** sovrascrive la password se l’hai già cambiata nel database.
+
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 
 1. Esporta la variabile nella shell prima di avviare lo stack, oppure crea un file **`.env`** nella stessa directory del `docker-compose.yml` (Compose legge automaticamente `.env` e sostituisce `${JWT_SECRET}`):

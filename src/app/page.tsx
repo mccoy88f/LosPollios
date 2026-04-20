@@ -59,12 +59,12 @@ export default async function HomePage() {
           </div>
         )}
 
-        {/* Quick links */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Quick links: flex così un solo riquadro (es. Accedi) resta centrato, non incollato a sinistra */}
+        <div className="flex flex-wrap justify-center gap-4">
           {session?.role === 'admin' || session?.role === 'entry' ? (
             <Link
               href={session.role === 'admin' ? '/admin' : `/entry/${session.electionId}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors group"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors group w-full max-w-sm"
             >
               <div className="text-3xl mb-3">{session.role === 'admin' ? '⚙️' : '📝'}</div>
               <h3 className="text-white font-semibold">
@@ -77,7 +77,7 @@ export default async function HomePage() {
           ) : (
             <Link
               href="/login"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
             >
               <div className="text-3xl mb-3">🔐</div>
               <h3 className="text-white font-semibold">Accedi</h3>
@@ -88,7 +88,7 @@ export default async function HomePage() {
           {allElections.length > 0 && (
             <Link
               href={`/live/${allElections[0].id}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
             >
               <div className="text-3xl mb-3">📊</div>
               <h3 className="text-white font-semibold">Risultati Live</h3>
@@ -99,7 +99,7 @@ export default async function HomePage() {
           {allElections.length > 0 && (
             <Link
               href={`/dashboard/${allElections[0].id}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
             >
               <div className="text-3xl mb-3">🔍</div>
               <h3 className="text-white font-semibold">Analisi & Proiezioni</h3>

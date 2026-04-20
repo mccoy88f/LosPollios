@@ -16,6 +16,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN npm run build
+# Script seed eseguibile con `node` nel container (no tsx): stesso contenuto di prisma/seed.ts
+RUN npx --yes esbuild@0.24.2 prisma/seed.ts --bundle --platform=node --target=node20 --format=cjs \
+  --outfile=prisma/seed.cjs --external:@prisma/client
 
 FROM base AS runner
 ENV NODE_ENV=production

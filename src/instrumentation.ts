@@ -10,8 +10,9 @@ export async function register() {
 
   try {
     const { default: prisma } = await import('@/lib/db')
-    await prisma.$executeRawUnsafe('PRAGMA journal_mode=WAL;')
-    await prisma.$executeRawUnsafe('PRAGMA busy_timeout = 5000;')
+    // PRAGMA in SQLite spesso restituiscono righe: $executeRaw fallisce con "Execute returned results"
+    await prisma.$queryRawUnsafe('PRAGMA journal_mode=WAL;')
+    await prisma.$queryRawUnsafe('PRAGMA busy_timeout = 5000;')
   } catch (e) {
     console.error('[instrumentation] Impostazione PRAGMA SQLite non riuscita:', e)
   }
