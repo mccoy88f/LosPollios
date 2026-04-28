@@ -7,7 +7,7 @@ export const HISTORICAL_TEMPLATE_HEADERS = [
   'Coalizione (opz.)',
   'Candidato sindaco (opz.)',
   'Voti',
-  'Percentuale',
+  'Percentuale (opz.)',
   'Seggi (opz.)',
 ] as const
 
@@ -15,8 +15,10 @@ export type HistoricalParsedRow = {
   listName: string
   coalition: string | null
   candidateMayor: string | null
-  votes: number
-  percentage: number
+  /** null = in reimport non aggiornare i voti in DB */
+  votes: number | null
+  /** null = in reimport non aggiornare la % in DB (es. foglio con solo candidati) */
+  percentage: number | null
   seats: number | null
 }
 
@@ -59,6 +61,26 @@ function parsePercent(v: unknown): number {
   return Number.isNaN(n) ? 0 : n
 }
 
+/** Cella vuota → null (reimport parziale); altrimenti come parsePercent */
+function parsePercentOptional(v: unknown): number | null {
+  if (v == null || v === '') return null
+  if (typeof v === 'number' && !Number.isNaN(v)) return v
+  const s = String(v)
+    .trim()
+    .replace('%', '')
+    .replace(/\s/g, '')
+  if (!s) return null
+  const n = parseFloat(s.replace(',', '.'))
+  return Number.isNaN(n) ? null : n
+}
+
+/** Cella vuota → null (non aggiornare voti lista in merge) */
+function parseVotesOptional(v: unknown): number | null {
+  if (v == null || v === '') return null
+  const n = parseVotes(v)
+  return n
+}
+
 function parseSeats(v: unknown): number | null {
   if (v == null || v === '') return null
   if (typeof v === 'number' && !Number.isNaN(v)) return Math.round(v)
@@ -98,7 +120,7 @@ export function downloadHistoricalExcelTemplate(filename = 'lospollios-modello-e
     ['Foglio «Risultati»: macro per lista (come Eligendo).'],
     ['Foglio «Candidati»: dettaglio candidati e preferenze sulla sintesi comunale (dopo il macro).'],
     ['Coalizione, candidato sindaco e seggi sono facoltativi (celle vuote).'],
-    ['Percentuale: accettati formato italiano (es. 28,5) o numero.'],
+    ['Percentuale (opz.): vuota al reimport su storico = non sovrascrivere; vuota su nuovo record = calcolo dai voti.'],
     ['Voti: numeri interi; separatore migliaia opzionale (es. 3.200).'],
     ['Import: pagina «Dati storici» o elezione archiviata.'],
   ])
@@ -137,8 +159,8 @@ export function parseHistoricalExcel(buffer: ArrayBuffer): HistoricalParsedRow[]
       listName,
       coalition: cellStr(r[1]) || null,
       candidateMayor: cellStr(r[2]) || null,
-      votes: parseVotes(r[3]),
-      percentage: parsePercent(r[4]),
+      votes: parseVotesOptional(r[3]),
+      percentage: parsePercentOptional(r[4]),
       seats: parseSeats(r[5]),
     })
   }
@@ -153,12 +175,141 @@ export function historicalRowsToSemicolonLines(rows: HistoricalParsedRow[]): str
         r.listName,
         r.coalition ?? '',
         r.candidateMayor ?? '',
-        r.votes,
-        r.percentage,
+        r.votes ?? '',
+        r.percentage ?? '',
         r.seats ?? '',
       ].join(';')
     )
     .join('\n')
+}
+
+/** Per creazione nuova elezione storica: voti obbligatori; % assenti calcolate sui totali. */
+export function normalizeHistoricalRowsForCreate(
+  rows: HistoricalParsedRow[]
+): Array<
+  Omit<HistoricalParsedRow, 'votes' | 'percentage'> & { votes: number; percentage: number }
+> {
+  const out: Array<
+    Omit<HistoricalParsedRow, 'votes' | 'percentage'> & { votes: number; percentage: number }
+  > = []
+  let totalVotes = 0
+  for (const r of rows) {
+    if (r.votes == null) {
+      throw new Error(`Voti mancanti per la lista «${r.listName}»`)
+    }
+    totalVotes += r.votes
+  }
+  for (const r of rows) {
+    const votes = r.votes!
+    const percentage =
+      r.percentage != null
+        ? r.percentage
+        : totalVotes > 0
+          ? Math.round((10000 * votes) / totalVotes) / 100
+          : 0
+    out.push({
+      listName: r.listName,
+      coalition: r.coalition,
+      candidateMayor: r.candidateMayor,
+      votes,
+      percentage,
+      seats: r.seats,
+    })
+  }
+  return out
+}
+
+export type HistoricalPrefillListRow = {
+  listName: string
+  coalition: string | null
+  candidateMayor: string | null
+  votes: number
+  percentage: number
+  seats: number | null
+}
+
+export type HistoricalPrefillCouncilRow = {
+  listName: string
+  lastName: string
+  firstName: string
+  order: number
+  preferenceVotes: number | null
+}
+
+function slugFilePart(s: string, max = 32): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\w\-]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, max) || 'comune'
+}
+
+/**
+ * Excel con foglio «Risultati» uguale all’elezione corrente e «Candidati» con righe esistenti
+ * oppure una riga segnaposto per lista (cognome/nome vuoti) da compilare a mano.
+ */
+export function downloadHistoricalElectionPrefillXlsx(
+  meta: { electionName: string; commune: string; year: number; filename?: string },
+  lists: HistoricalPrefillListRow[],
+  candidates: HistoricalPrefillCouncilRow[]
+): void {
+  const wb = XLSX.utils.book_new()
+
+  const risultati: (string | number)[][] = [
+    [...HISTORICAL_TEMPLATE_HEADERS],
+    ...lists.map(l => [
+      l.listName,
+      l.coalition ?? '',
+      l.candidateMayor ?? '',
+      l.votes,
+      Number.isFinite(l.percentage) ? Math.round(l.percentage * 100) / 100 : '',
+      l.seats ?? '',
+    ]),
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(risultati)
+  ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 24 }, { wch: 10 }, { wch: 14 }, { wch: 10 }]
+  XLSX.utils.book_append_sheet(wb, ws, HISTORICAL_SHEET_NAME)
+
+  const candidati: (string | number)[][] = [
+    ['Nome lista', 'Cognome', 'Nome', 'Ordine', 'Voti preferenza (opz.)'],
+  ]
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+
+  for (const l of lists) {
+    const forList = candidates.filter(c => norm(c.listName) === norm(l.listName))
+    if (forList.length > 0) {
+      for (const c of forList) {
+        candidati.push([
+          l.listName,
+          c.lastName,
+          c.firstName,
+          c.order,
+          c.preferenceVotes != null ? c.preferenceVotes : '',
+        ])
+      }
+    } else {
+      candidati.push([l.listName, '', '', 1, ''])
+    }
+  }
+
+  const wsCand = XLSX.utils.aoa_to_sheet(candidati)
+  wsCand['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 22 }]
+  XLSX.utils.book_append_sheet(wb, wsCand, HISTORICAL_CANDIDATES_SHEET)
+
+  const note = XLSX.utils.aoa_to_sheet([
+    ['Istruzioni — dopo Eligendo'],
+    ['Foglio «Risultati»: di solito non serve modificarlo. Puoi lasciare vuota la colonna «Percentuale (opz.)» al reimport.'],
+    ['Foglio «Candidati»: compila cognome, nome, ordine e voti preferenza per ogni candidato.'],
+    ['Reimport: dalla stessa scheda elezione storica usa «Reimporta Excel»; le liste si aggiornano solo per celle compilate.'],
+  ])
+  note['!cols'] = [{ wch: 78 }]
+  XLSX.utils.book_append_sheet(wb, note, 'Istruzioni')
+
+  const fn =
+    meta.filename ??
+    `storico-${meta.year}-${slugFilePart(meta.commune)}-candidati.xlsx`
+  XLSX.writeFile(wb, fn)
 }
 
 function candidateHeaderRow(cells: string[]): boolean {

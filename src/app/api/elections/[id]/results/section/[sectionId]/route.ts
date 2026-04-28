@@ -118,8 +118,13 @@ export async function POST(req: NextRequest, { params }: Params) {
       for (const pref of (lr.preferences ?? [])) {
         await tx.candidatePreference.upsert({
           where: { sectionResultId_candidateId: { sectionResultId: result.id, candidateId: Number(pref.candidateId) } },
-          update: { votes: Number(pref.votes) },
-          create: { sectionResultId: result.id, candidateId: Number(pref.candidateId), votes: Number(pref.votes) },
+          update: { votes: Number(pref.votes), enteredBy: username },
+          create: {
+            sectionResultId: result.id,
+            candidateId: Number(pref.candidateId),
+            votes: Number(pref.votes),
+            enteredBy: username,
+          },
         })
       }
     }

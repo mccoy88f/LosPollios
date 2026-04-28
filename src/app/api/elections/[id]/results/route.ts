@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { getElectionLastDataUpdateAt } from '@/lib/electionUpdates'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -7,7 +8,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const electionId = Number(id)
 
-  const [election, sections, turnouts, listResults] = await Promise.all([
+  const [election, sections, turnouts, listResults, lastDataUpdateAt] = await Promise.all([
     prisma.election.findUnique({
       where: { id: electionId },
       include: { lists: { orderBy: { order: 'asc' } } },
@@ -21,6 +22,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         preferences: { include: { candidate: true } },
       },
     }),
+    getElectionLastDataUpdateAt(electionId),
   ])
 
   if (!election) return NextResponse.json({ error: 'Non trovata' }, { status: 404 })
@@ -105,6 +107,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
                 percentage: totalTheoretical > 0 ? (totalActual / totalTheoretical) * 100 : 0 },
     lists: listsAggregated,
     sectionStatus,
+    /** Istante di generazione della risposta (refresh client) */
     lastUpdate: new Date().toISOString(),
+    /** Ultimo salvataggio su DB tra affluenza, voti lista e preferenze (sezioni) */
+    lastDataUpdateAt,
   })
 }

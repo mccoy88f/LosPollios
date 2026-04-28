@@ -116,6 +116,7 @@ export default function LivePreferenzePage({
         ]}
         contextLinks={[
           { label: 'Live', href: `/live/${electionId}` },
+          { label: 'Aggiornamenti', href: `/live/${electionId}/aggiornamenti` },
           { label: 'Analisi', href: `/dashboard/${electionId}` },
         ]}
       />

@@ -6,7 +6,15 @@ export async function GET() {
   const [flat, archivedOperational] = await Promise.all([
     prisma.historicalElection.findMany({
       orderBy: { year: 'desc' },
-      include: { results: { orderBy: { votes: 'desc' }, include: { mayorPerson: true } } },
+      include: {
+        results: {
+          orderBy: { votes: 'desc' },
+          include: {
+            mayorPerson: true,
+            councilCandidates: { orderBy: [{ order: 'asc' }, { id: 'asc' }], include: { person: true } },
+          },
+        },
+      },
     }),
     prisma.election.findMany({
       where: { archived: true },

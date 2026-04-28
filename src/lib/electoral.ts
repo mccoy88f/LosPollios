@@ -157,7 +157,9 @@ export function calculateProjection(
     seats,
     totalVotes,
     winningCoalition,
-    mayorElected: !needsRunoff ? winningCoalition?.candidateMayor : undefined,
+    // Senza voti dalle sezioni non ha senso mostrare un sindaco "eletto" (era solo il nome configurato sulla lista)
+    mayorElected:
+      totalVotes > 0 && !needsRunoff ? winningCoalition?.candidateMayor : undefined,
     needsRunoff,
   }
 }

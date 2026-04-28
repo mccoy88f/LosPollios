@@ -74,6 +74,10 @@ export default function SectionEntryForm({
     const current = Number(preferences[listId]?.[candidateId]) || 0
     setPreference(listId, candidateId, String(current + 1))
   }
+  function incrementListVote(listId: number) {
+    const current = Number(listVotes[listId]) || 0
+    setListVote(listId, String(current + 1))
+  }
 
   const totalListVotes = Object.values(listVotes).reduce((s, v) => s + (Number(v) || 0), 0)
   const actualVoters   = Number(turnout.votersActual) || 0
@@ -235,13 +239,24 @@ export default function SectionEntryForm({
                       </div>
                     )}
                   </div>
-                  <input
-                    type="number" min="0" value={listVotes[list.id]}
-                    onChange={e => setListVote(list.id, e.target.value)}
-                    disabled={readOnly}
-                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="0"
-                  />
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => incrementListVote(list.id)}
+                      disabled={readOnly}
+                      className="w-7 h-7 rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                      aria-label={`Aumenta voti di lista per ${list.name}`}
+                    >
+                      +
+                    </button>
+                    <input
+                      type="number" min="0" value={listVotes[list.id]}
+                      onChange={e => setListVote(list.id, e.target.value)}
+                      disabled={readOnly}
+                      className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
 
                 {/* Preferences toggle */}

@@ -161,13 +161,15 @@ export async function applyExcelMacroToElection(electionId: number, rows: Histor
       candidateMayor: row.candidateMayor,
       importedSeats: row.seats,
     })
+    const votes = row.votes
+    if (votes == null) continue
     await prisma.sectionListResult.upsert({
       where: { sectionId_listId: { sectionId: section.id, listId: list.id } },
-      update: { listVotes: row.votes, enteredBy: 'import-excel-storico' },
+      update: { listVotes: votes, enteredBy: 'import-excel-storico' },
       create: {
         sectionId: section.id,
         listId: list.id,
-        listVotes: row.votes,
+        listVotes: votes,
         enteredBy: 'import-excel-storico',
       },
     })
@@ -216,8 +218,13 @@ export async function applyCandidateRowsToElection(electionId: number, rows: His
 
     await prisma.candidatePreference.upsert({
       where: { sectionResultId_candidateId: { sectionResultId: sr.id, candidateId: cand.id } },
-      update: { votes: row.preferenceVotes },
-      create: { sectionResultId: sr.id, candidateId: cand.id, votes: row.preferenceVotes },
+      update: { votes: row.preferenceVotes, enteredBy: 'import-excel-storico' },
+      create: {
+        sectionResultId: sr.id,
+        candidateId: cand.id,
+        votes: row.preferenceVotes,
+        enteredBy: 'import-excel-storico',
+      },
     })
   }
 

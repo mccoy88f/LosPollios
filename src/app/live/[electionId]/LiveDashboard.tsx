@@ -27,6 +27,8 @@ interface ResultsData {
   lists:     ListResult[]
   sectionStatus: SectionStatus[]
   lastUpdate: string
+  /** Ultimo salvataggio DB (affluenza / voti lista / preferenze) */
+  lastDataUpdateAt?: string | null
 }
 
 function CoalitionSummary({ lists }: { lists: ListResult[] }) {
@@ -159,7 +161,10 @@ export default function LiveDashboard({
             { label: electionName },
             { label: 'Live' },
           ]}
-          contextLinks={[{ label: 'Analisi', href: `/dashboard/${electionId}` }]}
+          contextLinks={[
+            { label: 'Aggiornamenti', href: `/live/${electionId}/aggiornamenti` },
+            { label: 'Analisi', href: `/dashboard/${electionId}` },
+          ]}
         />
         <div className="flex items-center justify-center py-24">
           <div className="text-center text-gray-400">
@@ -173,7 +178,7 @@ export default function LiveDashboard({
 
   if (!data) return <div className="p-8 text-center text-red-500">Elezione non trovata</div>
 
-  const { election, progress, turnout, lists, sectionStatus } = data
+  const { election, progress, turnout, lists, sectionStatus, lastDataUpdateAt } = data
   const totalListVotes = lists.reduce((s, l) => s + l.votes, 0)
 
   const chartData = lists
@@ -194,7 +199,10 @@ export default function LiveDashboard({
           { label: electionName },
           { label: 'Live' },
         ]}
-        contextLinks={[{ label: 'Analisi', href: `/dashboard/${electionId}` }]}
+        contextLinks={[
+          { label: 'Aggiornamenti', href: `/live/${electionId}/aggiornamenti` },
+          { label: 'Analisi', href: `/dashboard/${electionId}` },
+        ]}
       />
       <div className="bg-blue-900 text-white py-6 px-4">
         <div className="max-w-7xl mx-auto">
@@ -226,10 +234,35 @@ export default function LiveDashboard({
               style={{ width: `${progress.percentage}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-blue-200 mt-1">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-blue-200 mt-1">
             <span>{progress.sectionsCounted} sezioni scrutinate</span>
-            {lastPulse && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" /> Live · {lastPulse.toLocaleTimeString('it-IT')}</span>}
+            {lastPulse && (
+              <span className="flex items-center gap-1 justify-center">
+                <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" /> Pagina ·{' '}
+                {lastPulse.toLocaleTimeString('it-IT')}
+              </span>
+            )}
             <span>{progress.totalSections - progress.sectionsCounted} mancanti</span>
+          </div>
+          <div className="mt-2 text-center text-xs text-blue-200/95">
+            {lastDataUpdateAt ? (
+              <>
+                Ultimo salvataggio dati:{' '}
+                <time dateTime={lastDataUpdateAt}>
+                  {new Date(lastDataUpdateAt).toLocaleString('it-IT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </time>
+                {' · '}
+              </>
+            ) : null}
+            <Link href={`/live/${electionId}/aggiornamenti`} className="underline hover:text-white font-medium">
+              Cronologia aggiornamenti
+            </Link>
           </div>
           {lists.some(l => l.candidates.length > 0) && (
             <div className="mt-4 text-center">

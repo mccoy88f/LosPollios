@@ -5,8 +5,15 @@ set -e
 export DATABASE_URL="${DATABASE_URL:-postgresql://lospollios:lospollios_change_me@db:5432/lospollios?schema=public}"
 
 echo "[lospollios] DATABASE_URL=${DATABASE_URL}"
-echo "[lospollios] Applicazione schema Prisma..."
-prisma db push --skip-generate
+echo "[lospollios] Migrazioni Prisma (migrate deploy)..."
+set +e
+prisma migrate deploy --skip-generate
+MIG_EXIT=$?
+set -e
+if [ "$MIG_EXIT" -ne 0 ]; then
+  echo "[lospollios] migrate deploy non riuscita (exit $MIG_EXIT) — fallback prisma db push (DB legacy o prima installazione)"
+  prisma db push --skip-generate
+fi
 
 echo "[lospollios] Bootstrap admin iniziale..."
 node ./scripts/bootstrap-admin.cjs

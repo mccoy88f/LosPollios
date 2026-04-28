@@ -1,19 +1,31 @@
 'use client'
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
+  downloadHistoricalElectionPrefillXlsx,
   downloadHistoricalExcelTemplate,
   historicalRowsToSemicolonLines,
+  normalizeHistoricalRowsForCreate,
   parseHistoricalExcelFull,
 } from '@/lib/historicalExcel'
-import type { HistoricalCandidateRow } from '@/lib/historicalExcel'
+import type { HistoricalCandidateRow, HistoricalParsedRow } from '@/lib/historicalExcel'
 import type { EligendoAffluenza } from '@/lib/eligendoImport'
 import { confirmElectionDeletionTwice } from '@/lib/confirmDelete'
 
 function numToInput(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return ''
   return String(n)
+}
+
+interface HistCouncilCandidate {
+  id: number
+  firstName: string
+  lastName: string
+  order: number
+  preferenceVotes: number
+  personId: number | null
+  person: { id: number; firstName: string; lastName: string } | null
 }
 
 interface HistResult {
@@ -29,6 +41,7 @@ interface HistResult {
   listLogoUrl?: string | null
   coalitionLogoUrl?: string | null
   notes?: string | null
+  councilCandidates?: HistCouncilCandidate[]
 }
 interface HistElection {
   id: number
@@ -70,6 +83,418 @@ type RowDraft = {
   mayorPersonId: string
 }
 
+function CouncilCandidatesEditor({
+  listResultId,
+  candidates,
+  persons,
+  listRowEditing,
+  onReload,
+  embedded,
+}: {
+  listResultId: number
+  candidates: HistCouncilCandidate[]
+  persons: PersonOpt[]
+  /** true se la riga lista principale è in modifica (loghi/note) */
+  listRowEditing: boolean
+  onReload: () => void
+  /** dentro scheda lista (senza bordo laterale) */
+  embedded?: boolean
+}) {
+  const list = [...(candidates ?? [])].sort((a, b) => a.order - b.order || a.id - b.id)
+  const [addForm, setAddForm] = useState({
+    firstName: '',
+    lastName: '',
+    order: '0',
+    preferenceVotes: '0',
+    personId: '',
+  })
+  const [editId, setEditId] = useState<number | null>(null)
+  const [editDraft, setEditDraft] = useState<{
+    firstName: string
+    lastName: string
+    order: string
+    preferenceVotes: string
+    personId: string
+  } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const locked = listRowEditing || busy
+
+  function startEdit(c: HistCouncilCandidate) {
+    setEditId(c.id)
+    setEditDraft({
+      firstName: c.firstName,
+      lastName: c.lastName,
+      order: String(c.order),
+      preferenceVotes: String(c.preferenceVotes),
+      personId: c.personId != null ? String(c.personId) : '',
+    })
+  }
+
+  function cancelEdit() {
+    setEditId(null)
+    setEditDraft(null)
+  }
+
+  async function patchPerson(c: HistCouncilCandidate, personId: number | null) {
+    if (editId === c.id) return
+    setBusy(true)
+    const res = await fetch(`/api/historical/council-candidates/${c.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personId }),
+    })
+    setBusy(false)
+    if (res.ok) onReload()
+  }
+
+  async function addOne() {
+    const fn = addForm.firstName.trim()
+    const ln = addForm.lastName.trim()
+    if (!fn || !ln) {
+      window.alert('Inserire nome e cognome.')
+      return
+    }
+    setBusy(true)
+    const res = await fetch(`/api/historical/results/${listResultId}/candidates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: fn,
+        lastName: ln,
+        order: parseInt(addForm.order, 10) || 0,
+        preferenceVotes: parseInt(addForm.preferenceVotes, 10) || 0,
+        personId: addForm.personId === '' ? null : parseInt(addForm.personId, 10),
+      }),
+    })
+    setBusy(false)
+    if (res.ok) {
+      setAddForm({ firstName: '', lastName: '', order: '0', preferenceVotes: '0', personId: '' })
+      onReload()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      window.alert(d.error || 'Salvataggio non riuscito')
+    }
+  }
+
+  async function saveEdit() {
+    if (!editId || !editDraft) return
+    const fn = editDraft.firstName.trim()
+    const ln = editDraft.lastName.trim()
+    if (!fn || !ln) {
+      window.alert('Nome e cognome obbligatori.')
+      return
+    }
+    setBusy(true)
+    const res = await fetch(`/api/historical/council-candidates/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: fn,
+        lastName: ln,
+        order: parseInt(editDraft.order, 10) || 0,
+        preferenceVotes: parseInt(editDraft.preferenceVotes, 10) || 0,
+        personId: editDraft.personId === '' ? null : parseInt(editDraft.personId, 10),
+      }),
+    })
+    setBusy(false)
+    if (res.ok) {
+      cancelEdit()
+      onReload()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      window.alert(d.error || 'Salvataggio non riuscito')
+    }
+  }
+
+  async function remove(id: number) {
+    if (!window.confirm('Eliminare questo candidato dallo storico?')) return
+    setBusy(true)
+    const res = await fetch(`/api/historical/council-candidates/${id}`, { method: 'DELETE' })
+    setBusy(false)
+    if (res.ok) {
+      if (editId === id) cancelEdit()
+      onReload()
+    }
+  }
+
+  async function bumpPreference(c: HistCouncilCandidate) {
+    if (locked) return
+    setBusy(true)
+    const res = await fetch(`/api/historical/council-candidates/${c.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferenceVotes: c.preferenceVotes + 1 }),
+    })
+    setBusy(false)
+    if (res.ok) onReload()
+  }
+
+  return (
+    <div
+      className={`space-y-2 py-1 ${embedded ? '' : 'pl-2 border-l-2 border-indigo-100'}`}
+    >
+      <p className="text-[11px] font-medium text-gray-600">
+        Preferenze: usa il <strong>+</strong> per +1 come in inserimento sezione. I voti totali della lista sono sulla scheda
+        sopra.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs min-w-[520px]">
+          <thead>
+            <tr className="text-gray-500 text-left border-b border-gray-100">
+              <th className="pb-1 pr-2 w-10">Ord.</th>
+              <th className="pb-1 pr-2">Cognome</th>
+              <th className="pb-1 pr-2">Nome</th>
+              <th className="pb-1 pr-2 text-right">Preferenze</th>
+              <th className="pb-1 pr-2 min-w-[140px]">Anagrafica</th>
+              <th className="pb-1 text-right w-28">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-2 text-gray-400 italic">
+                  Nessun candidato: aggiungi sotto.
+                </td>
+              </tr>
+            ) : (
+              list.map(c =>
+                editId === c.id && editDraft ? (
+                  <tr key={c.id} className="border-b border-gray-50 align-top">
+                    <td className="py-1 pr-2">
+                      <input
+                        type="number"
+                        value={editDraft.order}
+                        onChange={ev =>
+                          setEditDraft(d => d && { ...d, order: ev.target.value })
+                        }
+                        className="w-12 border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="py-1 pr-2">
+                      <input
+                        value={editDraft.lastName}
+                        onChange={ev =>
+                          setEditDraft(d => d && { ...d, lastName: ev.target.value })
+                        }
+                        className="w-full min-w-[80px] border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="py-1 pr-2">
+                      <input
+                        value={editDraft.firstName}
+                        onChange={ev =>
+                          setEditDraft(d => d && { ...d, firstName: ev.target.value })
+                        }
+                        className="w-full min-w-[80px] border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="py-1 pr-2 text-right">
+                      <div className="inline-flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditDraft(d =>
+                              d && {
+                                ...d,
+                                preferenceVotes: String(
+                                  (parseInt(d.preferenceVotes, 10) || 0) + 1,
+                                ),
+                              },
+                            )
+                          }
+                          className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50"
+                          aria-label="Aumenta preferenze di 1"
+                        >
+                          +
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editDraft.preferenceVotes}
+                          onChange={ev =>
+                            setEditDraft(d => d && { ...d, preferenceVotes: ev.target.value })
+                          }
+                          className="w-20 border border-gray-300 rounded px-1 py-0.5 text-right"
+                        />
+                      </div>
+                    </td>
+                    <td className="py-1 pr-2">
+                      <select
+                        value={editDraft.personId}
+                        onChange={ev =>
+                          setEditDraft(d => d && { ...d, personId: ev.target.value })
+                        }
+                        className="max-w-[150px] border border-gray-200 rounded px-1 py-0.5 text-[11px]"
+                      >
+                        <option value="">—</option>
+                        {persons.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.lastName} {p.firstName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-1 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => saveEdit()}
+                        className="text-indigo-600 font-medium mr-2"
+                      >
+                        Salva
+                      </button>
+                      <button type="button" onClick={() => cancelEdit()} className="text-gray-500">
+                        Annulla
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={c.id} className="border-b border-gray-50 align-top">
+                    <td className="py-1 pr-2 text-gray-600">{c.order}</td>
+                    <td className="py-1 pr-2">{c.lastName}</td>
+                    <td className="py-1 pr-2">{c.firstName}</td>
+                    <td className="py-1 pr-2 text-right">
+                      <div className="inline-flex items-center gap-1 justify-end w-full">
+                        <button
+                          type="button"
+                          disabled={locked}
+                          onClick={() => bumpPreference(c)}
+                          className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50 disabled:opacity-40"
+                          aria-label={`Aumenta preferenze per ${c.lastName}`}
+                        >
+                          +
+                        </button>
+                        <span className="tabular-nums">{c.preferenceVotes.toLocaleString('it-IT')}</span>
+                      </div>
+                    </td>
+                    <td className="py-1 pr-2">
+                      <select
+                        value={c.personId ?? ''}
+                        onChange={ev => {
+                          const v = ev.target.value
+                          void patchPerson(c, v ? parseInt(v, 10) : null)
+                        }}
+                        disabled={locked}
+                        className="max-w-[150px] border border-gray-200 rounded px-1 py-0.5 text-[11px] disabled:opacity-50"
+                      >
+                        <option value="">—</option>
+                        {persons.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.lastName} {p.firstName}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-1 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        disabled={locked}
+                        onClick={() => startEdit(c)}
+                        className="text-indigo-600 font-medium text-[11px] disabled:opacity-40 mr-2"
+                      >
+                        Modifica
+                      </button>
+                      <button
+                        type="button"
+                        disabled={locked}
+                        onClick={() => remove(c.id)}
+                        className="text-red-600 text-[11px] disabled:opacity-40"
+                      >
+                        Elimina
+                      </button>
+                    </td>
+                  </tr>
+                ),
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap gap-2 items-end pt-1 border-t border-gray-100/80">
+        <div>
+          <label className="block text-[10px] text-gray-500">Cognome</label>
+          <input
+            value={addForm.lastName}
+            onChange={ev => setAddForm(f => ({ ...f, lastName: ev.target.value }))}
+            disabled={locked}
+            className="border border-gray-300 rounded px-2 py-1 text-xs w-32 disabled:opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] text-gray-500">Nome</label>
+          <input
+            value={addForm.firstName}
+            onChange={ev => setAddForm(f => ({ ...f, firstName: ev.target.value }))}
+            disabled={locked}
+            className="border border-gray-300 rounded px-2 py-1 text-xs w-28 disabled:opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] text-gray-500">Ord.</label>
+          <input
+            type="number"
+            value={addForm.order}
+            onChange={ev => setAddForm(f => ({ ...f, order: ev.target.value }))}
+            disabled={locked}
+            className="border border-gray-300 rounded px-2 py-1 text-xs w-14 disabled:opacity-50"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] text-gray-500">Pref.</label>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() =>
+                setAddForm(f => ({
+                  ...f,
+                  preferenceVotes: String((parseInt(f.preferenceVotes, 10) || 0) + 1),
+                }))
+              }
+              className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50 disabled:opacity-50"
+              aria-label="Aumenta preferenze di 1"
+            >
+              +
+            </button>
+            <input
+              type="number"
+              min={0}
+              value={addForm.preferenceVotes}
+              onChange={ev => setAddForm(f => ({ ...f, preferenceVotes: ev.target.value }))}
+              disabled={locked}
+              className="border border-gray-300 rounded px-2 py-1 text-xs w-20 disabled:opacity-50"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] text-gray-500">Anagrafica</label>
+          <select
+            value={addForm.personId}
+            onChange={ev => setAddForm(f => ({ ...f, personId: ev.target.value }))}
+            disabled={locked}
+            className="border border-gray-200 rounded px-1 py-1 text-xs max-w-[140px] disabled:opacity-50"
+          >
+            <option value="">—</option>
+            {persons.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.lastName} {p.firstName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          disabled={locked}
+          onClick={() => addOne()}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium"
+        >
+          Aggiungi candidato
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ExpandedHistoricalElection({
   election: e,
   persons,
@@ -97,6 +522,10 @@ function ExpandedHistoricalElection({
   const [metaSaving, setMetaSaving] = useState(false)
   const [editingRowId, setEditingRowId] = useState<number | null>(null)
   const [rowDraft, setRowDraft] = useState<RowDraft | null>(null)
+  const [expandCouncilId, setExpandCouncilId] = useState<number | null>(null)
+  const [mergeBusy, setMergeBusy] = useState(false)
+  const [listAddBusy, setListAddBusy] = useState(false)
+  const mergeFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setMeta({
@@ -204,10 +633,21 @@ function ExpandedHistoricalElection({
     onReload()
   }
 
+  /** +1 voto di lista (come in inserimento sezione) */
+  async function bumpListVotes(r: HistResult) {
+    if (editingRowId != null) return
+    const res = await fetch(`/api/historical/results/${r.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ votes: r.votes + 1 }),
+    })
+    if (res.ok) onReload()
+  }
+
   async function deleteHistoricalElection() {
     const ok = confirmElectionDeletionTwice({
       title: `Eliminare l’elezione storica «${e.name}»?`,
-      detail: `${e.commune} · ${e.year}. Verranno eliminate tutte le righe lista e i dati di affluenza associati a questo record storico.`,
+      detail: `${e.commune} · ${e.year}. Verranno eliminate tutte le righe lista, i candidati al consiglio collegati e i dati di affluenza associati a questo record storico.`,
       finalPrompt: `Ultima conferma: eliminare definitivamente «${e.name}»? L’operazione non può essere annullata.`,
     })
     if (!ok) return
@@ -250,12 +690,141 @@ function ExpandedHistoricalElection({
     }
   }
 
+  function downloadPrefillCouncilXlsx() {
+    downloadHistoricalElectionPrefillXlsx(
+      { electionName: e.name, commune: e.commune, year: e.year },
+      e.results.map(r => ({
+        listName: r.listName,
+        coalition: r.coalition,
+        candidateMayor: r.candidateMayor,
+        votes: r.votes,
+        percentage: r.percentage,
+        seats: r.seats,
+      })),
+      e.results.flatMap(r =>
+        (r.councilCandidates ?? []).map(c => ({
+          listName: r.listName,
+          lastName: c.lastName,
+          firstName: c.firstName,
+          order: c.order,
+          preferenceVotes: c.preferenceVotes,
+        })),
+      ),
+    )
+  }
+
+  async function addListRow() {
+    setListAddBusy(true)
+    try {
+      const res = await fetch(`/api/historical/${e.id}/results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const row = await res.json()
+      if (!res.ok) {
+        window.alert(row.error || 'Impossibile aggiungere la lista')
+        return
+      }
+      onReload()
+      setExpandCouncilId(null)
+      startEditRow({
+        id: row.id,
+        listName: row.listName,
+        coalition: row.coalition,
+        candidateMayor: row.candidateMayor,
+        votes: row.votes,
+        percentage: row.percentage,
+        seats: row.seats,
+        mayorPersonId: row.mayorPersonId,
+        mayorPerson: row.mayorPerson ?? null,
+        listLogoUrl: row.listLogoUrl,
+        coalitionLogoUrl: row.coalitionLogoUrl,
+        notes: row.notes,
+        councilCandidates: row.councilCandidates ?? [],
+      })
+    } finally {
+      setListAddBusy(false)
+    }
+  }
+
+  async function onMergeExcelFile(files: FileList | null) {
+    const f = files?.[0]
+    if (!f) return
+    setMergeBusy(true)
+    try {
+      const buf = await f.arrayBuffer()
+      const { lists, candidates } = parseHistoricalExcelFull(buf)
+      if (!lists.length && !candidates.length) {
+        window.alert('Nessun dato nel file (fogli «Risultati» e «Candidati» vuoti o non validi).')
+        return
+      }
+      const res = await fetch(`/api/historical/${e.id}/merge-excel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lists: lists.length ? lists : undefined,
+          candidates: candidates.length ? candidates : undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        window.alert(data.error || 'Reimport non riuscito')
+        return
+      }
+      onReload()
+    } catch {
+      window.alert('Impossibile leggere il file.')
+    } finally {
+      setMergeBusy(false)
+      if (mergeFileRef.current) mergeFileRef.current.value = ''
+    }
+  }
+
   return (
     <div className="border-t border-gray-100 p-4 space-y-4">
       <p className="text-xs text-gray-600">
-        Dopo l&apos;import (Eligendo o altro) puoi correggere qui nome elezione, comune, anno, note e ogni riga lista:
-        nome, coalizione, sindaco, voti, percentuali, seggi, URL loghi e note. Il modello storico è per lista (non include
-        preferenze dei singoli candidati come nello spoglio sezione per sezione).
+        Ogni lista è una scheda. Il pulsante <strong>+</strong> accanto a voti e preferenze aumenta il contatore di 1 (come
+        in inserimento sezione). Per modifiche ampie usa <strong>Modifica lista</strong> o il pannello Candidati. Excel
+        precompilato e reimport disponibili qui sotto.
+      </p>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <button
+          type="button"
+          onClick={() => downloadPrefillCouncilXlsx()}
+          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium"
+        >
+          Scarica Excel candidati (precompilato)
+        </button>
+        <input
+          ref={mergeFileRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={ev => onMergeExcelFile(ev.target.files)}
+        />
+        <button
+          type="button"
+          disabled={mergeBusy}
+          onClick={() => mergeFileRef.current?.click()}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+        >
+          {mergeBusy ? 'Import…' : 'Reimporta Excel'}
+        </button>
+        <button
+          type="button"
+          disabled={listAddBusy || mergeBusy || editingRowId != null}
+          onClick={() => addListRow()}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+          title="Aggiunge una nuova lista nello spoglio con voti, percentuale e seggi (dati macro)"
+        >
+          {listAddBusy ? '…' : '+ Nuova riga voti lista'}
+        </button>
+      </div>
+      <p className="text-xs text-gray-500 -mt-2">
+        <strong>+ Nuova riga voti lista</strong> (blu) aggiunge un&apos;altra lista allo spoglio. I piccoli <strong>+</strong>{' '}
+        su voti e preferenze sono incrementi rapidi +1.
       </p>
 
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -363,64 +932,72 @@ function ExpandedHistoricalElection({
         </div>
       </div>
 
-      <div className="overflow-x-auto border border-gray-100 rounded-lg">
-        <table className="w-full text-sm min-w-[900px]">
-          <thead>
-            <tr className="text-xs text-gray-500 border-b border-gray-100">
-              <th className="text-left pb-2 w-10"> </th>
-              <th className="text-left pb-2">Lista</th>
-              <th className="text-left pb-2">Coalizione</th>
-              <th className="text-left pb-2">Sindaco (testo)</th>
-              <th className="text-left pb-2 min-w-[180px]">Anagrafica sindaco</th>
-              <th className="text-right pb-2">Voti</th>
-              <th className="text-right pb-2">%</th>
-              <th className="text-right pb-2">Seggi</th>
-              <th className="text-right pb-2 w-36">Azioni</th>
-            </tr>
-          </thead>
-          <tbody>
-            {e.results.map(r => (
-              <Fragment key={r.id}>
-                <tr className="border-b border-gray-50 last:border-0 align-top">
-                  <td className="py-1.5">
-                    {r.listLogoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.listLogoUrl} alt="" className="w-8 h-8 object-contain" />
-                    ) : r.coalitionLogoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.coalitionLogoUrl} alt="" title="Coalizione" className="w-7 h-7 object-contain opacity-90" />
-                    ) : (
-                      <span className="text-gray-300">·</span>
-                    )}
-                  </td>
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-800">Spoglio per lista (voti macro)</h3>
+        {e.results.map(r => (
+          <div key={r.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="flex flex-wrap items-start justify-between gap-3 p-4">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {r.listLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.listLogoUrl}
+                      alt=""
+                      className="w-10 h-10 object-contain rounded border border-gray-100 bg-white"
+                    />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full bg-gray-300 mt-1" aria-hidden />
+                  )}
+                  {r.coalitionLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.coalitionLogoUrl}
+                      alt=""
+                      title="Coalizione"
+                      className="w-8 h-8 object-contain rounded opacity-90"
+                    />
+                  ) : null}
+                </div>
+                <div className="min-w-0">
                   {editingRowId === r.id && rowDraft ? (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-0.5">Modifica lista</p>
+                      <p className="text-sm text-gray-800 truncate">{rowDraft.listName || 'Senza nome'}</p>
+                    </div>
+                  ) : (
                     <>
-                      <td className="py-1.5">
-                        <input
-                          value={rowDraft.listName}
-                          onChange={ev => setRowDraft(d => d && { ...d, listName: ev.target.value })}
-                          className="w-full min-w-[120px] border border-gray-300 rounded px-2 py-1 text-xs"
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <input
-                          value={rowDraft.coalition}
-                          onChange={ev => setRowDraft(d => d && { ...d, coalition: ev.target.value })}
-                          className="w-full min-w-[100px] border border-gray-300 rounded px-2 py-1 text-xs"
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <input
-                          value={rowDraft.candidateMayor}
-                          onChange={ev => setRowDraft(d => d && { ...d, candidateMayor: ev.target.value })}
-                          className="w-full min-w-[120px] border border-gray-300 rounded px-2 py-1 text-xs"
-                        />
-                      </td>
-                      <td className="py-1.5">
+                      <div className="font-semibold text-gray-900">{r.listName}</div>
+                      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1 text-sm text-gray-600 items-center">
+                        {r.coalition ? (
+                          <span className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded">{r.coalition}</span>
+                        ) : null}
+                        {r.candidateMayor ? <span className="text-gray-600">Sindaco: {r.candidateMayor}</span> : null}
+                        <span className="inline-flex flex-wrap items-center gap-1.5 text-gray-500 text-sm">
+                          <button
+                            type="button"
+                            onClick={() => bumpListVotes(r)}
+                            disabled={editingRowId != null || mergeBusy}
+                            className="w-7 h-7 rounded border border-blue-200 text-blue-700 text-sm leading-none hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            aria-label="Aumenta voti di lista di 1"
+                          >
+                            +
+                          </button>
+                          <span>
+                            {r.votes.toLocaleString('it-IT')} voti · {r.percentage.toFixed(1)}% ·{' '}
+                            {r.seats != null ? `${r.seats} seggi` : 'seggi —'}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-500">Anagrafica sindaco</span>
                         <select
-                          value={rowDraft.mayorPersonId}
-                          onChange={ev => setRowDraft(d => d && { ...d, mayorPersonId: ev.target.value })}
-                          className="text-xs border border-gray-200 rounded px-1 py-1 max-w-[160px]"
+                          value={r.mayorPersonId ?? ''}
+                          onChange={async ev => {
+                            const v = ev.target.value
+                            await patchMayor(r, v ? parseInt(v, 10) : null)
+                          }}
+                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">—</option>
                           {persons.map(p => (
@@ -429,126 +1006,201 @@ function ExpandedHistoricalElection({
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td className="py-1.5">
-                        <input
-                          type="number"
-                          min={0}
-                          value={rowDraft.votes}
-                          onChange={ev => setRowDraft(d => d && { ...d, votes: ev.target.value })}
-                          className="w-24 border border-gray-300 rounded px-2 py-1 text-xs text-right"
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <input
-                          value={rowDraft.percentage}
-                          onChange={ev => setRowDraft(d => d && { ...d, percentage: ev.target.value })}
-                          className="w-20 border border-gray-300 rounded px-2 py-1 text-xs text-right"
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <input
-                          value={rowDraft.seats}
-                          onChange={ev => setRowDraft(d => d && { ...d, seats: ev.target.value })}
-                          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs text-right"
-                          placeholder="—"
-                        />
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="py-1.5 font-medium">{r.listName}</td>
-                      <td className="py-1.5 text-gray-500">{r.coalition || '—'}</td>
-                      <td className="py-1.5 text-gray-600">{r.candidateMayor || '—'}</td>
-                      <td className="py-1.5">
-                        <div className="flex flex-wrap items-center gap-1">
-                          <select
-                            value={r.mayorPersonId ?? ''}
-                            onChange={async ev => {
-                              const v = ev.target.value
-                              await patchMayor(r, v ? parseInt(v, 10) : null)
-                            }}
-                            className="text-xs border border-gray-200 rounded px-1 py-1 max-w-[160px]"
-                          >
-                            <option value="">—</option>
-                            {persons.map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.lastName} {p.firstName}
-                              </option>
-                            ))}
-                          </select>
-                          <button type="button" className="text-xs text-indigo-600 whitespace-nowrap" onClick={() => suggestMayor(r)}>
-                            Suggerisci
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-1.5 text-right">{r.votes.toLocaleString('it-IT')}</td>
-                      <td className="py-1.5 text-right">{r.percentage.toFixed(1)}%</td>
-                      <td className="py-1.5 text-right text-gray-700">{r.seats ?? '—'}</td>
+                        <button
+                          type="button"
+                          className="text-xs text-indigo-600 font-medium hover:text-indigo-800 whitespace-nowrap"
+                          onClick={() => suggestMayor(r)}
+                        >
+                          Suggerisci
+                        </button>
+                      </div>
                     </>
                   )}
-                  <td className="py-1.5 text-right">
-                    {editingRowId === r.id ? (
-                      <div className="flex flex-col gap-1 items-end">
-                        <button type="button" onClick={() => saveRow()} className="text-xs font-medium text-blue-600">
-                          Salva riga
-                        </button>
-                        <button type="button" onClick={() => cancelEditRow()} className="text-xs text-gray-500">
-                          Annulla
-                        </button>
-                      </div>
-                    ) : (
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center justify-end">
+                <span className="text-xs text-gray-400">{(r.councilCandidates ?? []).length} candidati</span>
+                <button
+                  type="button"
+                  onClick={() => setExpandCouncilId(expandCouncilId === r.id ? null : r.id)}
+                  className="text-indigo-600 text-sm font-medium hover:text-indigo-800"
+                >
+                  {expandCouncilId === r.id ? 'Chiudi candidati' : 'Candidati'}
+                </button>
+                {editingRowId === r.id ? (
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-end sm:items-center">
+                    <button
+                      type="button"
+                      onClick={() => saveRow()}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      Salva
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cancelEditRow()}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={editingRowId != null && editingRowId !== r.id}
+                    onClick={() => startEditRow(r)}
+                    className="text-blue-600 text-sm font-medium hover:text-blue-800 disabled:opacity-40"
+                  >
+                    Modifica lista
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {editingRowId === r.id && rowDraft && (
+              <div className="border-t border-gray-100 p-4 bg-gray-50/90 space-y-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Nome lista</label>
+                    <input
+                      value={rowDraft.listName}
+                      onChange={ev => setRowDraft(d => d && { ...d, listName: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Coalizione</label>
+                    <input
+                      value={rowDraft.coalition}
+                      onChange={ev => setRowDraft(d => d && { ...d, coalition: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Sindaco (testo)</label>
+                    <input
+                      value={rowDraft.candidateMayor}
+                      onChange={ev => setRowDraft(d => d && { ...d, candidateMayor: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Anagrafica sindaco</label>
+                    <select
+                      value={rowDraft.mayorPersonId}
+                      onChange={ev => setRowDraft(d => d && { ...d, mayorPersonId: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">—</option>
+                      {persons.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.lastName} {p.firstName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Voti</label>
+                    <div className="flex gap-1.5 items-center">
                       <button
                         type="button"
-                        disabled={editingRowId != null}
-                        onClick={() => startEditRow(r)}
-                        className="text-xs font-medium text-blue-600 disabled:opacity-40"
+                        onClick={() =>
+                          setRowDraft(d =>
+                            d && { ...d, votes: String((parseInt(d.votes, 10) || 0) + 1) },
+                          )
+                        }
+                        className="w-9 h-9 shrink-0 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+                        aria-label="Aumenta voti di 1"
                       >
-                        Modifica
+                        +
                       </button>
-                    )}
-                  </td>
-                </tr>
-                {editingRowId === r.id && rowDraft && (
-                  <tr className="border-b border-gray-100 bg-gray-50/80">
-                    <td />
-                    <td colSpan={8} className="py-2 px-2">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <label className="text-gray-500">URL logo lista</label>
-                          <input
-                            value={rowDraft.listLogoUrl}
-                            onChange={ev => setRowDraft(d => d && { ...d, listLogoUrl: ev.target.value })}
-                            className="w-full border border-gray-300 rounded px-2 py-1 font-mono text-[11px] mt-0.5"
-                            placeholder="https://…"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-gray-500">URL logo coalizione</label>
-                          <input
-                            value={rowDraft.coalitionLogoUrl}
-                            onChange={ev => setRowDraft(d => d && { ...d, coalitionLogoUrl: ev.target.value })}
-                            className="w-full border border-gray-300 rounded px-2 py-1 font-mono text-[11px] mt-0.5"
-                            placeholder="https://…"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="text-gray-500">Note riga</label>
-                          <input
-                            value={rowDraft.notes}
-                            onChange={ev => setRowDraft(d => d && { ...d, notes: ev.target.value })}
-                            className="w-full border border-gray-300 rounded px-2 py-1 mt-0.5"
-                            placeholder="Opzionale"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
+                      <input
+                        type="number"
+                        min={0}
+                        value={rowDraft.votes}
+                        onChange={ev => setRowDraft(d => d && { ...d, votes: ev.target.value })}
+                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Percentuale</label>
+                    <input
+                      value={rowDraft.percentage}
+                      onChange={ev => setRowDraft(d => d && { ...d, percentage: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Seggi</label>
+                    <input
+                      value={rowDraft.seats}
+                      onChange={ev => setRowDraft(d => d && { ...d, seats: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="—"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">URL logo lista</label>
+                    <input
+                      value={rowDraft.listLogoUrl}
+                      onChange={ev => setRowDraft(d => d && { ...d, listLogoUrl: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://…"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">URL logo coalizione</label>
+                    <input
+                      value={rowDraft.coalitionLogoUrl}
+                      onChange={ev => setRowDraft(d => d && { ...d, coalitionLogoUrl: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://…"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs text-gray-500 mb-1">Note riga</label>
+                    <input
+                      value={rowDraft.notes}
+                      onChange={ev => setRowDraft(d => d && { ...d, notes: ev.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Opzionale"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {expandCouncilId === r.id && (
+              <div className="border-t border-gray-100 p-4">
+                <CouncilCandidatesEditor
+                  listResultId={r.id}
+                  candidates={r.councilCandidates ?? []}
+                  persons={persons}
+                  listRowEditing={editingRowId === r.id && rowDraft != null}
+                  onReload={onReload}
+                  embedded
+                />
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-gray-700 max-w-xl">
+            Per aggiungere <strong>un&apos;altra lista</strong> con i suoi voti di lista, percentuale e seggi, usa il + qui
+            sotto (stesso comando del pulsante blu in alto).
+          </p>
+          <button
+            type="button"
+            disabled={listAddBusy || mergeBusy || editingRowId != null}
+            onClick={() => addListRow()}
+            className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+          >
+            {listAddBusy ? '…' : '+ Nuova riga voti lista'}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg border border-red-100 bg-red-50/50 p-4">
@@ -622,22 +1274,30 @@ export default function HistoricalPage() {
       .then(buf => {
         try {
           const { lists, candidates } = parseHistoricalExcelFull(buf)
-          if (!lists.length) {
-            setImportErr('Nessuna riga valida nel file. Usa il foglio «Risultati» del modello.')
+          if (!lists.length && !candidates.length) {
+            setImportErr('Nessuna riga valida. Usa i fogli «Risultati» e/o «Candidati» del modello.')
             setPendingCandidates([])
             return
           }
-          setResultLines(historicalRowsToSemicolonLines(lists))
+          setResultLines(lists.length ? historicalRowsToSemicolonLines(lists) : '')
           setPendingCandidates(candidates)
-          if (candidates.length > 0 && storicoDestination === 'new') {
+          if (candidates.length > 0 && storicoDestination === 'new' && lists.length > 0) {
             setMsg(
               'Macro liste importate. È presente anche il foglio «Candidati»: per caricare preferenze e anagrafica scegli come destinazione un’elezione archiviata, oppure usa Eligendo+Excel solo sull’archiviata.'
             )
+          } else if (candidates.length > 0 && storicoDestination === 'new' && !lists.length) {
+            setImportErr(
+              'Solo foglio «Candidati»: per un nuovo record storico servono anche le liste, oppure importa candidati da una scheda storica già creata (Reimporta Excel).'
+            )
+            setPendingCandidates([])
+            return
           } else {
             setMsg(
               candidates.length > 0
                 ? `Importate ${lists.length} liste e ${candidates.length} righe candidati. Controlla e premi Salva.`
-                : 'Dati importati dal file. Controlla il riepilogo sotto e premi Salva.'
+                : lists.length > 0
+                  ? 'Dati importati dal file. Controlla il riepilogo sotto e premi Salva.'
+                  : 'Solo candidati: scegli un’elezione archiviata e premi Salva.'
             )
           }
         } catch {
@@ -653,14 +1313,35 @@ export default function HistoricalPage() {
     setSaving(true)
     setMsg('')
     setImportErr('')
-    // Parse result lines: listName;coalition;candidateMayor;votes;percentage;seats
-    const results = resultLines.trim().split('\n').filter(Boolean).map(line => {
+    const listRows: HistoricalParsedRow[] = resultLines.trim().split('\n').filter(Boolean).map(line => {
       const [listName, coalition, candidateMayor, votes, percentage, seats] = line.split(';').map(s => s.trim())
-      return { listName, coalition: coalition || null, candidateMayor: candidateMayor || null, votes: parseInt(votes) || 0, percentage: parseFloat(percentage) || 0, seats: seats ? parseInt(seats) : null }
+      let pct: number | null = null
+      if (percentage !== '') {
+        const n = parseFloat(percentage.replace(',', '.'))
+        pct = Number.isNaN(n) ? null : n
+      }
+      let v: number | null = null
+      if (votes !== '') {
+        const n = parseInt(votes, 10)
+        v = Number.isNaN(n) ? null : n
+      }
+      let seatsN: number | null = null
+      if (seats !== '') {
+        const n = parseInt(seats, 10)
+        seatsN = Number.isNaN(n) ? null : n
+      }
+      return {
+        listName,
+        coalition: coalition || null,
+        candidateMayor: candidateMayor || null,
+        votes: v,
+        percentage: pct,
+        seats: seatsN,
+      }
     })
 
     if (storicoDestination !== 'new') {
-      if (results.length === 0 && pendingCandidates.length === 0) {
+      if (listRows.length === 0 && pendingCandidates.length === 0) {
         setImportErr('Aggiungi righe risultato, candidati da Excel, oppure esegui prima l’import Eligendo su questa archiviata.')
         setSaving(false)
         return
@@ -669,7 +1350,10 @@ export default function HistoricalPage() {
       const res = await fetch(`/api/elections/${eid}/import-storico`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lists: results.length ? results : undefined, candidates: pendingCandidates.length ? pendingCandidates : undefined }),
+        body: JSON.stringify({
+          lists: listRows.length ? listRows : undefined,
+          candidates: pendingCandidates.length ? pendingCandidates : undefined,
+        }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -695,10 +1379,19 @@ export default function HistoricalPage() {
       return
     }
 
+    let resultsNormalized
+    try {
+      resultsNormalized = normalizeHistoricalRowsForCreate(listRows)
+    } catch (err) {
+      setImportErr(err instanceof Error ? err.message : 'Dati non validi')
+      setSaving(false)
+      return
+    }
+
     const res = await fetch('/api/historical', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, year: parseInt(form.year), results }),
+      body: JSON.stringify({ ...form, year: parseInt(form.year), results: resultsNormalized }),
     })
     if (res.ok) {
       setMsg('Elezione storica salvata')
@@ -776,7 +1469,9 @@ export default function HistoricalPage() {
         setMsg(`Macro Eligendo applicato all’elezione archiviata (${n} liste). Puoi aggiungere candidati da Excel o modificare tutto in amministrazione.`)
       } else {
         const n = data.election?.results?.length ?? 0
-        setMsg(`Elezione storica creata con ${n} liste (fonte Eligendo).`)
+        setMsg(
+          `Elezione storica creata con ${n} liste (fonte Eligendo). Apri la scheda e usa «Scarica Excel candidati (precompilato)» per aggiungere preferenze, poi «Reimporta Excel» se lavori in foglio.`
+        )
       }
       setEligendoPreview(null)
       setEligendoUrl('')

@@ -70,9 +70,10 @@ model Person {
   notes     String?
   createdAt DateTime @default(now())
 
-  candidates       Candidate[]
-  mayorForLists    ElectionList[]         @relation("ListMayorPerson")
-  historicalMayors HistoricalListResult[]
+  candidates                 Candidate[]
+  mayorForLists              ElectionList[]           @relation("ListMayorPerson")
+  historicalMayors           HistoricalListResult[]
+  historicalCouncilCandidates HistoricalCouncilCandidate[]
 
   @@index([lastName, firstName])
 }
@@ -172,8 +173,12 @@ model CandidatePreference {
   candidateId     Int
   candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   votes           Int               @default(0)
+  /** Utente che ha salvato per ultimo questa preferenza (inserimento sezione) */
+  enteredBy       String?
+  updatedAt       DateTime          @default(now()) @updatedAt
 
   @@unique([sectionResultId, candidateId])
+  @@index([updatedAt])
 }
 
 // ─── Utenti ──────────────────────────────────────────────────────────────────
@@ -229,5 +234,24 @@ model HistoricalListResult {
   seats          Int?
   notes          String?
 
+  councilCandidates HistoricalCouncilCandidate[]
+
   @@index([mayorPersonId])
+}
+
+/** Candidato al consiglio e preferenze aggregate su una riga lista dello storico (inserimento manuale o import futuro) */
+model HistoricalCouncilCandidate {
+  id              Int                  @id @default(autoincrement())
+  listResultId    Int
+  listResult      HistoricalListResult @relation(fields: [listResultId], references: [id], onDelete: Cascade)
+  firstName       String
+  lastName        String
+  order           Int                  @default(0)
+  personId        Int?
+  person          Person?              @relation(fields: [personId], references: [id], onDelete: SetNull)
+  /** Preferenze totali comunali (dato storico, non ripartito per sezione) */
+  preferenceVotes Int                  @default(0)
+
+  @@index([listResultId])
+  @@index([personId])
 }

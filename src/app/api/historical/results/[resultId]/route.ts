@@ -64,7 +64,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const row = await prisma.historicalListResult.update({
     where: { id },
     data,
-    include: { mayorPerson: true },
+    include: {
+      mayorPerson: true,
+      councilCandidates: { orderBy: [{ order: 'asc' }, { id: 'asc' }], include: { person: true } },
+    },
   })
   return NextResponse.json(row)
 }
