@@ -21,7 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: lospollios:latest
+    # In Portainer Git Stack builda dall repo: evita pull di immagini non pubblicate
+    pull_policy: never
     restart: unless-stopped
     ports:
       # porta esterna standard 3522 → app in ascolto su 3000 nel container

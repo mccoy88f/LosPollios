@@ -112,7 +112,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 
 2. Avvio: `docker compose up -d --build` — l’interfaccia è sulla **porta 3522** (vedi sotto).
 
-**Portainer (Stacks):** nello stack, apri **Environment** e imposta almeno `POSTGRES_PASSWORD` e `JWT_SECRET` (opzionali `POSTGRES_USER/POSTGRES_DB`); il DB server parte nello stesso stack. Il `docker-compose.yml` espone l’app sulla **porta esterna standard 3522** (`3522:3000`).
+**Portainer (Stacks da Git):** nello stack, apri **Environment** e imposta almeno `POSTGRES_PASSWORD` e `JWT_SECRET` (opzionali `POSTGRES_USER/POSTGRES_DB`); il DB server parte nello stesso stack. Questo compose e` configurato per **build locale dal repository** (nessun pull dell'immagine app). In Portainer lascia disattivato "Pull latest image". Porta esposta: **3522** (`3522:3000`).
 
 Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522` sul server).
 
