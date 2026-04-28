@@ -21,6 +21,8 @@ interface ProjectionData {
   totalSections: number
   sectionsCounted: number
   coverage: number
+  /** Seggi totali consiglio (da impostazioni elezione) */
+  totalSeats: number
   current:  { seats: SeatProjection[]; coalitions: { coalition: string; candidateMayor?: string; totalVotes: number; percentage: number; lists: unknown[] }[]; needsRunoff: boolean; mayorElected?: string }
   projected: { seats: SeatProjection[] }
   projectedLists: { listId: number; listName: string; color: string; votes: number; projectedVotes: number }[]
@@ -80,24 +82,64 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
   )
 }
 
+/** Normalizza sindaco / coalizione per confronti stabili */
+function normCompareKey(s: string | null | undefined): string {
+  if (s == null || !String(s).trim()) return ''
+  return String(s).trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+/**
+ * Accoppia una lista attuale a una riga storico nello stesso anno:
+ * 1) stesso candidato sindaco (se valorizzato su entrambi);
+ * 2) altrimenti stessa coalizione (se valorizzata sulla lista attuale e sulla riga storica).
+ * Nessun match sul solo nome lista.
+ */
+function findHistoricalMatch(cur: SeatProjection, results: HistResult[]): HistResult | null {
+  const mayorCur = normCompareKey(cur.candidateMayor)
+  const coalCur = normCompareKey(cur.coalition)
+
+  if (mayorCur) {
+    const byMayor = results.filter(r => normCompareKey(r.candidateMayor) === mayorCur)
+    if (byMayor.length === 1) return byMayor[0]
+    if (byMayor.length > 1 && coalCur) {
+      const byBoth = byMayor.filter(r => normCompareKey(r.coalition) === coalCur)
+      if (byBoth.length >= 1) return byBoth[0]
+    }
+    if (byMayor.length > 1) return byMayor[0]
+  }
+
+  if (coalCur) {
+    const byCoal = results.filter(r => normCompareKey(r.coalition) === coalCur)
+    if (byCoal.length === 1) return byCoal[0]
+    if (byCoal.length > 1 && mayorCur) {
+      const byBoth = byCoal.filter(r => normCompareKey(r.candidateMayor) === mayorCur)
+      if (byBoth.length >= 1) return byBoth[0]
+    }
+    if (byCoal.length >= 1) return byCoal[0]
+  }
+
+  return null
+}
+
 function HistoricalComparison({ current, historical }: { current: SeatProjection[]; historical: HistElection[] }) {
   if (!historical.length) return null
 
-  const allLists = new Set([
-    ...current.map(l => l.listName),
-    ...historical.flatMap(e => e.results.map(r => r.listName)),
-  ])
-
-  const compareData = Array.from(allLists).map(listName => {
-    const row: Record<string, unknown> = { listName }
-    const cur = current.find(l => l.listName.toLowerCase().includes(listName.toLowerCase().slice(0, 8)) || listName.toLowerCase().includes(l.listName.toLowerCase().slice(0, 8)))
-    if (cur) row['Attuale'] = parseFloat(cur.percentage.toFixed(1))
-    for (const h of historical) {
-      const r = h.results.find(r => r.listName.toLowerCase().includes(listName.toLowerCase().slice(0, 8)) || listName.toLowerCase().includes(r.listName.toLowerCase().slice(0, 8)))
-      if (r) row[String(h.year)] = r.percentage
-    }
-    return row
-  }).filter(r => Object.keys(r).length > 1)
+  const compareData = current
+    .map(cur => {
+      const row: Record<string, unknown> = { listName: cur.listName }
+      row['Attuale'] = parseFloat(cur.percentage.toFixed(1))
+      for (const h of historical) {
+        const r = findHistoricalMatch(cur, h.results)
+        if (r) row[String(h.year)] = r.percentage
+      }
+      return row
+    })
+    .filter(r => {
+      const keys = Object.keys(r).filter(k => k !== 'listName')
+      const hasCurrent = keys.includes('Attuale')
+      const hasAnyHistory = keys.some(k => k !== 'Attuale')
+      return hasCurrent && hasAnyHistory
+    })
 
   if (!compareData.length) return null
 
@@ -107,13 +149,17 @@ function HistoricalComparison({ current, historical }: { current: SeatProjection
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <h3 className="font-semibold text-gray-900 mb-4">Confronto storico – % voti per lista</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={compareData} margin={{ top: 0, right: 0, bottom: 40, left: 0 }}>
+      <p className="text-xs text-gray-500 mb-3">
+        Le serie storiche sono accoppiate alla lista attuale solo se coincide il <strong>candidato sindaco</strong>;
+        in assenza di sindaco confrontabile si usa la <strong>coalizione</strong>. Nessun accoppiamento sul solo nome lista.
+      </p>
+      <ResponsiveContainer width="100%" height={340}>
+        <BarChart data={compareData} margin={{ top: 8, right: 12, bottom: 100, left: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="listName" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" />
+          <XAxis dataKey="listName" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" height={70} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
           <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
-          <Legend />
+          <Legend wrapperStyle={{ paddingTop: 24 }} />
           {years.map((y, i) => <Bar key={y} dataKey={y} fill={COLORS[i % COLORS.length]} radius={[3, 3, 0, 0]} />)}
         </BarChart>
       </ResponsiveContainer>
@@ -183,7 +229,7 @@ export default function AnalysisDashboard({
     )
   }
 
-  const totalSeats = proj.current.seats.reduce((s, l) => s + l.seats, 0) || 32
+  const councilSeats = typeof proj.totalSeats === 'number' && proj.totalSeats > 0 ? proj.totalSeats : 32
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -250,7 +296,7 @@ export default function AnalysisDashboard({
               </div>
             )}
 
-            <SeatChart seats={proj.current.seats} totalSeats={totalSeats} title="Proiezione seggi – dati attuali" />
+            <SeatChart seats={proj.current.seats} totalSeats={councilSeats} title="Proiezione seggi – dati attuali" />
 
             {/* Coalitions */}
             {proj.current.coalitions.length > 0 && (
@@ -306,12 +352,12 @@ export default function AnalysisDashboard({
               </p>
             </div>
 
-            <SeatChart seats={proj.projected.seats} totalSeats={totalSeats} title="Proiezione seggi – stima voti finali" />
+            <SeatChart seats={proj.projected.seats} totalSeats={councilSeats} title="Proiezione seggi – stima voti finali" />
 
             {/* Projected votes comparison */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <h3 className="font-semibold text-gray-900 mb-4">Voti attuali vs proiettati</h3>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart
                   data={proj.projectedLists.map(l => ({
                     name: l.listName.slice(0, 15),
@@ -319,13 +365,13 @@ export default function AnalysisDashboard({
                     Proiettati: l.projectedVotes,
                     color: l.color,
                   }))}
-                  margin={{ top: 0, right: 0, bottom: 40, left: 0 }}
+                  margin={{ top: 8, right: 12, bottom: 100, left: 8 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" height={70} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatNumber(v)} />
                   <Tooltip formatter={(v: number) => [formatNumber(v), '']} />
-                  <Legend />
+                  <Legend wrapperStyle={{ paddingTop: 24 }} />
                   <Bar dataKey="Attuali"    fill="#93c5fd" radius={[3,3,0,0]} />
                   <Bar dataKey="Proiettati" fill="#2563eb" radius={[3,3,0,0]} />
                 </BarChart>

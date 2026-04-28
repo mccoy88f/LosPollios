@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { SiteTopNav } from '@/components/SiteTopNav'
@@ -10,7 +11,7 @@ interface ListResult {
   listLogoUrl?: string | null
   coalitionLogoUrl?: string | null
   candidateMayor: string | null; coalition: string | null; votes: number
-  candidates: { candidateId: number; name: string; votes: number; listId: number }[]
+  candidates: { candidateId: number; name: string; votes: number; listId: number; personId?: number | null; order?: number }[]
 }
 
 interface SectionStatus {
@@ -102,7 +103,7 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
       <div className="flex gap-4 mt-3 text-xs text-gray-500">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Con voti</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400 inline-block" /> Solo affluenza</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block" /> Non ancora</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block" /> Non iniziata</span>
       </div>
     </div>
   )
@@ -230,6 +231,16 @@ export default function LiveDashboard({
             {lastPulse && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" /> Live · {lastPulse.toLocaleTimeString('it-IT')}</span>}
             <span>{progress.totalSections - progress.sectionsCounted} mancanti</span>
           </div>
+          {lists.some(l => l.candidates.length > 0) && (
+            <div className="mt-4 text-center">
+              <Link
+                href={`/live/${electionId}/preferenze`}
+                className="inline-block text-sm font-medium text-white bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors"
+              >
+                Distribuzione preferenze e confronto storico →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -320,24 +331,47 @@ export default function LiveDashboard({
         {/* Top candidates */}
         {lists.some(l => l.candidates.length > 0) && (
           <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 className="font-semibold text-gray-900 mb-4">Preferenze candidati</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="font-semibold text-gray-900">Preferenze candidati (aggregate)</h3>
+              <Link href={`/live/${electionId}/preferenze`} className="text-sm text-blue-600 hover:underline font-medium">
+                Apri dettaglio con grafici →
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Preferenze pervenute finora da tutte le sezioni già inserite. La colonna «% lista» è la quota sul totale voti di lista di quella lista.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[...lists].sort((a, b) => b.votes - a.votes).filter(l => l.candidates.length > 0).map(list => (
-                <div key={list.listId}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
-                    <h4 className="text-sm font-semibold text-gray-700">{list.listName}</h4>
+              {[...lists].sort((a, b) => b.votes - a.votes).filter(l => l.candidates.length > 0).map(list => {
+                const prefTotal = list.candidates.reduce((s, c) => s + c.votes, 0)
+                return (
+                  <div key={list.listId}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
+                      <h4 className="text-sm font-semibold text-gray-700">{list.listName}</h4>
+                      <span className="text-xs text-gray-400">
+                        Σ pref. {formatNumber(prefTotal)}
+                        {list.votes > 0 && prefTotal !== list.votes && (
+                          <span title="Può differire dai voti lista se non tutte le schede hanno preferenze valorizzate"> · lista {formatNumber(list.votes)}</span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                      {[...list.candidates]
+                        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || b.votes - a.votes)
+                        .map(c => {
+                          const pctList = list.votes > 0 ? (c.votes / list.votes) * 100 : 0
+                          return (
+                            <div key={c.candidateId} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5 gap-2">
+                              <span className="text-gray-700 truncate">{c.name}</span>
+                              <span className="shrink-0 text-xs text-gray-500 w-14 text-right">{pctList.toFixed(1)}%</span>
+                              <span className="font-semibold text-gray-900 w-20 text-right">{formatNumber(c.votes)}</span>
+                            </div>
+                          )
+                        })}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    {[...list.candidates].sort((a, b) => b.votes - a.votes).slice(0, 5).map(c => (
-                      <div key={c.candidateId} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5">
-                        <span className="text-gray-700">{c.name}</span>
-                        <span className="font-semibold text-gray-900">{formatNumber(c.votes)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

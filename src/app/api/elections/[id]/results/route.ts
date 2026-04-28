@@ -42,7 +42,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   }
 
   // Candidate preferences aggregated
-  const candidateMap = new Map<number, { candidateId: number; name: string; votes: number; listId: number }>()
+  const candidateMap = new Map<number, { candidateId: number; name: string; votes: number; listId: number; personId: number | null; order: number }>()
   for (const r of listResults) {
     for (const p of r.preferences) {
       const key = p.candidateId
@@ -52,6 +52,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
           name: `${p.candidate.firstName} ${p.candidate.lastName}`,
           votes: 0,
           listId: r.listId,
+          personId: p.candidate.personId ?? null,
+          order: p.candidate.order,
         })
       }
       candidateMap.get(key)!.votes += p.votes
@@ -89,7 +91,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     candidateMayor: l.candidateMayor,
     coalition:     l.coalition,
     votes:         listVotesMap.get(l.id) ?? 0,
-    candidates:    Array.from(candidateMap.values()).filter(c => c.listId === l.id).sort((a, b) => b.votes - a.votes),
+    candidates:    Array.from(candidateMap.values())
+      .filter(c => c.listId === l.id)
+      .sort((a, b) => a.order - b.order || b.votes - a.votes),
   }))
 
   return NextResponse.json({

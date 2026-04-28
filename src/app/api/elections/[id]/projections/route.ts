@@ -78,6 +78,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     totalSections,
     sectionsCounted,
     coverage: totalSections > 0 ? (sectionsCounted / totalSections) * 100 : 0,
+    /** Seggi totali del consiglio (impostazione elezione), non la somma dei seggi assegnati in proiezione */
+    totalSeats: election.totalSeats,
     current: enrich(currentProjection),
     projected: enrich(projectedProjection),
     projectedLists: projectedLists.map(l => ({
