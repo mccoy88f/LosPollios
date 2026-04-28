@@ -33,9 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# generato in build Docker (esbuild), non versionare
-/prisma/seed.cjs
-
 # database
 *.db
 *.db-journal

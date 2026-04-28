@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
 interface Candidate { id: number; firstName: string; lastName: string; order: number }
 interface ListData { id: number; name: string; color: string; candidateMayor: string | null; candidates: Candidate[] }
@@ -27,8 +26,6 @@ export default function SectionEntryForm({
   theoreticalVoters,
   readOnly = false,
 }: Props) {
-  const router = useRouter()
-
   const [turnout, setTurnout] = useState({
     votersActual: existingTurnout?.votersActual !== undefined ? String(existingTurnout.votersActual) : '',
     ballotsValid: existingTurnout?.ballotsValid !== undefined ? String(existingTurnout.ballotsValid) : '',
@@ -55,23 +52,35 @@ export default function SectionEntryForm({
 
   const [showPrefs, setShowPrefs] = useState<Record<number, boolean>>({})
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const firstRenderRef = useRef(true)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inFlightRef = useRef(false)
+  const needsResaveRef = useRef(false)
 
   function setTurn(k: string, v: string) { setTurnout(t => ({ ...t, [k]: v })) }
+  function setListVote(listId: number, value: string) {
+    setListVotes(m => ({ ...m, [listId]: value }))
+  }
+  function setPreference(listId: number, candidateId: number, value: string) {
+    setPreferences(m => ({
+      ...m,
+      [listId]: { ...(m[listId] || {}), [candidateId]: value },
+    }))
+  }
+  function incrementPreference(listId: number, candidateId: number) {
+    const current = Number(preferences[listId]?.[candidateId]) || 0
+    setPreference(listId, candidateId, String(current + 1))
+  }
 
   const totalListVotes = Object.values(listVotes).reduce((s, v) => s + (Number(v) || 0), 0)
   const actualVoters   = Number(turnout.votersActual) || 0
   const validBallots   = Number(turnout.ballotsValid) || 0
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (readOnly) return
-    setSaving(true)
-    setMsg('')
-    setError('')
-
-    const payload = {
+  function buildPayload() {
+    return {
       turnout: {
         votersActual: Number(turnout.votersActual) || 0,
         ...(turnout.ballotsValid !== '' && { ballotsValid: Number(turnout.ballotsValid) }),
@@ -86,25 +95,74 @@ export default function SectionEntryForm({
           .map(c => ({ candidateId: c.id, votes: Number(preferences[l.id]?.[c.id]) || 0 })),
       })),
     }
+  }
+
+  async function persistData() {
+    if (readOnly) return
+    if (inFlightRef.current) {
+      needsResaveRef.current = true
+      return
+    }
+    inFlightRef.current = true
+    setSaving(true)
+    setError('')
 
     const res = await fetch(`/api/elections/${electionId}/results/section/${sectionId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildPayload()),
     })
 
-    setSaving(false)
     if (res.ok) {
-      setMsg('Dati salvati con successo!')
-      router.refresh()
+      setLastSavedAt(new Date())
+      setDirty(false)
     } else {
       const d = await res.json()
       setError(d.error || 'Errore nel salvataggio')
     }
+
+    inFlightRef.current = false
+    setSaving(false)
+    if (needsResaveRef.current) {
+      needsResaveRef.current = false
+      void persistData()
+    }
+  }
+
+  useEffect(() => {
+    if (readOnly) return
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false
+      return
+    }
+    setDirty(true)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(() => {
+      void persistData()
+    }, 500)
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [turnout, listVotes, preferences, readOnly])
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [])
+
+  function saveStatusText() {
+    if (readOnly) return 'Sola lettura'
+    if (saving) return 'Salvataggio automatico...'
+    if (error) return 'Errore di salvataggio'
+    if (dirty) return 'Modifiche in attesa di salvataggio...'
+    if (lastSavedAt) return `Salvato alle ${lastSavedAt.toLocaleTimeString('it-IT')}`
+    return 'Nessuna modifica'
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       {/* Affluenza */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-4">Affluenza</h3>
@@ -179,7 +237,7 @@ export default function SectionEntryForm({
                   </div>
                   <input
                     type="number" min="0" value={listVotes[list.id]}
-                    onChange={e => setListVotes(m => ({ ...m, [list.id]: e.target.value }))}
+                    onChange={e => setListVote(list.id, e.target.value)}
                     disabled={readOnly}
                     className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="0"
@@ -198,11 +256,18 @@ export default function SectionEntryForm({
                         {list.candidates.map(c => (
                           <div key={c.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
                             <span className="text-xs text-gray-700 flex-1">{c.order}. {c.lastName} {c.firstName}</span>
+                            <button
+                              type="button"
+                              onClick={() => incrementPreference(list.id, c.id)}
+                              disabled={readOnly}
+                              className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                              aria-label={`Aumenta preferenze per ${c.lastName} ${c.firstName}`}
+                            >
+                              +
+                            </button>
                             <input
                               type="number" min="0" value={preferences[list.id]?.[c.id] ?? ''}
-                              onChange={e => setPreferences(m => ({
-                                ...m, [list.id]: { ...(m[list.id] || {}), [c.id]: e.target.value }
-                              }))}
+                              onChange={e => setPreference(list.id, c.id, e.target.value)}
                               disabled={readOnly}
                               className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                               placeholder="0"
@@ -219,19 +284,17 @@ export default function SectionEntryForm({
         </div>
       </div>
 
-      {msg   && <div className="bg-green-50 text-green-700 rounded-lg px-4 py-3 font-medium">{msg}</div>}
+      <div className={`rounded-lg px-4 py-3 text-sm font-medium ${error ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+        {saveStatusText()}
+      </div>
       {error && <div className="bg-red-50   text-red-700   rounded-lg px-4 py-3">{error}</div>}
 
       <div className="flex gap-3">
-        <button type="submit" disabled={saving || readOnly}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-colors text-lg">
-          {readOnly ? 'Sola lettura' : saving ? 'Salvataggio...' : '💾 Salva dati sezione'}
-        </button>
         <a href={`/entry/${electionId}`}
           className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium">
           ← Torna alle sezioni
         </a>
       </div>
-    </form>
+    </div>
   )
 }

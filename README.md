@@ -94,31 +94,35 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 
 | Variabile | Default tipico |
 |-----------|----------------|
-| **`DATABASE_URL`** | `file:/data/lospollios.db` — database SQLite sul volume Docker `lospollios-data` montato in `/data`. |
+| **`DATABASE_URL`** | **Obbligatoria**: URL del database reale dell'ambiente (nessun fallback su file preconfigurato). |
 
-**Primo avvio:** l’entrypoint del container, dopo `db push`, esegue automaticamente il seed (come `npm run db:seed`). Così puoi accedere subito con **admin** / **admin123**. Il seed è **idempotente** (upsert): ai riavvii non azzera i dati; per l’utente `admin`, `update: {}` in Prisma **non** sovrascrive la password se l’hai già cambiata nel database.
+**Primo avvio Docker:** l’entrypoint applica solo `prisma db push` e **non** carica dati demo. Utenti ed elezioni vanno creati esplicitamente dall’amministratore (o con seed/manual import scelto da te).
 
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 
-1. Esporta la variabile nella shell prima di avviare lo stack, oppure crea un file **`.env`** nella stessa directory del `docker-compose.yml` (Compose legge automaticamente `.env` e sostituisce `${JWT_SECRET}`):
+1. Esporta le variabili nella shell prima di avviare lo stack, oppure crea un file **`.env`** nella stessa directory del `docker-compose.yml` (Compose legge automaticamente `.env` e sostituisce `${...}`):
 
    ```bash
+   DATABASE_URL=incolla-qui-url-del-tuo-db
    JWT_SECRET=incolla-qui-una-stringa-lunga-e-casuale
    ```
 
 2. Avvio: `docker compose up -d --build` — l’interfaccia è sulla **porta 3522** (vedi sotto).
 
-**Portainer (Stacks):** nello stack, apri **Environment** e aggiungi `JWT_SECRET` con un valore generato (non lasciare vuoto). Il `docker-compose.yml` del repo espone l’app sulla **porta esterna standard 3522** (`3522:3000`). Puoi cambiarla nello stack se serve. Il volume `lospollios-data` mantiene il file SQLite tra i riavvii.
+**Portainer (Stacks):** nello stack, apri **Environment** e aggiungi **sia** `DATABASE_URL` sia `JWT_SECRET`. Il `docker-compose.yml` del repo espone l’app sulla **porta esterna standard 3522** (`3522:3000`). Puoi cambiarla nello stack se serve.
 
 Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522` sul server).
 
 **Eseguire il container a mano:**
 
 ```bash
-docker run -p 3522:3000 -e JWT_SECRET='la-tua-chiave-segreta' -v lospollios-data:/data lospollios
+docker run -p 3522:3000 \
+  -e DATABASE_URL='url-del-tuo-db' \
+  -e JWT_SECRET='la-tua-chiave-segreta' \
+  lospollios
 ```
 
-Senza `-e JWT_SECRET=...` il processo parte comunque, ma **non** è una configurazione sicura per un ambiente esposto in rete.
+Senza `-e DATABASE_URL=...` il processo **non parte**; senza `-e JWT_SECRET=...` il processo parte ma non è una configurazione sicura per un ambiente esposto in rete.
 
 ---
 

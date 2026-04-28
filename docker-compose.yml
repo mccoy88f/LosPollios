@@ -13,12 +13,6 @@ services:
       - "3522:3000"
     environment:
       NODE_ENV: production
-      # URL assoluto del DB SQLite sul volume persistente
-      DATABASE_URL: file:/data/lospollios.db
+      # Database reale fornito dall'ambiente (obbligatorio)
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
-    volumes:
-      - lospollios-data:/data
-
-volumes:
-  lospollios-data:
-    driver: local
