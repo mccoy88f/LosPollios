@@ -31,6 +31,9 @@ services:
       NODE_ENV: production
       # DB server preconfigurato nello stack (override opzionale con APP_DATABASE_URL)
       DATABASE_URL: ${APP_DATABASE_URL:-postgresql://${POSTGRES_USER:-lospollios}:${POSTGRES_PASSWORD:-lospollios_change_me}@db:5432/${POSTGRES_DB:-lospollios}?schema=public}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NAME: ${ADMIN_NAME:-Amministratore}
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
       db:

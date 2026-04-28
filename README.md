@@ -94,8 +94,11 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 | Variabile | Default tipico |
 |-----------|----------------|
 | **`DATABASE_URL`** | Calcolata automaticamente in Compose verso il Postgres interno (`db`). Override opzionale con `APP_DATABASE_URL`. |
+| **`ADMIN_USERNAME`** | `admin` — username creato automaticamente al primo avvio (se non esiste). |
+| **`ADMIN_PASSWORD`** | `admin123` — password iniziale dell'admin; cambiala subito in produzione. |
+| **`ADMIN_NAME`** | `Amministratore` — nome visualizzato per l'utente admin iniziale. |
 
-**Primo avvio Docker:** l’entrypoint applica solo `prisma db push` e **non** carica dati demo. Utenti ed elezioni vanno creati esplicitamente dall’amministratore (o con seed/manual import scelto da te).
+**Primo avvio Docker:** l’entrypoint applica `prisma db push` e crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza caricare dati demo di elezioni/liste/sezioni.
 
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 
@@ -107,6 +110,9 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
    POSTGRES_PASSWORD=metti-una-password-forte
    # opzionale: override completo DB app
    # APP_DATABASE_URL=postgresql://user:pass@host:5432/dbname?schema=public
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=cambia-questa-password
+   ADMIN_NAME=Amministratore
    JWT_SECRET=incolla-qui-una-stringa-lunga-e-casuale
    ```
 
@@ -125,7 +131,7 @@ docker run -p 3522:3000 \
   lospollios
 ```
 
-Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres preconfigurato nello stack; senza `-e JWT_SECRET=...` il processo parte ma non è una configurazione sicura per un ambiente esposto in rete.
+Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres preconfigurato nello stack; senza `-e JWT_SECRET=...` il processo parte ma non è una configurazione sicura per un ambiente esposto in rete. Se non imposti `ADMIN_*`, al primo avvio viene creato `admin / admin123`.
 
 ---
 
