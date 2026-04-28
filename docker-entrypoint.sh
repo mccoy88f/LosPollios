@@ -1,10 +1,8 @@
 #!/bin/sh
 set -e
 
-if [ -z "${DATABASE_URL}" ]; then
-  echo "[lospollios] ERRORE: DATABASE_URL non impostata"
-  exit 1
-fi
+# Default al DB server Postgres preconfigurato nello stack docker-compose
+export DATABASE_URL="${DATABASE_URL:-postgresql://lospollios:lospollios_change_me@db:5432/lospollios?schema=public}"
 
 echo "[lospollios] DATABASE_URL=${DATABASE_URL}"
 echo "[lospollios] Applicazione schema Prisma..."

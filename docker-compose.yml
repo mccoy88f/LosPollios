@@ -2,6 +2,21 @@
 # Imposta JWT_SECRET (obbligatorio in produzione) nelle variabili d'ambiente dello stack.
 
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lospollios}
+      POSTGRES_USER: ${POSTGRES_USER:-lospollios}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lospollios_change_me}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lospollios} -d ${POSTGRES_DB:-lospollios}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - lospollios-postgres-data:/var/lib/postgresql/data
+
   lospollios:
     build:
       context: .
@@ -13,6 +28,13 @@ services:
       - "3522:3000"
     environment:
       NODE_ENV: production
-      # Database reale fornito dall'ambiente (obbligatorio)
-      DATABASE_URL: ${DATABASE_URL}
+      # DB server preconfigurato nello stack (override opzionale con APP_DATABASE_URL)
+      DATABASE_URL: ${APP_DATABASE_URL:-postgresql://${POSTGRES_USER:-lospollios}:${POSTGRES_PASSWORD:-lospollios_change_me}@db:5432/${POSTGRES_DB:-lospollios}?schema=public}
       JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  lospollios-postgres-data:
+    driver: local

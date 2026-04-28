@@ -66,7 +66,7 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
 
 ## Note per chi installa o ospita il sistema
 
-Per sviluppatori e sistemisti: il progetto è un’applicazione **Next.js** con database **SQLite** tramite **Prisma**. Per avviare in ambiente di sviluppo servono Node.js, dipendenze installate (`npm install`), file `.env` con `DATABASE_URL` e `JWT_SECRET` adeguato in produzione. Comandi utili: `npm run dev` (sviluppo), `npm run build` (build), script `db:*` per database e seed di prova.
+Per sviluppatori e sistemisti: il progetto è un’applicazione **Next.js** con **Prisma** e database SQL. Nello stack Docker il database è un server **PostgreSQL** preconfigurato; in sviluppo locale puoi comunque usare una `DATABASE_URL` personalizzata. Comandi utili: `npm run dev` (sviluppo), `npm run build` (build), script `db:*` per gestione schema e seed.
 
 ### PWA (installazione su telefono)
 
@@ -74,10 +74,9 @@ Il sito espone un **manifest** (`/manifest.webmanifest`), icone **192/512** e un
 
 Dopo il deploy, apri il sito dal telefono: dal menu del browser (Chrome: *Installa app* / *Aggiungi a schermata Home*; Safari: *Condividi* → *Aggiungi a Home*).
 
-### SQLite, molti scrutatori e “live”
+### Database server, concorrenza e “live”
 
-- **Scritture:** SQLite consente **una scrittura alla volta** sul file; le altre si accodano. Ogni salvataggio sezione è una **transazione** breve (affluenza + voti per lista). Con decine di scrutatori su **sezioni diverse** è in genere accettabile; picchi simultanei possono introdurre **attese brevi** (mitigate con `busy_timeout` e modalità **WAL**, impostate all’avvio del server).
-- **Letture:** con **WAL** le letture (dashboard, live) possono procedere in parallelo alle scritture molto meglio che col journal classico.
+- **Scritture/letture:** con PostgreSQL le scritture concorrenti e le letture live sono gestite nativamente meglio di un file DB locale, utile quando più operatori inseriscono dati in parallelo.
 - **Tempo reale:** gli aggiornamenti alla vista live usano **SSE in memoria sullo stesso processo Node**. Con **un solo** container/istanza va bene; con **più repliche** Docker ogni istanza ha memoria separata: servirebbe un bus condiviso (es. Redis) per notifiche cross-istanza — scenario da pianificare solo se replichi l’app.
 
 ### Docker e Portainer
@@ -94,7 +93,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 
 | Variabile | Default tipico |
 |-----------|----------------|
-| **`DATABASE_URL`** | **Obbligatoria**: URL del database reale dell'ambiente (nessun fallback su file preconfigurato). |
+| **`DATABASE_URL`** | Calcolata automaticamente in Compose verso il Postgres interno (`db`). Override opzionale con `APP_DATABASE_URL`. |
 
 **Primo avvio Docker:** l’entrypoint applica solo `prisma db push` e **non** carica dati demo. Utenti ed elezioni vanno creati esplicitamente dall’amministratore (o con seed/manual import scelto da te).
 
@@ -103,13 +102,17 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 1. Esporta le variabili nella shell prima di avviare lo stack, oppure crea un file **`.env`** nella stessa directory del `docker-compose.yml` (Compose legge automaticamente `.env` e sostituisce `${...}`):
 
    ```bash
-   DATABASE_URL=incolla-qui-url-del-tuo-db
+   POSTGRES_DB=lospollios
+   POSTGRES_USER=lospollios
+   POSTGRES_PASSWORD=metti-una-password-forte
+   # opzionale: override completo DB app
+   # APP_DATABASE_URL=postgresql://user:pass@host:5432/dbname?schema=public
    JWT_SECRET=incolla-qui-una-stringa-lunga-e-casuale
    ```
 
 2. Avvio: `docker compose up -d --build` — l’interfaccia è sulla **porta 3522** (vedi sotto).
 
-**Portainer (Stacks):** nello stack, apri **Environment** e aggiungi **sia** `DATABASE_URL` sia `JWT_SECRET`. Il `docker-compose.yml` del repo espone l’app sulla **porta esterna standard 3522** (`3522:3000`). Puoi cambiarla nello stack se serve.
+**Portainer (Stacks):** nello stack, apri **Environment** e imposta almeno `POSTGRES_PASSWORD` e `JWT_SECRET` (opzionali `POSTGRES_USER/POSTGRES_DB`); il DB server parte nello stesso stack. Il `docker-compose.yml` espone l’app sulla **porta esterna standard 3522** (`3522:3000`).
 
 Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522` sul server).
 
@@ -117,12 +120,12 @@ Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522`
 
 ```bash
 docker run -p 3522:3000 \
-  -e DATABASE_URL='url-del-tuo-db' \
+  -e DATABASE_URL='postgresql://user:pass@host:5432/dbname?schema=public' \
   -e JWT_SECRET='la-tua-chiave-segreta' \
   lospollios
 ```
 
-Senza `-e DATABASE_URL=...` il processo **non parte**; senza `-e JWT_SECRET=...` il processo parte ma non è una configurazione sicura per un ambiente esposto in rete.
+Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres preconfigurato nello stack; senza `-e JWT_SECRET=...` il processo parte ma non è una configurazione sicura per un ambiente esposto in rete.
 
 ---
 
