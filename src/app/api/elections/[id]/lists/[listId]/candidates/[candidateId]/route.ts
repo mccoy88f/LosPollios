@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeNamePartDisplay } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ candidateId: string }> }
 
@@ -14,8 +15,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const c = await prisma.candidate.update({
     where: { id: Number(candidateId) },
     data: {
-      ...(body.firstName !== undefined && { firstName: body.firstName }),
-      ...(body.lastName !== undefined && { lastName: body.lastName }),
+      ...(body.firstName !== undefined && { firstName: normalizeNamePartDisplay(body.firstName) }),
+      ...(body.lastName !== undefined && { lastName: normalizeNamePartDisplay(body.lastName) }),
       ...(body.order !== undefined && { order: Number(body.order) }),
       ...(body.gender !== undefined && { gender: body.gender }),
       ...(body.personId !== undefined && {

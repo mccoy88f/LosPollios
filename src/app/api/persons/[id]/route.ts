@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeNamePartDisplay } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -85,8 +86,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   const body = await req.json()
-  const firstName = String(body.firstName ?? '').trim()
-  const lastName = String(body.lastName ?? '').trim()
+  const firstName = normalizeNamePartDisplay(String(body.firstName ?? ''))
+  const lastName = normalizeNamePartDisplay(String(body.lastName ?? ''))
   const notes = body.notes == null ? null : String(body.notes).trim() || null
   if (!firstName || !lastName) {
     return NextResponse.json({ error: 'Nome e cognome obbligatori' }, { status: 400 })

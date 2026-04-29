@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeNamePartDisplay } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ listId: string }> }
 
@@ -27,8 +28,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         prisma.candidate.create({
           data: {
             listId: Number(listId),
-            firstName: c.firstName,
-            lastName: c.lastName,
+            firstName: normalizeNamePartDisplay(c.firstName),
+            lastName: normalizeNamePartDisplay(c.lastName),
             order: Number(c.order ?? 0),
             gender: c.gender,
           },
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const candidate = await prisma.candidate.create({
     data: {
       listId: Number(listId),
-      firstName,
-      lastName,
+      firstName: normalizeNamePartDisplay(firstName),
+      lastName: normalizeNamePartDisplay(lastName),
       order: Number(order ?? 0),
       gender,
     },

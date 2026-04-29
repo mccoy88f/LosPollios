@@ -1,6 +1,7 @@
 import prisma from '@/lib/db'
 import type { EligendoParseResult } from '@/lib/eligendoImport'
 import type { HistoricalParsedRow, HistoricalCandidateRow } from '@/lib/historicalExcel'
+import { normalizeFullNameLabel, normalizeNamePartDisplay } from '@/lib/personUtils'
 
 /** Sezione dedicata ai totali comunali (import Eligendo/Excel storico). Non sommare con altre sezioni che hanno già voti. */
 export const SYNTHESIS_SECTION_NUMBER = 0
@@ -128,7 +129,7 @@ export async function applyEligendoMacroToElection(
   for (const row of parsed.results) {
     const list = await findOrCreateList(electionId, row.listName, {
       coalition: row.coalition,
-      candidateMayor: row.candidateMayor || null,
+      candidateMayor: normalizeFullNameLabel(row.candidateMayor),
       listLogoUrl: row.listLogoUrl,
       importedSeats: row.seats,
     })
@@ -158,7 +159,7 @@ export async function applyExcelMacroToElection(electionId: number, rows: Histor
   for (const row of rows) {
     const list = await findOrCreateList(electionId, row.listName, {
       coalition: row.coalition,
-      candidateMayor: row.candidateMayor,
+      candidateMayor: normalizeFullNameLabel(row.candidateMayor),
       importedSeats: row.seats,
     })
     const votes = row.votes
@@ -197,8 +198,8 @@ export async function applyCandidateRowsToElection(electionId: number, rows: His
     let cand = await prisma.candidate.findFirst({
       where: { listId: list.id, order: row.order },
     })
-    const fn = row.firstName.trim() || '—'
-    const ln = row.lastName.trim()
+    const fn = normalizeNamePartDisplay(row.firstName.trim()) || '—'
+    const ln = normalizeNamePartDisplay(row.lastName.trim())
     if (cand) {
       cand = await prisma.candidate.update({
         where: { id: cand.id },

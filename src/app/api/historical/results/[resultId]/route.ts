@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeFullNameLabel } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ resultId: string }> }
 
@@ -25,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
   if ('candidateMayor' in body) {
     data.candidateMayor =
-      body.candidateMayor === null || body.candidateMayor === '' ? null : String(body.candidateMayor)
+      body.candidateMayor === null || body.candidateMayor === '' ? null : normalizeFullNameLabel(String(body.candidateMayor))
   }
   if ('votes' in body) {
     data.votes = Math.max(0, Number(body.votes) || 0)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeFullNameLabel } from '@/lib/personUtils'
 
 export async function GET() {
   const [flat, archivedOperational] = await Promise.all([
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
           }) => ({
             listName:       r.listName,
             coalition:      r.coalition,
-            candidateMayor: r.candidateMayor,
+            candidateMayor: normalizeFullNameLabel(r.candidateMayor),
             votes:          Number(r.votes),
             percentage:     Number(r.percentage),
             seats:          r.seats !== undefined && r.seats !== null ? Number(r.seats) : null,

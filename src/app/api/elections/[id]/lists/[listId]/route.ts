@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeFullNameLabel } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ id: string; listId: string }> }
 
@@ -32,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(body.color !== undefined && { color: body.color }),
       ...(body.listLogoUrl !== undefined && { listLogoUrl: body.listLogoUrl?.trim() || null }),
       ...(body.coalitionLogoUrl !== undefined && { coalitionLogoUrl: body.coalitionLogoUrl?.trim() || null }),
-      ...(body.candidateMayor !== undefined && { candidateMayor: body.candidateMayor }),
+      ...(body.candidateMayor !== undefined && { candidateMayor: normalizeFullNameLabel(body.candidateMayor) }),
       ...(body.mayorPersonId !== undefined && {
         mayorPersonId: body.mayorPersonId === null || body.mayorPersonId === '' ? null : Number(body.mayorPersonId),
       }),

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   downloadHistoricalElectionPrefillXlsx,
@@ -1218,6 +1219,9 @@ function ExpandedHistoricalElection({
 }
 
 export default function HistoricalPage() {
+  const searchParams = useSearchParams()
+  const isAddMode = searchParams.get('mode') === 'add'
+
   const [elections, setElections] = useState<HistElection[]>([])
   const [archivedElections, setArchivedElections] = useState<ArchivedOpElection[]>([])
   /** "new" = crea HistoricalElection; altrimenti id elezione archiviata */
@@ -1494,9 +1498,20 @@ export default function HistoricalPage() {
         </span>
         <span className="text-gray-900 font-medium">Dati storici</span>
       </nav>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Elezioni storiche</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Elezioni storiche</h1>
+        {isAddMode ? (
+          <Link href="/admin/historical" className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium">
+            Torna ai dati storici
+          </Link>
+        ) : (
+          <Link href="/admin/historical/add" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+            + Aggiungi
+          </Link>
+        )}
+      </div>
 
-      {archivedElections.length > 0 && (
+      {isAddMode && archivedElections.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 mb-6">
           <h2 className="font-semibold text-amber-950 text-sm mb-2">Elezioni archiviate (dati operativi)</h2>
           <p className="text-xs text-amber-900 mb-2">
@@ -1522,9 +1537,10 @@ export default function HistoricalPage() {
         </div>
       )}
 
-      {msg && <div className="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
-      {importErr && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-2 mb-4">{importErr}</div>}
+      {isAddMode && msg && <div className="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
+      {isAddMode && importErr && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-2 mb-4">{importErr}</div>}
 
+      {isAddMode && (
       <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6">
         <h2 className="font-semibold text-indigo-900 mb-2">Importa da Eligendo (Ministero dell&apos;Interno)</h2>
         <p className="text-sm text-indigo-800 mb-3">
@@ -1668,8 +1684,11 @@ export default function HistoricalPage() {
           </div>
         )}
       </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {isAddMode && (
+        <>
         {/* Add form */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-900 mb-4">Aggiungi elezione storica</h2>
@@ -1745,9 +1764,12 @@ export default function HistoricalPage() {
             </button>
           </div>
         </div>
+        </>
+        )}
 
         {/* List */}
-        <div className="space-y-3">
+        {!isAddMode && (
+        <div className="space-y-3 lg:col-span-2">
           {elections.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
               Nessuna elezione storica inserita
@@ -1776,6 +1798,7 @@ export default function HistoricalPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import prisma from '@/lib/db'
 import type { HistoricalCandidateRow, HistoricalParsedRow } from '@/lib/historicalExcel'
+import { normalizeFullNameLabel, normalizeNamePartDisplay } from '@/lib/personUtils'
 
 function normListName(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, ' ')
@@ -36,7 +37,7 @@ export async function mergeHistoricalElectionFromExcel(
       } = {}
 
       if (row.coalition !== undefined) data.coalition = row.coalition
-      if (row.candidateMayor !== undefined) data.candidateMayor = row.candidateMayor
+      if (row.candidateMayor !== undefined) data.candidateMayor = normalizeFullNameLabel(row.candidateMayor)
       if (row.votes != null) data.votes = row.votes
       if (row.percentage != null) data.percentage = row.percentage
       if (row.seats !== undefined) data.seats = row.seats
@@ -67,8 +68,8 @@ export async function mergeHistoricalElectionFromExcel(
 
       await prisma.$transaction(async tx => {
         for (const row of rows) {
-          const fn = (row.firstName || '—').trim() || '—'
-          const ln = row.lastName.trim()
+          const fn = normalizeNamePartDisplay((row.firstName || '—').trim()) || '—'
+          const ln = normalizeNamePartDisplay(row.lastName.trim())
           const pv =
             row.preferenceVotes != null && row.preferenceVotes >= 0 ? row.preferenceVotes : 0
 

@@ -10,7 +10,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts"
+    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
+    "db:normalize-names": "tsx scripts/normalize-existing-names.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",

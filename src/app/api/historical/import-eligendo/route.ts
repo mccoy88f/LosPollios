@@ -7,6 +7,7 @@ import {
   parseEligendoResultsHtml,
 } from '@/lib/eligendoImport'
 import { applyEligendoMacroToElection, canImportMacroToElection } from '@/lib/archivedElectionImport'
+import { normalizeFullNameLabel } from '@/lib/personUtils'
 
 /**
  * Importa risultati da una pagina dell'Archivio Eligendo (Ministero dell'Interno).
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       results: {
         create: parsed.results.map(r => ({
           listName: r.listName,
-          candidateMayor: r.candidateMayor || null,
+          candidateMayor: normalizeFullNameLabel(r.candidateMayor),
           coalition: r.coalition,
           votes: r.votes,
           percentage: r.percentage,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { normalizeFullNameLabel } from '@/lib/personUtils'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       color: color ?? '#6366f1',
       listLogoUrl: listLogoUrl?.trim() || null,
       coalitionLogoUrl: coalitionLogoUrl?.trim() || null,
-      candidateMayor,
+      candidateMayor: normalizeFullNameLabel(candidateMayor),
       mayorPersonId: mayorPersonId != null && mayorPersonId !== '' ? Number(mayorPersonId) : null,
       coalition,
       order: Number(order ?? 0),

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
-import { namesMatch } from '@/lib/personUtils'
+import { namesMatch, normalizeNamePartDisplay } from '@/lib/personUtils'
 
 export async function GET() {
   const session = await getSession()
@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
   if (!firstName?.trim() || !lastName?.trim()) {
     return NextResponse.json({ error: 'Nome e cognome obbligatori' }, { status: 400 })
   }
-  const fn = firstName.trim()
-  const ln = lastName.trim()
+  const fn = normalizeNamePartDisplay(firstName)
+  const ln = normalizeNamePartDisplay(lastName)
   const persons = await prisma.person.findMany()
   const existing = persons.find(p => namesMatch(p.firstName, fn) && namesMatch(p.lastName, ln))
   if (existing) {
