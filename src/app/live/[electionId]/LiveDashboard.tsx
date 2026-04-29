@@ -23,7 +23,14 @@ interface SectionStatus {
 
 interface ResultsData {
   election: { id: number; name: string; commune: string; date: string; type: string; totalSeats: number; threshold: number; status: string }
-  progress:  { totalSections: number; sectionsCounted: number; percentage: number }
+  progress:  {
+    totalSections: number
+    sectionsCounted: number
+    /** Percentuale scrutinio su voti (voti lista / votanti reali attesi) */
+    percentage: number
+    scrutinizedVotes: number
+    expectedVotes: number
+  }
   turnout:   { totalTheoretical: number; totalActual: number; totalValid: number; totalNull: number; totalBlank: number; percentage: number }
   lists:     ListResult[]
   sectionStatus: SectionStatus[]
@@ -218,7 +225,7 @@ export default function LiveDashboard({
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold">{progress.percentage.toFixed(1)}%</div>
-                <div className="text-blue-200 text-xs">Sezioni scrutinate</div>
+                <div className="text-blue-200 text-xs">Voti scrutinati</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">{formatPercent(turnout.percentage)}</div>
@@ -239,14 +246,16 @@ export default function LiveDashboard({
             />
           </div>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-blue-200 mt-1">
-            <span>{progress.sectionsCounted} sezioni scrutinate</span>
+            <span>
+              {formatNumber(progress.scrutinizedVotes)} / {formatNumber(progress.expectedVotes)} voti scrutinati
+            </span>
             {lastPulse && (
               <span className="flex items-center gap-1 justify-center">
                 <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" /> Pagina ·{' '}
                 {lastPulse.toLocaleTimeString('it-IT')}
               </span>
             )}
-            <span>{progress.totalSections - progress.sectionsCounted} mancanti</span>
+            <span>{progress.sectionsCounted}/{progress.totalSections} sezioni con affluenza</span>
           </div>
           <div className="mt-2 text-center text-xs text-blue-200/95">
             {lastDataUpdateAt ? (

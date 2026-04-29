@@ -98,12 +98,22 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .filter(c => c.listId === l.id)
       .sort((a, b) => a.order - b.order || b.votes - a.votes),
   }))
+  const totalListVotes = listsAggregated.reduce((s, l) => s + l.votes, 0)
+  // Progress scrutinio basato sui voti scrutinati rispetto ai votanti reali registrati.
+  const scrutinizedVotesPercentage =
+    totalActual > 0 ? Math.min(100, (totalListVotes / totalActual) * 100) : 0
 
   return NextResponse.json({
     election: { id: election.id, name: election.name, commune: election.commune, date: election.date,
                 type: election.type, totalSeats: election.totalSeats, threshold: election.threshold,
                 status: election.status },
-    progress: { totalSections, sectionsCounted, percentage: totalSections > 0 ? (sectionsCounted / totalSections) * 100 : 0 },
+    progress: {
+      totalSections,
+      sectionsCounted,
+      percentage: scrutinizedVotesPercentage,
+      scrutinizedVotes: totalListVotes,
+      expectedVotes: totalActual,
+    },
     turnout:  { totalTheoretical, totalActual, totalValid, totalNull, totalBlank,
                 percentage: totalTheoretical > 0 ? (totalActual / totalTheoretical) * 100 : 0 },
     lists: listsAggregated,
