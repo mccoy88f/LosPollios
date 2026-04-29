@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { EntryContextNav } from '@/components/EntryContextNav'
+import EntrySectionLockToggle from './EntrySectionLockToggle'
 
 type Props = { params: Promise<{ electionId: string }> }
 
@@ -57,9 +58,12 @@ export default async function EntryIndexPage({ params }: Props) {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {sections.map((s) => {
+            const hasData = !!s.turnout || s.listResults.length > 0
             const colors = s.locked
               ? 'border-green-300 bg-green-50 text-green-800'
-              : 'border-orange-300 bg-orange-50 text-orange-800'
+              : hasData
+                ? 'border-orange-300 bg-orange-50 text-orange-800'
+                : 'border-gray-200 bg-white text-gray-700'
 
             return (
               <Link
@@ -69,8 +73,15 @@ export default async function EntryIndexPage({ params }: Props) {
               >
                 <div className="text-2xl font-bold">{s.number}</div>
                 <div className="text-xs mt-1 font-medium">
-                  {s.locked ? '✅ Scrutinio terminato' : '🟠 In corso'}
+                  {s.locked ? '✅ Scrutinio terminato' : hasData ? '🟠 In corso' : 'Da compilare'}
                 </div>
+                {session.role === 'admin' && (
+                  <EntrySectionLockToggle
+                    electionId={election.id}
+                    sectionId={s.id}
+                    locked={s.locked}
+                  />
+                )}
                 {s.turnout && (
                   <div className="text-xs mt-1 opacity-70">{s.turnout.votersActual} votanti</div>
                 )}

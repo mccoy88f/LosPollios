@@ -238,20 +238,6 @@ export default function SectionsPage() {
     load()
   }
 
-  async function toggleSectionLock(secId: number, currentlyLocked: boolean) {
-    const next = !currentlyLocked
-    if (next && !confirm('Chiudere questa sezione? I rappresentanti non potranno più modificare i dati inseriti.')) return
-    if (!next && !confirm('Riaprire la sezione ai rappresentanti?')) return
-    setSaving(true)
-    await fetch(`/api/elections/${id}/sections/${secId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locked: next }),
-    })
-    setSaving(false)
-    load()
-  }
-
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -484,18 +470,15 @@ export default function SectionsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionLock(s.id, s.locked)}
-                        disabled={saving}
-                        className={`text-xs font-medium px-2 py-1 rounded-lg border transition-colors disabled:opacity-60 ${
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded-lg border ${
                           s.locked
-                            ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                            : 'border-green-200 bg-green-50 text-green-800 hover:bg-green-100'
+                            ? 'border-green-200 bg-green-50 text-green-800'
+                            : 'border-orange-200 bg-orange-50 text-orange-800'
                         }`}
                       >
-                        {s.locked ? 'Chiusa · Riapri' : 'Aperta · Chiudi'}
-                      </button>
+                        {s.locked ? 'Scrutinio terminato' : 'In corso'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => { setEditId(s.id); setEditForm({ name: s.name || '', location: s.location || '', theoreticalVoters: String(s.theoreticalVoters) }) }}

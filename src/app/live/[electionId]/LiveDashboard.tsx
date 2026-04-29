@@ -92,18 +92,22 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
         <span className="text-sm text-gray-500">{counted} / {sections.length} chiuse (scrutinio terminato)</span>
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
-        {sections.map(s => (
-          <div
-            key={s.id}
-            title={`Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : 'In corso'}`}
-            className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors
-              ${s.locked ? 'bg-green-500 text-white' : 'bg-orange-400 text-orange-950'}`}
-          >
-            {s.number}
-          </div>
-        ))}
+        {sections.map(s => {
+          const hasData = s.hasTurnout || s.hasResults
+          return (
+            <div
+              key={s.id}
+              title={`Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : hasData ? 'In corso' : 'Da compilare'}`}
+              className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors
+              ${s.locked ? 'bg-green-500 text-white' : hasData ? 'bg-orange-400 text-orange-950' : 'bg-gray-100 text-gray-400'}`}
+            >
+              {s.number}
+            </div>
+          )
+        })}
       </div>
       <div className="flex gap-4 mt-3 text-xs text-gray-500">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border border-gray-200" /> Da compilare</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400 inline-block" /> In corso</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Scrutinio terminato (chiusa admin)</span>
       </div>
