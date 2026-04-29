@@ -100,7 +100,9 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
         {sections.map(s => {
-          const hasData = s.hasTurnout || s.hasResults
+          const hasTurnoutData = (s.votersActual ?? 0) > 0
+          const hasVotesData = s.hasResults
+          const hasData = hasTurnoutData || hasVotesData
           return (
             <div
               key={s.id}

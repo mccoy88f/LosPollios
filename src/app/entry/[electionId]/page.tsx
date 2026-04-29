@@ -58,7 +58,9 @@ export default async function EntryIndexPage({ params }: Props) {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {sections.map((s) => {
-            const hasData = !!s.turnout || s.listResults.length > 0
+            const hasTurnoutData = (s.turnout?.votersActual ?? 0) > 0
+            const hasVotesData = s.listResults.some(r => r.listVotes > 0)
+            const hasData = hasTurnoutData || hasVotesData
             const colors = s.locked
               ? 'border-green-300 bg-green-50 text-green-800'
               : hasData
