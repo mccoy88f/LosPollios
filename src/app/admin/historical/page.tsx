@@ -660,6 +660,19 @@ function ExpandedHistoricalElection({
     }
   }
 
+  async function deleteListRow(r: HistResult) {
+    if (!window.confirm(`Eliminare la lista «${r.listName}» dallo storico?`)) return
+    const res = await fetch(`/api/historical/results/${r.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      if (editingRowId === r.id) cancelEditRow()
+      if (expandCouncilId === r.id) setExpandCouncilId(null)
+      onReload()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      window.alert(d.error || 'Eliminazione lista non riuscita')
+    }
+  }
+
   async function suggestMayor(r: HistResult) {
     if (!r.candidateMayor?.trim()) return
     const res = await fetch(`/api/persons/suggestions?mayorLabel=${encodeURIComponent(r.candidateMayor)}`)
@@ -1046,14 +1059,24 @@ function ExpandedHistoricalElection({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={editingRowId != null && editingRowId !== r.id}
-                    onClick={() => startEditRow(r)}
-                    className="text-blue-600 text-sm font-medium hover:text-blue-800 disabled:opacity-40"
-                  >
-                    Modifica lista
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={editingRowId != null && editingRowId !== r.id}
+                      onClick={() => startEditRow(r)}
+                      className="text-blue-600 text-sm font-medium hover:text-blue-800 disabled:opacity-40"
+                    >
+                      Modifica lista
+                    </button>
+                    <button
+                      type="button"
+                      disabled={editingRowId != null}
+                      onClick={() => deleteListRow(r)}
+                      className="text-red-600 text-sm font-medium hover:text-red-800 disabled:opacity-40"
+                    >
+                      Elimina lista
+                    </button>
+                  </>
                 )}
               </div>
             </div>

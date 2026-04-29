@@ -72,3 +72,22 @@ export async function PUT(req: NextRequest, { params }: Params) {
   })
   return NextResponse.json(row)
 }
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const session = await getSession()
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+  }
+  const { resultId } = await params
+  const id = Number(resultId)
+  if (!Number.isFinite(id)) {
+    return NextResponse.json({ error: 'ID non valido' }, { status: 400 })
+  }
+
+  try {
+    await prisma.historicalListResult.delete({ where: { id } })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Riga lista non trovata' }, { status: 404 })
+  }
+}
