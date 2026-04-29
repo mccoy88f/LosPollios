@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       // Send initial keepalive
       controller.enqueue(encoder.encode(': keepalive\n\n'))
 
-      const unsubscribe = sseSubscribe(electionId, (data) => {
+      const sub = sseSubscribe(electionId, data => {
         const msg = `data: ${JSON.stringify(data)}\n\n`
         controller.enqueue(encoder.encode(msg))
       })
@@ -27,14 +27,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
           controller.enqueue(encoder.encode(': keepalive\n\n'))
         } catch {
           clearInterval(timer)
-          unsubscribe()
+          sub.close()
         }
       }, 25000)
 
       // Cleanup on close
       _req.signal.addEventListener('abort', () => {
         clearInterval(timer)
-        unsubscribe()
+        sub.close()
         try { controller.close() } catch {}
       })
     },

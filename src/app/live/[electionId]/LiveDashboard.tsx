@@ -19,6 +19,9 @@ interface SectionStatus {
   locked: boolean
   theoreticalVoters: number; hasTurnout: boolean; hasResults: boolean
   votersActual: number | null; turnoutPct: number | null
+  listVotesSum: number
+  ballotsValid: number | null
+  sectionWarnings: string[]
 }
 
 interface ResultsData {
@@ -34,6 +37,10 @@ interface ResultsData {
   turnout:   { totalTheoretical: number; totalActual: number; totalValid: number; totalNull: number; totalBlank: number; percentage: number }
   lists:     ListResult[]
   sectionStatus: SectionStatus[]
+  dataQuality?: {
+    sectionsWithDataWarnings: number
+    listVotesExceedRegisteredVoters: boolean
+  }
   lastUpdate: string
   /** Ultimo salvataggio DB (affluenza / voti lista / preferenze) */
   lastDataUpdateAt?: string | null
@@ -103,11 +110,15 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
           const hasTurnoutData = (s.votersActual ?? 0) > 0
           const hasVotesData = s.hasResults
           const hasData = hasTurnoutData || hasVotesData
+          const warn = s.sectionWarnings?.length ? s.sectionWarnings.join('\n') : ''
+          const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : hasData ? 'In corso' : 'Da compilare'}`
+          const title = warn ? `${titleBase}\n\n⚠ ${warn}` : titleBase
           return (
             <div
               key={s.id}
-              title={`Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : hasData ? 'In corso' : 'Da compilare'}`}
-              className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors
+              title={title}
+              className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors ring-2 ring-offset-1
+              ${s.sectionWarnings?.length ? 'ring-amber-500 ring-offset-gray-50' : 'ring-transparent'}
               ${s.locked ? 'bg-green-500 text-white' : hasData ? 'bg-orange-400 text-orange-950' : 'bg-gray-100 text-gray-400'}`}
             >
               {s.number}
@@ -119,6 +130,7 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border border-gray-200" /> Da compilare</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400 inline-block" /> In corso</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Scrutinio terminato (chiusa admin)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded ring-2 ring-amber-500 inline-block bg-transparent" /> Dato da verificare (tooltip sulla cella)</span>
       </div>
     </div>
   )
@@ -191,7 +203,7 @@ export default function LiveDashboard({
 
   if (!data) return <div className="p-8 text-center text-red-500">Elezione non trovata</div>
 
-  const { election, progress, turnout, lists, sectionStatus, lastDataUpdateAt } = data
+  const { election, progress, turnout, lists, sectionStatus, dataQuality, lastDataUpdateAt } = data
   const totalListVotes = lists.reduce((s, l) => s + l.votes, 0)
 
   const chartData = lists
@@ -293,6 +305,28 @@ export default function LiveDashboard({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {(dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0) && (
+          <div
+            role="status"
+            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          >
+            <p className="font-semibold">Controllo coerenza dati</p>
+            {dataQuality?.listVotesExceedRegisteredVoters && (
+              <p className="mt-1">
+                La somma dei voti di lista supera i votanti reali registrati in affluenza: verificare le sezioni o
+                l&apos;aggregato prima di usare le percentuali di scrutinio.
+              </p>
+            )}
+            {(dataQuality?.sectionsWithDataWarnings ?? 0) > 0 && (
+              <p className="mt-1">
+                {dataQuality!.sectionsWithDataWarnings === 1
+                  ? 'Una sezione presenta incongruenze'
+                  : `${dataQuality!.sectionsWithDataWarnings} sezioni presentano incongruenze`}{' '}
+                (schede valide, voti lista o preferenze). Passa il mouse sulle celle evidenziate in giallo nella griglia.
+              </p>
+            )}
+          </div>
+        )}
         {/* Turnout stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[

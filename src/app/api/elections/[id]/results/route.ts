@@ -70,19 +70,54 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return m
   }, new Map<number, typeof listResults>())
 
-  const sectionStatus = sections.map(sec => ({
-    id:               sec.id,
-    number:           sec.number,
-    name:             sec.name,
-    locked:           sec.locked,
-    theoreticalVoters: sec.theoreticalVoters,
-    hasTurnout:       turnoutBySection.has(sec.id),
-    hasResults:       resultsBySection.has(sec.id),
-    votersActual:     turnoutBySection.get(sec.id)?.votersActual ?? null,
-    turnoutPct:       sec.theoreticalVoters > 0 && turnoutBySection.has(sec.id)
-      ? (turnoutBySection.get(sec.id)!.votersActual / sec.theoreticalVoters) * 100
-      : null,
-  }))
+  const sectionStatus = sections.map(sec => {
+    const sectionResults = resultsBySection.get(sec.id) ?? []
+    const hasPositiveListVotes = sectionResults.some(r => r.listVotes > 0)
+    const hasPositivePreferences = sectionResults.some(r => r.preferences.some(p => p.votes > 0))
+    const listVotesSum = sectionResults.reduce((s, r) => s + r.listVotes, 0)
+    const turnoutRow = turnoutBySection.get(sec.id)
+    const ballotsValid = turnoutRow?.ballotsValid ?? null
+    const votersActual = turnoutRow?.votersActual ?? null
+
+    const sectionWarnings: string[] = []
+    if (listVotesSum > 0 && turnoutRow) {
+      if (ballotsValid != null && listVotesSum !== ballotsValid) {
+        sectionWarnings.push(
+          `Somma voti lista (${listVotesSum}) diversa da schede valide (${ballotsValid}).`
+        )
+      } else if (ballotsValid == null && votersActual != null && votersActual > 0 && listVotesSum !== votersActual) {
+        sectionWarnings.push(
+          `Somma voti lista (${listVotesSum}) diversa da votanti reali (${votersActual}); conviene compilare le schede valide.`
+        )
+      }
+    }
+    for (const r of sectionResults) {
+      const prefSum = r.preferences.reduce((s, p) => s + p.votes, 0)
+      if (r.listVotes > 0 && prefSum > r.listVotes) {
+        sectionWarnings.push(
+          `${r.list.name}: preferenze (${prefSum}) superiori ai voti lista (${r.listVotes}).`
+        )
+      }
+    }
+
+    return {
+      id: sec.id,
+      number: sec.number,
+      name: sec.name,
+      locked: sec.locked,
+      theoreticalVoters: sec.theoreticalVoters,
+      hasTurnout: turnoutBySection.has(sec.id),
+      // "Ha risultati" solo se c'e' almeno un dato voto reale (non semplice presenza righe a zero).
+      hasResults: hasPositiveListVotes || hasPositivePreferences,
+      votersActual,
+      listVotesSum,
+      ballotsValid,
+      sectionWarnings,
+      turnoutPct: sec.theoreticalVoters > 0 && turnoutBySection.has(sec.id)
+        ? (turnoutBySection.get(sec.id)!.votersActual / sec.theoreticalVoters) * 100
+        : null,
+    }
+  })
 
   const listsAggregated = election.lists.map(l => ({
     listId:        l.id,
@@ -103,6 +138,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const scrutinizedVotesPercentage =
     totalActual > 0 ? Math.min(100, (totalListVotes / totalActual) * 100) : 0
 
+  const dataQuality = {
+    sectionsWithDataWarnings: sectionStatus.filter(s => s.sectionWarnings.length > 0).length,
+    listVotesExceedRegisteredVoters: totalActual > 0 && totalListVotes > totalActual,
+  }
+
   return NextResponse.json({
     election: { id: election.id, name: election.name, commune: election.commune, date: election.date,
                 type: election.type, totalSeats: election.totalSeats, threshold: election.threshold,
@@ -118,6 +158,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
                 percentage: totalTheoretical > 0 ? (totalActual / totalTheoretical) * 100 : 0 },
     lists: listsAggregated,
     sectionStatus,
+    dataQuality,
     /** Istante di generazione della risposta (refresh client) */
     lastUpdate: new Date().toISOString(),
     /** Ultimo salvataggio su DB tra affluenza, voti lista e preferenze (sezioni) */
