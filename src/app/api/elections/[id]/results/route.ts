@@ -74,6 +74,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     id:               sec.id,
     number:           sec.number,
     name:             sec.name,
+    locked:           sec.locked,
     theoreticalVoters: sec.theoreticalVoters,
     hasTurnout:       turnoutBySection.has(sec.id),
     hasResults:       resultsBySection.has(sec.id),

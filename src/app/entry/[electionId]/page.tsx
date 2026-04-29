@@ -57,26 +57,19 @@ export default async function EntryIndexPage({ params }: Props) {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {sections.map((s) => {
-            const hasVotes  = s.listResults.length > 0
-            const hasTurnout = !!s.turnout
-            const status = hasVotes ? 'complete' : hasTurnout ? 'partial' : 'empty'
-            const colors = { complete: 'border-green-300 bg-green-50 text-green-800', partial: 'border-yellow-300 bg-yellow-50 text-yellow-800', empty: 'border-gray-200 bg-white text-gray-700' }
+            const colors = s.locked
+              ? 'border-green-300 bg-green-50 text-green-800'
+              : 'border-orange-300 bg-orange-50 text-orange-800'
 
             return (
               <Link
                 key={s.id}
                 href={`/entry/${electionId}/${s.id}`}
-                className={`rounded-xl border-2 p-4 text-center hover:shadow-md transition-all ${colors[status]}`}
+                className={`rounded-xl border-2 p-4 text-center hover:shadow-md transition-all ${colors}`}
               >
                 <div className="text-2xl font-bold">{s.number}</div>
                 <div className="text-xs mt-1 font-medium">
-                  {session.role === 'entry' && s.locked
-                    ? '🔒 Chiusa'
-                    : status === 'complete'
-                      ? '✓ Completata'
-                      : status === 'partial'
-                        ? '◐ Affluenza'
-                        : 'Da compilare'}
+                  {s.locked ? '✅ Scrutinio terminato' : '🟠 In corso'}
                 </div>
                 {s.turnout && (
                   <div className="text-xs mt-1 opacity-70">{s.turnout.votersActual} votanti</div>

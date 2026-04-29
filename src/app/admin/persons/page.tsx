@@ -8,12 +8,14 @@ interface PersonRow {
   firstName: string
   lastName: string
   notes: string | null
-  _count: { candidates: number; mayorForLists: number; historicalMayors: number }
+  _count: { candidates: number; mayorForLists: number; historicalMayors: number; historicalCouncilCandidates: number }
 }
 
 export default function PersonsPage() {
   const [persons, setPersons] = useState<PersonRow[]>([])
   const [form, setForm] = useState({ firstName: '', lastName: '', notes: '' })
+  const [editId, setEditId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '', notes: '' })
   const [msg, setMsg] = useState('')
   const [expandId, setExpandId] = useState<number | null>(null)
   const [trail, setTrail] = useState<{ kind: string; label: string; detail: string; year?: number }[] | null>(null)
@@ -50,6 +52,61 @@ export default function PersonsPage() {
     const res = await fetch(`/api/persons/${id}`)
     const data = await res.json()
     setTrail(data.timeline || [])
+  }
+
+  function startEdit(p: PersonRow) {
+    setEditId(p.id)
+    setEditForm({ firstName: p.firstName, lastName: p.lastName, notes: p.notes ?? '' })
+  }
+
+  function cancelEdit() {
+    setEditId(null)
+    setEditForm({ firstName: '', lastName: '', notes: '' })
+  }
+
+  async function saveEdit() {
+    if (!editId) return
+    setMsg('')
+    const res = await fetch(`/api/persons/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) {
+      setMsg('Anagrafica aggiornata')
+      cancelEdit()
+      load()
+    } else {
+      setMsg(data.error || 'Errore aggiornamento')
+    }
+  }
+
+  async function deletePerson(p: PersonRow) {
+    const refs =
+      p._count.candidates +
+      p._count.mayorForLists +
+      p._count.historicalMayors +
+      p._count.historicalCouncilCandidates
+    const warn =
+      refs > 0
+        ? `Questa anagrafica ha ${refs} collegamenti. Eliminando, i riferimenti verranno scollegati (personId = null). Continuare?`
+        : `Eliminare anagrafica ${p.lastName} ${p.firstName}?`
+    if (!window.confirm(warn)) return
+    setMsg('')
+    const res = await fetch(`/api/persons/${p.id}`, { method: 'DELETE' })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) {
+      setMsg('Anagrafica eliminata')
+      if (expandId === p.id) {
+        setExpandId(null)
+        setTrail(null)
+      }
+      if (editId === p.id) cancelEdit()
+      load()
+    } else {
+      setMsg(data.error || 'Errore eliminazione')
+    }
   }
 
   return (
@@ -121,16 +178,65 @@ export default function PersonsPage() {
                     <span className="text-xs text-gray-400 ml-2">#{p.id}</span>
                     <div className="text-xs text-gray-500 mt-1">
                       Consiglio: {p._count.candidates} · Sindaco lista: {p._count.mayorForLists} · Storico sindaco:{' '}
-                      {p._count.historicalMayors}
+                      {p._count.historicalMayors} · Storico candidati: {p._count.historicalCouncilCandidates}
                     </div>
+                    {editId === p.id && (
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          value={editForm.firstName}
+                          onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))}
+                          placeholder="Nome"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs"
+                        />
+                        <input
+                          value={editForm.lastName}
+                          onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))}
+                          placeholder="Cognome"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs"
+                        />
+                        <input
+                          value={editForm.notes}
+                          onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                          placeholder="Note"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openTrail(p.id)}
-                    className="text-xs text-indigo-600 hover:underline shrink-0"
-                  >
-                    {expandId === p.id ? 'Chiudi cronologia' : 'Cronologia'}
-                  </button>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {editId === p.id ? (
+                      <>
+                        <button type="button" onClick={saveEdit} className="text-xs text-blue-600 hover:underline">
+                          Salva
+                        </button>
+                        <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:underline">
+                          Annulla
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(p)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        Modifica
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => deletePerson(p)}
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      Elimina
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTrail(p.id)}
+                      className="text-xs text-indigo-600 hover:underline"
+                    >
+                      {expandId === p.id ? 'Chiudi cronologia' : 'Cronologia'}
+                    </button>
+                  </div>
                 </div>
                 {expandId === p.id && trail && (
                   <ul className="mt-3 text-xs text-gray-600 space-y-2 border-t border-gray-50 pt-3">

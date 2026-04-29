@@ -11,7 +11,14 @@ export async function GET() {
   const persons = await prisma.person.findMany({
     orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     include: {
-      _count: { select: { candidates: true, mayorForLists: true, historicalMayors: true } },
+      _count: {
+        select: {
+          candidates: true,
+          mayorForLists: true,
+          historicalMayors: true,
+          historicalCouncilCandidates: true,
+        },
+      },
     },
   })
   return NextResponse.json(persons)

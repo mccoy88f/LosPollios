@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
@@ -71,4 +71,52 @@ export async function GET(_req: Request, { params }: Params) {
   })
 
   return NextResponse.json({ person, timeline })
+}
+
+export async function PUT(req: NextRequest, { params }: Params) {
+  const session = await getSession()
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+  }
+  const { id } = await params
+  const personId = Number(id)
+  if (!Number.isFinite(personId)) {
+    return NextResponse.json({ error: 'ID non valido' }, { status: 400 })
+  }
+
+  const body = await req.json()
+  const firstName = String(body.firstName ?? '').trim()
+  const lastName = String(body.lastName ?? '').trim()
+  const notes = body.notes == null ? null : String(body.notes).trim() || null
+  if (!firstName || !lastName) {
+    return NextResponse.json({ error: 'Nome e cognome obbligatori' }, { status: 400 })
+  }
+
+  try {
+    const updated = await prisma.person.update({
+      where: { id: personId },
+      data: { firstName, lastName, notes },
+    })
+    return NextResponse.json(updated)
+  } catch {
+    return NextResponse.json({ error: 'Anagrafica non trovata' }, { status: 404 })
+  }
+}
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const session = await getSession()
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+  }
+  const { id } = await params
+  const personId = Number(id)
+  if (!Number.isFinite(personId)) {
+    return NextResponse.json({ error: 'ID non valido' }, { status: 400 })
+  }
+  try {
+    await prisma.person.delete({ where: { id: personId } })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Anagrafica non trovata' }, { status: 404 })
+  }
 }

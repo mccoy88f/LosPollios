@@ -16,6 +16,7 @@ interface ListResult {
 
 interface SectionStatus {
   id: number; number: number; name: string | null
+  locked: boolean
   theoreticalVoters: number; hasTurnout: boolean; hasResults: boolean
   votersActual: number | null; turnoutPct: number | null
 }
@@ -83,29 +84,28 @@ function CoalitionSummary({ lists }: { lists: ListResult[] }) {
 }
 
 function SectionGrid({ sections }: { sections: SectionStatus[] }) {
-  const counted = sections.filter(s => s.hasTurnout).length
+  const counted = sections.filter(s => s.locked).length
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900">Sezioni</h3>
-        <span className="text-sm text-gray-500">{counted} / {sections.length} scrutinate</span>
+        <span className="text-sm text-gray-500">{counted} / {sections.length} chiuse (scrutinio terminato)</span>
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
         {sections.map(s => (
           <div
             key={s.id}
-            title={`Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`}
+            title={`Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : 'In corso'}`}
             className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors
-              ${s.hasResults ? 'bg-green-500 text-white' : s.hasTurnout ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-100 text-gray-400'}`}
+              ${s.locked ? 'bg-green-500 text-white' : 'bg-orange-400 text-orange-950'}`}
           >
             {s.number}
           </div>
         ))}
       </div>
       <div className="flex gap-4 mt-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Con voti</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-400 inline-block" /> Solo affluenza</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block" /> Non iniziata</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400 inline-block" /> In corso</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Scrutinio terminato (chiusa admin)</span>
       </div>
     </div>
   )
