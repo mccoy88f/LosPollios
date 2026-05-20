@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Vote } from 'lucide-react'
 
 const STATUS_LABEL: Record<string, string> = { setup: 'Configurazione', active: 'Attiva', closed: 'Chiusa' }
 const STATUS_COLOR: Record<string, string> = { setup: 'bg-yellow-100 text-yellow-800', active: 'bg-green-100 text-green-800', closed: 'bg-gray-100 text-gray-700' }
@@ -86,7 +86,7 @@ export default async function AdminPage() {
 
       {empty ? (
         <div className="text-center py-24 text-gray-400">
-          <p className="text-5xl mb-4">🗳️</p>
+          <Vote className="w-12 h-12 mx-auto mb-4 text-gray-300" aria-hidden />
           <p className="font-medium text-gray-600">Nessuna elezione configurata</p>
           <p className="text-sm mt-1">Crea la prima elezione per iniziare</p>
         </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -403,10 +404,9 @@ export default function SectionsPage() {
               className="border border-gray-300 rounded-lg px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="es. 800" />
           </div>
-          <button onClick={bulkCreate} disabled={!bulkCount || saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
+          <Button type="button" onClick={bulkCreate} disabled={!bulkCount || saving}>
             Crea sezioni
-          </button>
+          </Button>
         </div>
         <p className="text-xs text-gray-400 mt-2">Le sezioni esistenti non vengono sovrascritte. Puoi modificarle singolarmente.</p>
       </div>
@@ -508,10 +508,9 @@ export default function SectionsPage() {
               />
             </div>
           ))}
-          <button onClick={addSection} disabled={!newForm.number || saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium text-sm">
+          <Button type="button" onClick={addSection} disabled={!newForm.number || saving}>
             Aggiungi
-          </button>
+          </Button>
         </div>
       </details>
     </div>

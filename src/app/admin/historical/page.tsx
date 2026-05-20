@@ -830,7 +830,7 @@ function ExpandedHistoricalElection({
           type="button"
           disabled={listAddBusy || mergeBusy || editingRowId != null}
           onClick={() => addListRow()}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+          className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
           title="Aggiunge una nuova lista nello spoglio con voti, percentuale e seggi (dati macro)"
         >
           {listAddBusy ? '…' : '+ Nuova riga voti lista'}
@@ -939,7 +939,7 @@ function ExpandedHistoricalElection({
             type="button"
             disabled={metaSaving || !meta.name.trim() || !meta.commune.trim()}
             onClick={() => saveMeta()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-10 px-4 text-sm gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {metaSaving ? 'Salvataggio…' : 'Salva dati elezione'}
           </button>
@@ -1220,7 +1220,7 @@ function ExpandedHistoricalElection({
             type="button"
             disabled={listAddBusy || mergeBusy || editingRowId != null}
             onClick={() => addListRow()}
-            className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+            className="shrink-0 inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {listAddBusy ? '…' : '+ Nuova riga voti lista'}
           </button>
@@ -1528,7 +1528,7 @@ export default function HistoricalPage() {
             Torna ai dati storici
           </Link>
         ) : (
-          <Link href="/admin/historical/add" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+          <Link href="/admin/historical/add" className="inline-flex items-center justify-center font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 h-8 px-3 text-xs">
             + Aggiungi
           </Link>
         )}
@@ -1781,7 +1781,7 @@ export default function HistoricalPage() {
             <button
               onClick={save}
               disabled={(storicoDestination === 'new' && (!form.name || !form.commune)) || saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="w-full inline-flex items-center justify-center font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 h-11 px-5 text-sm disabled:opacity-70"
             >
               {saving ? 'Salvataggio...' : storicoDestination === 'new' ? 'Salva elezione storica' : 'Importa su elezione archiviata'}
             </button>

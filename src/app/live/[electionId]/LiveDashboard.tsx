@@ -8,6 +8,8 @@ import { SiteTopNav } from '@/components/SiteTopNav'
 import { Alert } from '@/components/ui/Alert'
 import { SectionStatusBadge, sectionLiveCellClasses } from '@/components/ui/SectionStatusBadge'
 import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
+import { LiveMetricsHeader } from '@/components/live/LiveMetricsHeader'
+import { Crown } from 'lucide-react'
 
 interface ListResult {
   listId: number; listName: string; shortName: string | null; color: string
@@ -71,7 +73,7 @@ function CoalitionSummary({ lists }: { lists: ListResult[] }) {
           {coalitions.map((c, i) => (
             <div key={c.name} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
               <div className="flex items-center gap-2">
-                {i === 0 && <span className="text-yellow-500">👑</span>}
+                {i === 0 && <Crown className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />}
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.color }} />
                 <div>
                   <div className="font-medium text-sm text-gray-900">{c.mayor || c.name}</div>
@@ -230,82 +232,17 @@ export default function LiveDashboard({
           { label: 'Analisi', href: `/dashboard/${electionId}` },
         ]}
       />
-      <div className="bg-blue-900 text-white py-6 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-2xl font-bold">{election.name}</h1>
-              <p className="text-blue-200">{commune}</p>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold">{progress.percentage.toFixed(1)}%</div>
-                <div className="text-blue-200 text-xs">Voti scrutinati</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">{formatPercent(turnout.percentage)}</div>
-                <div className="text-blue-200 text-xs">Affluenza</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">{progress.sectionsCounted}/{progress.totalSections}</div>
-                <div className="text-blue-200 text-xs">Sezioni</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-4 bg-blue-900/50 rounded-full h-3">
-            <div
-              className="bg-green-400 h-3 rounded-full transition-all duration-500"
-              style={{ width: `${progress.percentage}%` }}
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs text-blue-200 mt-1">
-            <span>
-              {formatNumber(progress.scrutinizedVotes)} / {formatNumber(progress.expectedVotes)} voti scrutinati
-            </span>
-            {lastPulse && (
-              <span className="flex items-center gap-1 justify-center">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" /> Pagina ·{' '}
-                {lastPulse.toLocaleTimeString('it-IT')}
-              </span>
-            )}
-            <span>{progress.sectionsCounted}/{progress.totalSections} sezioni con affluenza</span>
-          </div>
-          <div className="mt-2 text-center text-xs text-blue-200/95">
-            {lastDataUpdateAt ? (
-              <>
-                Ultimo salvataggio dati:{' '}
-                <time dateTime={lastDataUpdateAt}>
-                  {new Date(lastDataUpdateAt).toLocaleString('it-IT', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })}
-                </time>
-                {' · '}
-              </>
-            ) : null}
-            <Link href={`/live/${electionId}/aggiornamenti`} className="underline hover:text-white font-medium">
-              Cronologia aggiornamenti
-            </Link>
-          </div>
-          {lists.some(l => l.candidates.length > 0) && (
-            <div className="mt-4 text-center">
-              <Link
-                href={`/live/${electionId}/preferenze`}
-                className="inline-block text-sm font-medium text-white bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors"
-              >
-                Distribuzione preferenze e confronto storico →
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <LiveMetricsHeader
+          electionName={election.name}
+          commune={commune}
+          progress={progress}
+          turnout={turnout}
+          lastPulse={lastPulse}
+          lastDataUpdateAt={lastDataUpdateAt}
+          electionId={electionId}
+          showPreferenzeLink={lists.some(l => l.candidates.length > 0)}
+        />
         {(dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0) && (
           <Alert variant="warning" title="Controllo coerenza dati">
             {dataQuality?.listVotesExceedRegisteredVoters && (

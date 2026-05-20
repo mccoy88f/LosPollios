@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/Button'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -263,10 +264,9 @@ export default function ListsPage() {
           </div>
         </div>
         <div className="flex gap-3 mt-4">
-          <button onClick={saveList} disabled={!form.name || saving}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+          <Button type="button" onClick={saveList} disabled={!form.name || saving}>
             {editId ? 'Aggiorna' : 'Aggiungi lista'}
-          </button>
+          </Button>
           {editId && (
             <button onClick={() => { setEditId(null); setForm({ ...emptyList }) }}
               className="border border-gray-300 px-5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">

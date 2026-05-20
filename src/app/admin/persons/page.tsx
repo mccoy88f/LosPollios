@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { buttonClassName } from '@/components/ui/buttonStyles'
 
 interface PersonRow {
   id: number
@@ -157,9 +159,9 @@ export default function PersonsPage() {
               placeholder="es. ex sindaco, professione…"
             />
           </div>
-          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <Button type="submit">
             Crea / trova omonimo
-          </button>
+          </Button>
           <p className="text-xs text-gray-400">
             Se esiste già stesso nome e cognome (ignorando maiuscole), viene riutilizzato il record esistente.
           </p>

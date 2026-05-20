@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
 
 export default function NewElectionPage() {
   const router = useRouter()
@@ -121,10 +122,9 @@ export default function NewElectionPage() {
         {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors">
+          <Button type="submit" disabled={loading} size="lg">
             {loading ? 'Creazione...' : 'Crea elezione'}
-          </button>
+          </Button>
           <Link href="/admin" className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
             Annulla
           </Link>

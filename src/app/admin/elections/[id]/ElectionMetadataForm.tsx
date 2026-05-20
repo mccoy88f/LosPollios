@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toElectionDateInputValue } from '@/lib/utils'
+import { Button } from '@/components/ui/Button'
 
 type Initial = {
   name: string
@@ -178,13 +179,9 @@ export default function ElectionMetadataForm({
       </div>
       {error && <div className="text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2">{error}</div>}
       {saved && !error && <div className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">Modifiche salvate.</div>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-      >
+      <Button type="submit" disabled={loading}>
         {loading ? 'Salvataggio…' : 'Salva dati elezione'}
-      </button>
+      </Button>
     </form>
   )
 }

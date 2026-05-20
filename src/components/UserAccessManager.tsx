@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { confirmDelete } from '@/lib/confirmDelete'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
+import { Card, CardBody, CardTitle } from '@/components/ui/Card'
+import { Drawer } from '@/components/ui/Drawer'
+import { SectionPicker, UserEditFields } from '@/components/UserEditFields'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { Pencil, Trash2 } from 'lucide-react'
 
 type Section = { id: number; number: number; name: string | null }
@@ -50,6 +54,8 @@ export function UserAccessManager({
   const [editForm, setEditForm] = useState({ ...emptyForm, password: '', active: true })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const editingUser = editingId != null ? users.find(u => u.id === editingId) : null
 
   const effectiveElectionId = fixedElectionId ?? (form.electionId ? Number(form.electionId) : null)
   const editElectionId =
@@ -99,10 +105,6 @@ export function UserAccessManager({
   }
   function setEf(k: string, v: string | number[] | boolean) {
     setEditForm(f => ({ ...f, [k]: v }))
-  }
-
-  function toggleSectionId(ids: number[], id: number): number[] {
-    return ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
   }
 
   async function createUser() {
@@ -194,42 +196,13 @@ export function UserAccessManager({
     }
   }
 
-  function SectionPicker({
-    selected,
-    onChange,
-    disabled,
-  }: {
-    selected: number[]
-    onChange: (ids: number[]) => void
-    disabled?: boolean
-  }) {
-    if (sections.length === 0) {
-      return <p className="text-xs text-gray-400">Seleziona un&apos;elezione per scegliere le sezioni.</p>
-    }
-    return (
-      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border border-gray-100 rounded-lg p-2">
-        {sections.map(s => (
-          <label key={s.id} className="inline-flex items-center gap-1 text-xs text-gray-700">
-            <input
-              type="checkbox"
-              checked={selected.includes(s.id)}
-              disabled={disabled}
-              onChange={() => onChange(toggleSectionId(selected, s.id))}
-            />
-            Sez. {s.number}
-            {s.name ? ` (${s.name})` : ''}
-          </label>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {msg && <Alert variant="info">{msg}</Alert>}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">Nuovo utente</h2>
+      <Card>
+        <CardBody>
+        <CardTitle className="mb-4">Nuovo utente</CardTitle>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[['Username *', 'username', 'text'], ['Password *', 'password', 'password'], ['Nome', 'name', 'text']].map(
             ([label, key, type]) => (
@@ -296,7 +269,7 @@ export function UserAccessManager({
             <label className="block text-xs text-gray-500 mb-1">
               Sezioni consentite (vuoto = tutte le sezioni dell&apos;elezione)
             </label>
-            <SectionPicker selected={form.sectionIds} onChange={ids => setF('sectionIds', ids)} />
+            <SectionPicker sections={sections} selected={form.sectionIds} onChange={ids => setF('sectionIds', ids)} />
           </div>
         )}
         <Button
@@ -307,9 +280,44 @@ export function UserAccessManager({
         >
           Crea utente
         </Button>
+        </CardBody>
+      </Card>
+
+      {/* Mobile: elenco card */}
+      <div className="lg:hidden space-y-3">
+        {users.map(u => (
+          <Card key={u.id}>
+            <CardBody className="py-4 space-y-2">
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <p className="font-mono font-medium text-gray-900">{u.username}</p>
+                  <p className="text-sm text-gray-600">{u.name || '—'}</p>
+                  <p className="text-xs text-gray-500">{u.role}{u.list ? ` · ${u.list.name}` : ''}</p>
+                </div>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'}`}
+                >
+                  {u.active ? 'Attivo' : 'Off'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Sezioni: {u.sectionIds.length === 0 ? 'Tutte' : u.sections.map(s => s.number).join(', ')}
+              </p>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="ghost" size="sm" icon={<Pencil className="w-3.5 h-3.5" />} onClick={() => startEdit(u)}>
+                  Modifica
+                </Button>
+                <Button type="button" variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => void removeUser(u)}>
+                  Elimina
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        ))}
+        {users.length === 0 && <p className="text-center text-gray-400 py-8">Nessun utente</p>}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <Card className="hidden lg:block overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -324,106 +332,22 @@ export function UserAccessManager({
           <tbody>
             {users.map(u => (
               <tr key={u.id} className="border-b border-gray-100 last:border-0 align-top">
-                {editingId === u.id ? (
+                {isDesktop && editingId === u.id ? (
                   <td colSpan={fixedElectionId ? 5 : 6} className="px-4 py-4 bg-gray-50">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Username</label>
-                        <input
-                          value={editForm.username}
-                          onChange={e => setEf('username', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Nuova password (opz.)</label>
-                        <input
-                          type="password"
-                          value={editForm.password}
-                          onChange={e => setEf('password', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Nome</label>
-                        <input
-                          value={editForm.name}
-                          onChange={e => setEf('name', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Ruolo</label>
-                        <select
-                          value={editForm.role}
-                          onChange={e => setEf('role', e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                        >
-                          <option value="entry">Inserimento</option>
-                          <option value="viewer">Visualizzazione</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </div>
-                      {showElectionPicker && !fixedElectionId && (
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Elezione</label>
-                          <select
-                            value={editForm.electionId}
-                            onChange={e => setEf('electionId', e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
-                          >
-                            <option value="">— Admin —</option>
-                            {elections.map(e => (
-                              <option key={e.id} value={e.id}>
-                                {e.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      {editForm.role !== 'admin' && editElectionId && (
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Lista</label>
-                          <select
-                            value={editForm.listId}
-                            onChange={e => setEf('listId', e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
-                          >
-                            <option value="">— Nessuna —</option>
-                            {lists.map(l => (
-                              <option key={l.id} value={l.id}>
-                                {l.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                    {editForm.role !== 'admin' && editElectionId && (
-                      <div className="mt-3">
-                        <label className="block text-xs text-gray-500 mb-1">Sezioni consentite</label>
-                        <SectionPicker
-                          selected={editForm.sectionIds}
-                          onChange={ids => setEf('sectionIds', ids)}
-                        />
-                      </div>
-                    )}
-                    <label className="inline-flex items-center gap-2 mt-3 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={editForm.active}
-                        onChange={e => setEf('active', e.target.checked)}
-                      />
-                      Account attivo
-                    </label>
-                    <div className="flex gap-2 mt-4">
-                      <Button type="button" onClick={() => void saveEdit()} disabled={saving}>
-                        Salva
-                      </Button>
-                      <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
-                        Annulla
-                      </Button>
-                    </div>
+                    <UserEditFields
+                      form={editForm}
+                      setField={setEf}
+                      sections={sections}
+                      lists={lists}
+                      elections={elections}
+                      showElectionPicker={showElectionPicker}
+                      fixedElectionId={fixedElectionId}
+                      editElectionId={editElectionId}
+                      showActiveToggle
+                      saving={saving}
+                      onSave={() => void saveEdit()}
+                      onCancel={() => setEditingId(null)}
+                    />
                   </td>
                 ) : (
                   <>
@@ -485,7 +409,31 @@ export function UserAccessManager({
             )}
           </tbody>
         </table>
-      </div>
+      </Card>
+
+      <Drawer
+        open={!isDesktop && editingId != null}
+        onClose={() => setEditingId(null)}
+        title={editingUser ? `Modifica · ${editingUser.username}` : 'Modifica utente'}
+      >
+        {editingId != null && (
+          <UserEditFields
+            form={editForm}
+            setField={setEf}
+            sections={sections}
+            lists={lists}
+            elections={elections}
+            showElectionPicker={showElectionPicker}
+            fixedElectionId={fixedElectionId}
+            editElectionId={editElectionId}
+            showActiveToggle
+            saving={saving}
+            onSave={() => void saveEdit()}
+            onCancel={() => setEditingId(null)}
+          />
+        )}
+      </Drawer>
+
       <p className="text-xs text-gray-500">
         Gli utenti «Inserimento» senza sezioni selezionate possono accedere a tutte le sezioni dell&apos;elezione assegnata.
         Con una o più sezioni spuntate l&apos;accesso è limitato solo a quelle.
