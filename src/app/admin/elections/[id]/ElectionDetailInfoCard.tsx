@@ -122,7 +122,7 @@ export default function ElectionDetailInfoCard({
         <strong>Per sezione:</strong> nella pagina{' '}
         <Link
           href={`/admin/elections/${electionId}/sections`}
-          className="text-blue-600 hover:text-blue-800 font-medium underline underline-offset-2"
+          className="text-brand-600 hover:text-brand-800 font-medium underline underline-offset-2"
         >
           Sezioni
         </Link>{' '}

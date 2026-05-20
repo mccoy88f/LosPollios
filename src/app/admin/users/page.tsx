@@ -5,7 +5,7 @@ export default function AdminUsersPage() {
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300 mx-2">/</span>

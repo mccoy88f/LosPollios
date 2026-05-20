@@ -242,13 +242,13 @@ export default function SectionsPage() {
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300" aria-hidden>
           /
         </span>
-        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:underline">
+        <Link href={`/admin/elections/${id}`} className="text-brand-600 hover:underline">
           Scheda elezione
         </Link>
         <span className="text-gray-300" aria-hidden>
@@ -452,7 +452,7 @@ export default function SectionsPage() {
                     <td className="px-4 py-2 text-right text-gray-400">-</td>
                     <td className="px-4 py-2 text-center text-gray-400">—</td>
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => saveEdit(s.id)} className="text-blue-600 hover:text-blue-800 font-medium mr-2">Salva</button>
+                      <button onClick={() => saveEdit(s.id)} className="text-brand-600 hover:text-brand-800 font-medium mr-2">Salva</button>
                       <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600">Annulla</button>
                     </td>
                   </>
@@ -482,7 +482,7 @@ export default function SectionsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => { setEditId(s.id); setEditForm({ name: s.name || '', location: s.location || '', theoreticalVoters: String(s.theoreticalVoters) }) }}
-                        className="text-blue-600 hover:text-blue-800 text-xs font-medium mr-3">Modifica</button>
+                        className="text-brand-600 hover:text-brand-800 text-xs font-medium mr-3">Modifica</button>
                       <button onClick={() => deleteSection(s.id)} className="text-red-400 hover:text-red-600 text-xs font-medium">Elimina</button>
                     </td>
                   </>

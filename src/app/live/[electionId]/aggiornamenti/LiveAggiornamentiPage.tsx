@@ -221,7 +221,7 @@ export default function LiveAggiornamentiPage({
         </div>
 
         <p className="text-center text-xs text-gray-400 pb-6">
-          <Link href={`/live/${electionId}`} className="text-blue-600 hover:underline">
+          <Link href={`/live/${electionId}`} className="text-brand-600 hover:underline">
             ← Torna alla live
           </Link>
         </p>

@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Alert } from '@/components/ui/Alert'
+import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav'
+import { Button } from '@/components/ui/Button'
+import { Card, CardBody, CardTitle } from '@/components/ui/Card'
+import { buttonClassName } from '@/components/ui/buttonStyles'
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import {
   downloadHistoricalElectionPrefillXlsx,
   downloadHistoricalExcelTemplate,
@@ -992,7 +998,7 @@ function ExpandedHistoricalElection({
                             type="button"
                             onClick={() => bumpListVotes(r)}
                             disabled={editingRowId != null || mergeBusy}
-                            className="w-7 h-7 rounded border border-blue-200 text-blue-700 text-sm leading-none hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-7 h-7 rounded border border-brand-200 text-brand-700 text-sm leading-none hover:bg-brand-50 disabled:opacity-40 disabled:cursor-not-allowed"
                             aria-label="Aumenta voti di lista di 1"
                           >
                             +
@@ -1011,7 +1017,7 @@ function ExpandedHistoricalElection({
                             const v = ev.target.value
                             await patchMayor(r, v ? parseInt(v, 10) : null)
                           }}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-brand-500"
                         >
                           <option value="">—</option>
                           {persons.map(p => (
@@ -1046,7 +1052,7 @@ function ExpandedHistoricalElection({
                     <button
                       type="button"
                       onClick={() => saveRow()}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="text-sm font-medium text-brand-600 hover:text-brand-800"
                     >
                       Salva
                     </button>
@@ -1064,7 +1070,7 @@ function ExpandedHistoricalElection({
                       type="button"
                       disabled={editingRowId != null && editingRowId !== r.id}
                       onClick={() => startEditRow(r)}
-                      className="text-blue-600 text-sm font-medium hover:text-blue-800 disabled:opacity-40"
+                      className="text-brand-600 text-sm font-medium hover:text-brand-800 disabled:opacity-40"
                     >
                       Modifica lista
                     </button>
@@ -1089,7 +1095,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.listName}
                       onChange={ev => setRowDraft(d => d && { ...d, listName: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
@@ -1097,7 +1103,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.coalition}
                       onChange={ev => setRowDraft(d => d && { ...d, coalition: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
@@ -1105,7 +1111,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.candidateMayor}
                       onChange={ev => setRowDraft(d => d && { ...d, candidateMayor: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
@@ -1113,7 +1119,7 @@ function ExpandedHistoricalElection({
                     <select
                       value={rowDraft.mayorPersonId}
                       onChange={ev => setRowDraft(d => d && { ...d, mayorPersonId: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
                       <option value="">—</option>
                       {persons.map(p => (
@@ -1133,7 +1139,7 @@ function ExpandedHistoricalElection({
                             d && { ...d, votes: String((parseInt(d.votes, 10) || 0) + 1) },
                           )
                         }
-                        className="w-9 h-9 shrink-0 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+                        className="w-9 h-9 shrink-0 rounded-lg border border-brand-200 text-brand-700 hover:bg-brand-50"
                         aria-label="Aumenta voti di 1"
                       >
                         +
@@ -1143,7 +1149,7 @@ function ExpandedHistoricalElection({
                         min={0}
                         value={rowDraft.votes}
                         onChange={ev => setRowDraft(d => d && { ...d, votes: ev.target.value })}
-                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
                   </div>
@@ -1152,7 +1158,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.percentage}
                       onChange={ev => setRowDraft(d => d && { ...d, percentage: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <div>
@@ -1160,7 +1166,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.seats}
                       onChange={ev => setRowDraft(d => d && { ...d, seats: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="—"
                     />
                   </div>
@@ -1171,7 +1177,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.listLogoUrl}
                       onChange={ev => setRowDraft(d => d && { ...d, listLogoUrl: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="https://…"
                     />
                   </div>
@@ -1180,7 +1186,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.coalitionLogoUrl}
                       onChange={ev => setRowDraft(d => d && { ...d, coalitionLogoUrl: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="https://…"
                     />
                   </div>
@@ -1189,7 +1195,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.notes}
                       onChange={ev => setRowDraft(d => d && { ...d, notes: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="Opzionale"
                     />
                   </div>
@@ -1211,7 +1217,7 @@ function ExpandedHistoricalElection({
             )}
           </div>
         ))}
-        <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="rounded-lg border border-dashed border-brand-200 bg-brand-50/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-gray-700 max-w-xl">
             Per aggiungere <strong>un&apos;altra lista</strong> con i suoi voti di lista, percentuale e seggi, usa il + qui
             sotto (stesso comando del pulsante blu in alto).
@@ -1511,61 +1517,59 @@ export default function HistoricalPage() {
   }
 
   return (
-    <div>
-      <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:text-blue-800 hover:underline">
-          Elezioni
-        </Link>
-        <span className="text-gray-300" aria-hidden>
-          /
-        </span>
-        <span className="text-gray-900 font-medium">Dati storici</span>
-      </nav>
+    <div className="max-w-5xl mx-auto">
+      <BreadcrumbNav
+        items={[
+          { label: 'Elezioni', href: '/admin' },
+          { label: 'Dati storici' },
+        ]}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Elezioni storiche</h1>
         {isAddMode ? (
-          <Link href="/admin/historical" className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-3 py-2 rounded-lg text-sm font-medium">
+          <Link href="/admin/historical" className={buttonClassName('secondary', 'sm')}>
             Torna ai dati storici
           </Link>
         ) : (
-          <Link href="/admin/historical/add" className="inline-flex items-center justify-center font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 h-8 px-3 text-xs">
-            + Aggiungi
+          <Link href="/admin/historical/add" className={buttonClassName('primary', 'sm', 'gap-1.5')}>
+            <Plus className="w-4 h-4" aria-hidden />
+            Aggiungi
           </Link>
         )}
       </div>
 
       {isAddMode && archivedElections.length > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 mb-6">
-          <h2 className="font-semibold text-amber-950 text-sm mb-2">Elezioni archiviate (dati operativi)</h2>
-          <p className="text-xs text-amber-900 mb-2">
+        <Alert variant="warning" title="Elezioni archiviate (dati operativi)" className="mb-6">
+          <p className="text-sm mb-2">
             Puoi importare il <strong>macro Eligendo</strong> e il dettaglio <strong>candidati da Excel</strong> sulla stessa elezione, poi modificare liste e preferenze come per un’elezione attiva dalla{' '}
-            <Link href="/admin" className="underline font-medium text-indigo-800">
+            <Link href="/admin" className="underline font-medium text-brand-800">
               dashboard elezioni
             </Link>
             .
           </p>
-          <ul className="text-sm text-amber-950 space-y-1">
+          <ul className="text-sm space-y-1">
             {archivedElections.map(a => (
               <li key={a.id}>
-                <Link href={`/admin/elections/${a.id}`} className="text-indigo-700 hover:underline font-medium">
+                <Link href={`/admin/elections/${a.id}`} className="text-brand-700 hover:underline font-medium">
                   {a.name}
                 </Link>
-                <span className="text-amber-800/80">
+                <span className="opacity-80">
                   {' '}
                   · {a.commune} · {new Date(a.date).getFullYear()}
                 </span>
               </li>
             ))}
           </ul>
-        </div>
+        </Alert>
       )}
 
-      {isAddMode && msg && <div className="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
-      {isAddMode && importErr && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-2 mb-4">{importErr}</div>}
+      {isAddMode && msg && <Alert variant="success" className="mb-4">{msg}</Alert>}
+      {isAddMode && importErr && <Alert variant="error" className="mb-4">{importErr}</Alert>}
 
       {isAddMode && (
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6">
-        <h2 className="font-semibold text-indigo-900 mb-2">Importa da Eligendo (Ministero dell&apos;Interno)</h2>
+      <Card className="mb-6 border-indigo-200 bg-indigo-50/80">
+        <CardBody>
+        <CardTitle className="text-indigo-900 mb-2">Importa da Eligendo (Ministero dell&apos;Interno)</CardTitle>
         <p className="text-sm text-indigo-800 mb-3">
           Incolla il link della pagina di risultati comunali dall&apos;{' '}
           <a
@@ -1607,26 +1611,22 @@ export default function HistoricalPage() {
             placeholder="https://elezionistorico.interno.gov.it/index.php?..."
             className="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm bg-white"
           />
-          <button
-            type="button"
-            disabled={eligendoBusy}
-            onClick={() => previewEligendo()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
+          <Button type="button" disabled={eligendoBusy} onClick={() => previewEligendo()} className="bg-indigo-600 hover:bg-indigo-700 border-transparent">
             {eligendoBusy && !eligendoPreview ? 'Lettura…' : 'Anteprima'}
-          </button>
+          </Button>
           {eligendoPreview && (
-            <button
+            <Button
               type="button"
+              variant="primary"
               disabled={
                 eligendoBusy ||
                 (!!eligendoPreview.macroTarget && !eligendoPreview.macroTarget.canImport)
               }
               onClick={() => confirmEligendoImport()}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium"
+              className="bg-emerald-600 hover:bg-emerald-700 border-transparent"
             >
               Conferma import
-            </button>
+            </Button>
           )}
         </div>
         {eligendoPreview && (
@@ -1706,15 +1706,17 @@ export default function HistoricalPage() {
             </div>
           </div>
         )}
-      </div>
+        </CardBody>
+      </Card>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {isAddMode && (
         <>
         {/* Add form */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Aggiungi elezione storica</h2>
+        <Card>
+          <CardBody>
+          <CardTitle className="mb-4">Aggiungi elezione storica</CardTitle>
           <div className="space-y-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Destinazione salvataggio</label>
@@ -1739,7 +1741,7 @@ export default function HistoricalPage() {
                 <label className="block text-xs text-gray-500 mb-1">{label}</label>
                 <input type={type} value={(form as Record<string, string>)[key]} onChange={e => setF(key, e.target.value)}
                   placeholder={ph}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
             ))}
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
@@ -1775,7 +1777,7 @@ export default function HistoricalPage() {
               <label className="block text-xs text-gray-500 mb-1">Anteprima / modifica testo (una riga per lista)</label>
               <p className="text-xs text-gray-400 mb-1">Formato: NomeLista;Coalizione;CandidatoSindaco;Voti;%Voti;Seggi</p>
               <textarea value={resultLines} onChange={e => setResultLines(e.target.value)} rows={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder={"Lista Civica;Centro-Sinistra;Mario Rossi;3200;28.5;10\nPartito Blu;Centro-Destra;Anna Verdi;2800;24.9;9"} />
             </div>
             <button
@@ -1786,7 +1788,8 @@ export default function HistoricalPage() {
               {saving ? 'Salvataggio...' : storicoDestination === 'new' ? 'Salva elezione storica' : 'Importa su elezione archiviata'}
             </button>
           </div>
-        </div>
+        </CardBody>
+        </Card>
         </>
         )}
 
@@ -1804,7 +1807,11 @@ export default function HistoricalPage() {
                   <h3 className="font-semibold text-gray-900">{e.name}</h3>
                   <p className="text-sm text-gray-500">{e.commune} · {e.year} · {e.results.length} liste</p>
                 </div>
-                <span className="text-gray-400 text-sm">{expandId === e.id ? '▲' : '▼'}</span>
+                {expandId === e.id ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" aria-hidden />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" aria-hidden />
+                )}
               </button>
               {expandId === e.id && (
                 <ExpandedHistoricalElection

@@ -70,14 +70,14 @@ export default async function SectionEntryPage({ params }: Props) {
       />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div className="bg-blue-50 border border-brand-200 rounded-xl p-4 mb-6">
           <div className="flex justify-between items-start">
             <div>
               <h2 className="font-semibold text-blue-900">Sezione {section.number} {section.name ? `– ${section.name}` : ''}</h2>
               {section.location && <p className="text-blue-700 text-sm">{section.location}</p>}
             </div>
             <div className="text-right">
-              <p className="text-xs text-blue-600">Aventi diritto al voto</p>
+              <p className="text-xs text-brand-600">Aventi diritto al voto</p>
               <p className="text-2xl font-bold text-blue-900">{section.theoreticalVoters.toLocaleString('it-IT')}</p>
             </div>
           </div>

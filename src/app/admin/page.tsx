@@ -44,7 +44,7 @@ function ElectionCard({
         <Link href={`/dashboard/${e.id}`} className="text-sm text-purple-600 hover:text-purple-700 font-medium px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors">
           Analisi
         </Link>
-        <Link href={`/admin/elections/${e.id}`} className="text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+        <Link href={`/admin/elections/${e.id}`} className="text-sm text-brand-600 hover:text-brand-700 font-medium px-3 py-1.5 border border-brand-200 rounded-lg hover:bg-brand-50 transition-colors">
           Gestisci
         </Link>
       </div>

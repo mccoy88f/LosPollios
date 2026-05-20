@@ -7,6 +7,13 @@ import {
 } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { SiteTopNav } from '@/components/SiteTopNav'
+import { Alert } from '@/components/ui/Alert'
+import { Button } from '@/components/ui/Button'
+import { Card, CardBody } from '@/components/ui/Card'
+import { TabBar } from '@/components/ui/TabBar'
+import { buttonClassName } from '@/components/ui/buttonStyles'
+import Link from 'next/link'
+import { Calendar, Crown, Landmark, RefreshCw, TrendingUp } from 'lucide-react'
 
 interface HistResult { id: number; listName: string; coalition: string | null; candidateMayor: string | null; votes: number; percentage: number; seats: number | null }
 interface HistElection { id: number; name: string; commune: string; year: number; results: HistResult[] }
@@ -241,59 +248,46 @@ export default function AnalysisDashboard({
         ]}
         contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
       />
-      <div className="bg-slate-100 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <p className="text-gray-700">
-            <span className="font-medium text-gray-900">{electionName}</span>
-            <span className="text-gray-400 mx-2">·</span>
-            {commune}
-          </p>
-          <div className="flex items-center gap-3">
-            <span className="bg-white border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700">
-              {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
-            </span>
-            <button
-              type="button"
-              onClick={fetchProj}
-              className="bg-blue-800 hover:bg-blue-900 text-white px-3 py-1.5 rounded-lg transition-colors"
-            >
-              ↻ Aggiorna
-            </button>
-          </div>
-        </div>
-      </div>
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <Card>
+          <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{electionName}</h1>
+              <p className="text-sm text-gray-500">{commune}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700 tabular-nums">
+                {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
+              </span>
+              <Button type="button" variant="secondary" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={fetchProj}>
+                Aggiorna
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Tab nav */}
-        <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-6 w-fit">
-          {[['seats', '🏛️ Seggi attuali'], ['projection', '📈 Proiezione finale'], ['history', '📅 Confronto storico']].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key as typeof tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-blue-700 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'seats', label: 'Seggi attuali', icon: Landmark },
+            { id: 'projection', label: 'Proiezione finale', icon: TrendingUp },
+            { id: 'history', label: 'Confronto storico', icon: Calendar },
+          ]}
+        />
 
         {tab === 'seats' && (
           <div className="space-y-6">
             {/* Runoff warning */}
             {proj.current.needsRunoff && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3">
-                <span className="text-2xl">⚠️</span>
-                <div>
-                  <p className="font-semibold text-yellow-800">Ballottaggio previsto</p>
-                  <p className="text-yellow-700 text-sm">Nessun candidato ha superato il 50% dei voti. Si procederà al secondo turno.</p>
-                </div>
-              </div>
+              <Alert variant="warning" title="Ballottaggio previsto">
+                Nessun candidato ha superato il 50% dei voti. Si procederà al secondo turno.
+              </Alert>
             )}
             {proj.current.mayorElected && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-                <span className="text-2xl">🏆</span>
-                <div>
-                  <p className="font-semibold text-green-800">Sindaco eletto al primo turno</p>
-                  <p className="text-green-700 text-xl font-bold">{proj.current.mayorElected}</p>
-                </div>
-              </div>
+              <Alert variant="success" title="Sindaco eletto al primo turno">
+                <p className="text-lg font-bold">{proj.current.mayorElected}</p>
+              </Alert>
             )}
 
             <SeatChart seats={proj.current.seats} totalSeats={councilSeats} title="Proiezione seggi – dati attuali" />
@@ -307,7 +301,7 @@ export default function AnalysisDashboard({
                     {proj.current.coalitions.map((c, i) => (
                       <div key={c.coalition} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                         <div className="flex items-center gap-2">
-                          {i === 0 && <span>👑</span>}
+                          {i === 0 && <Crown className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />}
                           <div>
                             <p className="font-semibold text-sm">{c.candidateMayor || c.coalition}</p>
                             {c.candidateMayor && <p className="text-xs text-gray-500">{c.coalition}</p>}
@@ -345,12 +339,10 @@ export default function AnalysisDashboard({
 
         {tab === 'projection' && (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-blue-800 text-sm">
-                <strong>Proiezione basata su {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)</strong><br />
-                I voti finali sono estrapolati proporzionalmente dalle sezioni già scrutinate.
-              </p>
-            </div>
+            <Alert variant="info" title="Metodo di proiezione">
+              Basato su <strong>{proj.sectionsCounted} / {proj.totalSections}</strong> sezioni ({proj.coverage.toFixed(1)}%).
+              I voti finali sono estrapolati proporzionalmente dalle sezioni già scrutinate.
+            </Alert>
 
             <SeatChart seats={proj.projected.seats} totalSeats={councilSeats} title="Proiezione seggi – stima voti finali" />
 
@@ -383,13 +375,15 @@ export default function AnalysisDashboard({
         {tab === 'history' && (
           <div className="space-y-6">
             {historicalElections.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
-                <p className="text-3xl mb-3">📅</p>
-                <p>Nessun dato storico disponibile per questo comune.</p>
-                <a href="/admin/historical" className="text-blue-600 hover:underline text-sm mt-2 block">
-                  Aggiungi dati storici →
-                </a>
-              </div>
+              <Card>
+                <CardBody className="py-12 text-center text-gray-500">
+                  <Calendar className="w-10 h-10 mx-auto mb-3 text-gray-300" aria-hidden />
+                  <p>Nessun dato storico disponibile per questo comune.</p>
+                  <Link href="/admin/historical" className={buttonClassName('ghost', 'sm', 'mt-4 inline-flex')}>
+                    Aggiungi dati storici →
+                  </Link>
+                </CardBody>
+              </Card>
             ) : (
               <>
                 <HistoricalComparison current={proj.current.seats} historical={historicalElections} />

@@ -31,6 +31,13 @@ L’amministratore crea gli account collegati a un’elezione. Esistono **tre ru
 
 Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema impedisce di accedere all’inserimento di un’altra elezione se non si è autorizzati.
 
+### Accesso e limiti operativi
+
+- **Login obbligatorio** su tutte le pagine e le API (eccetto login e logout): senza sessione valida si viene reindirizzati alla pagina di accesso.
+- Ogni utente non amministratore è associato a **una sola elezione** alla volta.
+- L’amministratore può **limitare le sezioni** modificabili da un operatore (solo le sezioni assegnate compaiono in inserimento dati; i tentativi su altre sezioni sono bloccati).
+- L’**amministratore** gestisce tutti gli account (creazione, modifica, eliminazione) dall’area admin, anche quelli di altre elezioni.
+
 ---
 
 ## Pagine e funzioni principali (per l’utente)
@@ -45,13 +52,13 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati possono essere aggiornati man mano che si ricevono nuove comunicazioni dai seggi.
 
 - **Vista live**  
-  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio (pubblica o semi-pubblica, a seconda di come viene diffuso il link).
+  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Mostra avvisi di **coerenza dati** (es. sezioni con affluenza ma senza voti, o viceversa) e lo stato di ogni sezione (da fare, in corso, completa). Sottopagine per **preferenze** e **cronologia aggiornamenti**.
 
 - **Dashboard analisi**  
-  Visione più analitica di risultati aggregati e proiezioni utili a chi coordina o commenta l’esito.
+  Visione analitica con schede per **seggi attuali**, **proiezione finale** (estrapolazione sulle sezioni già scrutinate) e **confronto storico** con elezioni passate dello stesso comune.
 
-- **Storico**  
-  Consultazione di **elezioni archiviate** con i relativi risultati, senza mescolarle con l’elezione corrente.
+- **Storico (admin)**  
+  Gestione di **elezioni storiche** in tabella dedicata: inserimento manuale, import da **Excel** o da link **Eligendo** (Ministero dell’Interno), modifica liste/candidati/preferenze. Si può anche applicare il macro Eligendo a un’**elezione archiviata** (dati operativi) e completarla da admin come un’elezione normale.
 
 ---
 
@@ -66,7 +73,18 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
 
 ## Note per chi installa o ospita il sistema
 
-Per sviluppatori e sistemisti: il progetto è un’applicazione **Next.js** con **Prisma** e database SQL. Nello stack Docker il database è un server **PostgreSQL** preconfigurato; in sviluppo locale puoi comunque usare una `DATABASE_URL` personalizzata. Comandi utili: `npm run dev` (sviluppo), `npm run build` (build), script `db:*` per gestione schema e seed.
+Per sviluppatori e sistemisti: il progetto è un’applicazione **Next.js 15** con **Prisma** e **PostgreSQL**. Interfaccia con componenti condivisi (pulsanti, card, avvisi, badge stato sezione) e palette **brand** per la navigazione; i colori delle liste restano quelli elettorali nei grafici e nello spoglio.
+
+Comandi utili:
+
+| Comando | Uso |
+|---------|-----|
+| `npm run dev` | Sviluppo locale |
+| `npm run build` | Build di produzione |
+| `npm run db:push` | Allinea lo schema al DB (sviluppo) |
+| `npm run db:reset` | Reset DB + seed (solo dev) |
+
+In sviluppo serve un file `.env` con almeno `DATABASE_URL` e `JWT_SECRET`.
 
 ### PWA (installazione su telefono)
 
@@ -76,8 +94,9 @@ Dopo il deploy, apri il sito dal telefono: dal menu del browser (Chrome: *Instal
 
 ### Database server, concorrenza e “live”
 
-- **Scritture/letture:** con PostgreSQL le scritture concorrenti e le letture live sono gestite nativamente meglio di un file DB locale, utile quando più operatori inseriscono dati in parallelo.
-- **Tempo reale:** gli aggiornamenti alla vista live usano **SSE in memoria sullo stesso processo Node**. Con **un solo** container/istanza va bene; con **più repliche** Docker ogni istanza ha memoria separata: servirebbe un bus condiviso (es. Redis) per notifiche cross-istanza — scenario da pianificare solo se replichi l’app.
+- **Scritture/letture:** PostgreSQL gestisce bene più operatori che inseriscono sezioni in parallelo.
+- **Tempo reale (SSE):** quando i risultati cambiano, l’app invia un evento tramite **`pg_notify`** sul canale `lospollios_election_sse`; ogni istanza Node che serve la vista live fa **`LISTEN`** sullo stesso database. Così le notifiche funzionano anche con **più repliche** dell’app dietro un load balancer, purché condividano lo **stesso Postgres**. Il payload NOTIFY ha un limite (~8 KB): aggiornamenti molto grandi potrebbero non essere propagati (caso raro in uso normale).
+- **Qualità dati:** l’API risultati segnala anomalie (sezione “con dati” solo con affluenza a zero, progresso voti distorto, ecc.) e la UI live le mostra in evidenza.
 
 ### Docker e Portainer
 
@@ -98,7 +117,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 | **`ADMIN_PASSWORD`** | `admin123` — password iniziale dell'admin; cambiala subito in produzione. |
 | **`ADMIN_NAME`** | `Amministratore` — nome visualizzato per l'utente admin iniziale. |
 
-**Primo avvio Docker:** l’entrypoint applica `prisma db push` e crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza caricare dati demo di elezioni/liste/sezioni.
+**Primo avvio Docker:** l’entrypoint esegue `prisma migrate deploy` (con fallback a `db push` se il DB è legacy o alla prima installazione), poi crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza dati demo di elezioni/liste/sezioni.
 
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 

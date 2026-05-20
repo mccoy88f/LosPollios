@@ -272,7 +272,7 @@ export default function LiveDashboard({
             <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4">
               <p className="text-xs text-gray-500 mb-1">{s.label}</p>
               <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-              {s.sub && <p className="text-sm text-blue-600 font-medium">{s.sub}</p>}
+              {s.sub && <p className="text-sm text-brand-600 font-medium">{s.sub}</p>}
             </div>
           ))}
         </div>
@@ -349,7 +349,7 @@ export default function LiveDashboard({
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h3 className="font-semibold text-gray-900">Preferenze candidati (aggregate)</h3>
-              <Link href={`/live/${electionId}/preferenze`} className="text-sm text-blue-600 hover:underline font-medium">
+              <Link href={`/live/${electionId}/preferenze`} className="text-sm text-brand-600 hover:underline font-medium">
                 Apri dettaglio con grafici →
               </Link>
             </div>
@@ -393,7 +393,9 @@ export default function LiveDashboard({
         )}
 
         <div className="text-center text-xs text-gray-400 pb-4">
-          <a href={`/dashboard/${electionId}`} className="text-blue-600 hover:underline">Vai all&apos;analisi dettagliata e proiezioni seggi →</a>
+          <Link href={`/dashboard/${electionId}`} className="text-sm text-brand-600 hover:underline font-medium">
+            Vai all&apos;analisi dettagliata e proiezioni seggi →
+          </Link>
         </div>
       </div>
     </div>

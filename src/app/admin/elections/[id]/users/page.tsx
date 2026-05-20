@@ -11,13 +11,13 @@ export default function ElectionUsersPage() {
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300" aria-hidden>
           /
         </span>
-        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:underline">
+        <Link href={`/admin/elections/${id}`} className="text-brand-600 hover:underline">
           Scheda elezione
         </Link>
         <span className="text-gray-300" aria-hidden>
@@ -25,7 +25,7 @@ export default function ElectionUsersPage() {
         </span>
         <span className="text-gray-900 font-medium">Accessi</span>
         <span className="text-gray-300 hidden sm:inline">·</span>
-        <Link href="/admin/users" className="text-blue-600 hover:underline text-xs">
+        <Link href="/admin/users" className="text-brand-600 hover:underline text-xs">
           Tutti gli account →
         </Link>
       </nav>

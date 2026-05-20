@@ -266,7 +266,7 @@ export default function LivePreferenzePage({
         )}
 
         <div className="text-center pb-8">
-          <Link href={`/live/${electionId}`} className="text-blue-600 hover:underline text-sm">
+          <Link href={`/live/${electionId}`} className="text-brand-600 hover:underline text-sm">
             ← Torna alla live
           </Link>
         </div>

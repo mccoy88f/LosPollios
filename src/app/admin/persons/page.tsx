@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { buttonClassName } from '@/components/ui/buttonStyles'
 
 interface PersonRow {
   id: number
@@ -114,7 +113,7 @@ export default function PersonsPage() {
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300">/</span>
@@ -208,7 +207,7 @@ export default function PersonsPage() {
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     {editId === p.id ? (
                       <>
-                        <button type="button" onClick={saveEdit} className="text-xs text-blue-600 hover:underline">
+                        <button type="button" onClick={saveEdit} className="text-xs text-brand-600 hover:underline">
                           Salva
                         </button>
                         <button type="button" onClick={cancelEdit} className="text-xs text-gray-500 hover:underline">
@@ -219,7 +218,7 @@ export default function PersonsPage() {
                       <button
                         type="button"
                         onClick={() => startEdit(p)}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-brand-600 hover:underline"
                       >
                         Modifica
                       </button>

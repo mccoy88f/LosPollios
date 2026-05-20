@@ -170,13 +170,13 @@ export default function ListsPage() {
   return (
     <div>
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300" aria-hidden>
           /
         </span>
-        <Link href={`/admin/elections/${id}`} className="text-blue-600 hover:underline">
+        <Link href={`/admin/elections/${id}`} className="text-brand-600 hover:underline">
           Scheda elezione
         </Link>
         <span className="text-gray-300" aria-hidden>
@@ -313,7 +313,7 @@ export default function ListsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-400">{list.candidates.length} candidati</span>
                   <button onClick={() => { setEditId(list.id); setForm({ name: list.name, shortName: list.shortName || '', color: list.color, listLogoUrl: list.listLogoUrl || '', coalitionLogoUrl: list.coalitionLogoUrl || '', candidateMayor: list.candidateMayor || '', mayorPersonId: list.mayorPersonId ? String(list.mayorPersonId) : '', coalition: list.coalition || '', order: String(list.order), notes: '' }) }}
-                    className="text-blue-600 text-xs hover:text-blue-800 font-medium">Modifica</button>
+                    className="text-brand-600 text-xs hover:text-brand-800 font-medium">Modifica</button>
                   <button onClick={() => setExpandId(expandId === list.id ? null : list.id)}
                     className="text-indigo-600 text-xs hover:text-indigo-800 font-medium">
                     {expandId === list.id ? 'Chiudi' : 'Candidati'}

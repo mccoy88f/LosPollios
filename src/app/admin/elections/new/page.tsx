@@ -48,7 +48,7 @@ export default function NewElectionPage() {
   return (
     <div className="max-w-2xl">
       <nav className="text-sm text-gray-500 mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Link href="/admin" className="text-blue-600 hover:underline">
+        <Link href="/admin" className="text-brand-600 hover:underline">
           Elezioni
         </Link>
         <span className="text-gray-300" aria-hidden>
