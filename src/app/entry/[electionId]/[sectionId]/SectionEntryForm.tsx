@@ -50,7 +50,7 @@ export default function SectionEntryForm({
     ]))
   )
 
-  const [showPrefs, setShowPrefs] = useState<Record<number, boolean>>({})
+  const [openListId, setOpenListId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
@@ -74,9 +74,28 @@ export default function SectionEntryForm({
     const current = Number(preferences[listId]?.[candidateId]) || 0
     setPreference(listId, candidateId, String(current + 1))
   }
+  function decrementPreference(listId: number, candidateId: number) {
+    const current = Number(preferences[listId]?.[candidateId]) || 0
+    setPreference(listId, candidateId, String(Math.max(0, current - 1)))
+  }
   function incrementListVote(listId: number) {
     const current = Number(listVotes[listId]) || 0
     setListVote(listId, String(current + 1))
+  }
+  function decrementListVote(listId: number) {
+    const current = Number(listVotes[listId]) || 0
+    setListVote(listId, String(Math.max(0, current - 1)))
+  }
+
+  function togglePreferences(listId: number) {
+    if (openListId === listId) {
+      setOpenListId(null)
+      return
+    }
+    setOpenListId(listId)
+    requestAnimationFrame(() => {
+      document.getElementById(`list-panel-${listId}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
   }
 
   const totalListVotes = Object.values(listVotes).reduce((s, v) => s + (Number(v) || 0), 0)
@@ -220,10 +239,17 @@ export default function SectionEntryForm({
             const v = Number(listVotes[list.id]) || 0
             const total = validBallots || totalListVotes
             const pct = total > 0 ? (v / total) * 100 : 0
+            const isOpen = openListId === list.id
 
             return (
-              <div key={list.id} className="border border-gray-100 rounded-xl p-3">
-                <div className="flex items-center gap-3">
+              <div
+                key={list.id}
+                id={`list-panel-${list.id}`}
+                className={`border rounded-xl p-3 transition-shadow ${
+                  isOpen ? 'border-indigo-200 shadow-md ring-1 ring-indigo-100' : 'border-gray-100'
+                }`}
+              >
+                <div className={`flex items-center gap-3 ${isOpen ? 'sticky top-0 z-10 bg-white pb-2 -mx-1 px-1' : ''}`}>
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
@@ -256,39 +282,66 @@ export default function SectionEntryForm({
                       className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="0"
                     />
+                    <button
+                      type="button"
+                      onClick={() => decrementListVote(list.id)}
+                      disabled={readOnly}
+                      className="w-7 h-7 rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                      aria-label={`Diminuisci voti di lista per ${list.name}`}
+                    >
+                      −
+                    </button>
                   </div>
                 </div>
 
-                {/* Preferences toggle */}
+                {/* Preferenze: una lista aperta, scroll solo nell'area candidati */}
                 {list.candidates.length > 0 && (
                   <div className="mt-2">
-                    <button type="button" onClick={() => setShowPrefs(m => ({ ...m, [list.id]: !m[list.id] }))}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                      {showPrefs[list.id] ? '▲ Nascondi preferenze' : '▼ Preferenze candidati'}
+                    <button
+                      type="button"
+                      onClick={() => togglePreferences(list.id)}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                    >
+                      {isOpen ? '▲ Nascondi preferenze' : '▼ Preferenze candidati'}
                     </button>
-                    {showPrefs[list.id] && (
-                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {list.candidates.map(c => (
-                          <div key={c.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-                            <span className="text-xs text-gray-700 flex-1">{c.order}. {c.lastName} {c.firstName}</span>
-                            <button
-                              type="button"
-                              onClick={() => incrementPreference(list.id, c.id)}
-                              disabled={readOnly}
-                              className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                              aria-label={`Aumenta preferenze per ${c.lastName} ${c.firstName}`}
-                            >
-                              +
-                            </button>
-                            <input
-                              type="number" min="0" value={preferences[list.id]?.[c.id] ?? ''}
-                              onChange={e => setPreference(list.id, c.id, e.target.value)}
-                              disabled={readOnly}
-                              className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                              placeholder="0"
-                            />
-                          </div>
-                        ))}
+                    {isOpen && (
+                      <div className="mt-2 max-h-[min(55vh,22rem)] overflow-y-auto overscroll-contain pr-1 border-t border-indigo-50 pt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {list.candidates.map(c => (
+                            <div key={c.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+                              <span className="text-xs text-gray-700 flex-1">
+                                {c.order}. {c.lastName} {c.firstName}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => incrementPreference(list.id, c.id)}
+                                disabled={readOnly}
+                                className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                                aria-label={`Aumenta preferenze per ${c.lastName} ${c.firstName}`}
+                              >
+                                +
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                value={preferences[list.id]?.[c.id] ?? ''}
+                                onChange={e => setPreference(list.id, c.id, e.target.value)}
+                                disabled={readOnly}
+                                className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                placeholder="0"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => decrementPreference(list.id, c.id)}
+                                disabled={readOnly}
+                                className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                                aria-label={`Diminuisci preferenze per ${c.lastName} ${c.firstName}`}
+                              >
+                                −
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

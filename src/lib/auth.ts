@@ -13,6 +13,20 @@ export interface JwtPayload {
   role: string
   electionId?: number
   listId?: number
+  /** Se definito e non vuoto: solo queste sezioni per inserimento */
+  allowedSectionIds?: number[]
+}
+
+export async function requireSession(): Promise<JwtPayload> {
+  const session = await getSession()
+  if (!session) throw new Error('UNAUTHORIZED')
+  return session
+}
+
+export async function requireAdmin(): Promise<JwtPayload> {
+  const session = await requireSession()
+  if (session.role !== 'admin') throw new Error('FORBIDDEN')
+  return session
 }
 
 export async function signToken(payload: JwtPayload): Promise<string> {

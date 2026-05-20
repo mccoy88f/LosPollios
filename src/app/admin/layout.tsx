@@ -11,10 +11,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <SiteTopNav
         primaryLinks={[
           { label: 'Elezioni', href: '/admin' },
+          { label: 'Accessi', href: '/admin/users' },
           { label: 'Anagrafica', href: '/admin/persons' },
           { label: 'Dati storici', href: '/admin/historical' },
         ]}
-        contextLinks={[{ label: 'Home pubblica', href: '/' }]}
+        contextLinks={[{ label: 'Home', href: '/' }]}
         username={session.username}
         showLogout
       />

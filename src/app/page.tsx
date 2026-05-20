@@ -74,16 +74,7 @@ export default async function HomePage() {
                 {session.role === 'admin' ? 'Gestisci elezioni e configurazione' : 'Inserisci i voti della tua sezione'}
               </p>
             </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
-            >
-              <div className="text-3xl mb-3">🔐</div>
-              <h3 className="text-white font-semibold">Accedi</h3>
-              <p className="text-blue-200 text-sm mt-1">Login per rappresentanti e admin</p>
-            </Link>
-          )}
+          ) : null}
 
           {allElections.length > 0 && (
             <Link

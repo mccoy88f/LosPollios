@@ -1,3 +1,7 @@
+export function confirmDelete(message: string): boolean {
+  return window.confirm(message)
+}
+
 /**
  * Due passaggi di conferma obbligatori prima di eliminazioni irreversibili (elezioni).
  */

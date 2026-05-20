@@ -56,6 +56,7 @@ model Section {
 
   turnout           SectionTurnout?
   listResults       SectionListResult[]
+  userSections      UserSection[]
 
   @@unique([electionId, number])
   @@index([electionId])
@@ -196,6 +197,19 @@ model User {
   list       ElectionList? @relation(fields: [listId], references: [id], onDelete: SetNull)
   active     Boolean       @default(true)
   createdAt  DateTime      @default(now())
+  /** Sezioni consentite per inserimento; vuoto = tutte le sezioni dell'elezione */
+  allowedSections UserSection[]
+}
+
+/** Limita un utente entry/viewer a una o più sezioni dell'elezione collegata */
+model UserSection {
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectionId Int
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, sectionId])
+  @@index([sectionId])
 }
 
 // ─── Elezioni storiche ───────────────────────────────────────────────────────

@@ -2,13 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { ssePublish } from '@/lib/sse'
+import { assertEntryCanWriteSection } from '@/lib/userAccess'
 
 type Params = { params: Promise<{ id: string; sectionId: string }> }
 
 // GET: ritorna i dati già inseriti per questa sezione
 export async function GET(_req: NextRequest, { params }: Params) {
+  const session = await getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Autenticazione richiesta' }, { status: 401 })
+  }
+
   const { id, sectionId } = await params
   const electionId = Number(id)
+  const secId = Number(sectionId)
+
+  const access = await assertEntryCanWriteSection(session, electionId, secId)
+  if (!access.ok && session.role === 'entry') {
+    return NextResponse.json({ error: access.error }, { status: access.status })
+  }
 
   const section = await prisma.section.findUnique({
     where: { id: Number(sectionId) },
@@ -43,6 +55,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { id, sectionId } = await params
   const electionId = Number(id)
   const secId = Number(sectionId)
+
+  const access = await assertEntryCanWriteSection(session, electionId, secId)
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status })
+  }
+
   const body = await req.json()
 
   const sectionRow = await prisma.section.findUnique({
@@ -101,8 +119,13 @@ export async function POST(req: NextRequest, { params }: Params) {
       })
     }
 
+    const listsPayload =
+      session.role === 'entry' && session.listId
+        ? (body.lists ?? []).filter((lr: { listId: number }) => Number(lr.listId) === session.listId)
+        : (body.lists ?? [])
+
     // Upsert list results
-    for (const lr of (body.lists ?? [])) {
+    for (const lr of listsPayload) {
       const result = await tx.sectionListResult.upsert({
         where: { sectionId_listId: { sectionId: secId, listId: Number(lr.listId) } },
         update: { listVotes: Number(lr.listVotes), enteredBy: username },

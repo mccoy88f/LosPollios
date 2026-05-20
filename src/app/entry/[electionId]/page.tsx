@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
@@ -22,8 +23,17 @@ export default async function EntryIndexPage({ params }: Props) {
     redirect('/')
   }
 
+  let allowedSectionIds: number[] | null = null
+  if (session.role === 'entry') {
+    allowedSectionIds =
+      session.allowedSectionIds ?? (await getAllowedSectionIdsForUser(session.userId))
+  }
+
   const sections = await prisma.section.findMany({
-    where: { electionId: election.id },
+    where: {
+      electionId: election.id,
+      ...(allowedSectionIds?.length ? { id: { in: allowedSectionIds } } : {}),
+    },
     orderBy: { number: 'asc' },
     include: {
       turnout: true,

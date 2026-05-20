@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,11 +22,19 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Errore'); return }
+      if (!res.ok) {
+        setError(data.error || 'Errore')
+        return
+      }
 
       const user = data.user
+      const next = searchParams.get('next')
+      if (next && next.startsWith('/') && !next.startsWith('/login')) {
+        router.push(next)
+        return
+      }
       if (user.role === 'admin') router.push('/admin')
-      else if (user.role === 'entry') router.push(`/entry/${user.electionId}`)
+      else if (user.role === 'entry' && user.electionId) router.push(`/entry/${user.electionId}`)
       else router.push('/')
     } finally {
       setLoading(false)
@@ -66,9 +75,7 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
           </div>
-          {error && (
-            <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>
-          )}
+          {error && <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
           <button
             type="submit"
             disabled={loading}
@@ -79,5 +86,19 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[100dvh] grid place-items-center bg-gradient-to-br from-blue-900 to-indigo-900 text-white">
+          Caricamento…
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }

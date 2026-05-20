@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/db'
 import { signToken, setTokenCookie } from '@/lib/auth'
+import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 
 export async function POST(req: NextRequest) {
   const { username, password } = await req.json()
@@ -20,17 +21,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Password errata' }, { status: 401 })
   }
 
+  const allowed = await getAllowedSectionIdsForUser(user.id)
+  const allowedSectionIds = allowed ?? undefined
+
   const token = await signToken({
     userId: user.id,
     username: user.username,
     role: user.role,
     electionId: user.electionId ?? undefined,
     listId: user.listId ?? undefined,
+    allowedSectionIds,
   })
 
   const res = NextResponse.json({
-    user: { id: user.id, username: user.username, name: user.name, role: user.role,
-            electionId: user.electionId, listId: user.listId },
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      electionId: user.electionId,
+      listId: user.listId,
+      allowedSectionIds: allowed,
+    },
   })
   res.cookies.set(setTokenCookie(token))
   return res

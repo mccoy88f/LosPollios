@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { assertEntryCanWriteSection } from '@/lib/userAccess'
 import { redirect, notFound } from 'next/navigation'
 import SectionEntryForm from './SectionEntryForm'
 import { EntryContextNav } from '@/components/EntryContextNav'
@@ -21,6 +22,11 @@ export default async function SectionEntryPage({ params }: Props) {
     redirect('/')
   }
 
+  const access = await assertEntryCanWriteSection(session, election.id, Number(sectionId))
+  if (!access.ok && session.role === 'entry') {
+    redirect(`/entry/${electionId}`)
+  }
+
   const section = await prisma.section.findUnique({
     where: { id: Number(sectionId) },
     include: {
@@ -33,6 +39,11 @@ export default async function SectionEntryPage({ params }: Props) {
   if (!section) notFound()
 
   const readOnly = session.role === 'entry' && section.locked
+
+  const listsForForm =
+    session.role === 'entry' && session.listId
+      ? election.lists.filter(l => l.id === session.listId)
+      : election.lists
 
   // Existing data
   const existingTurnout = section.turnout ? {
@@ -81,7 +92,7 @@ export default async function SectionEntryPage({ params }: Props) {
           electionId={Number(electionId)}
           sectionId={Number(sectionId)}
           readOnly={readOnly}
-          lists={election.lists.map(l => ({
+          lists={listsForForm.map(l => ({
             id: l.id,
             name: l.name,
             color: l.color,
