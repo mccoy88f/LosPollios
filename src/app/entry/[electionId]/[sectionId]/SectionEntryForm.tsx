@@ -1,6 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { Alert } from '@/components/ui/Alert'
+import { Card, CardBody, CardTitle } from '@/components/ui/Card'
+import { NumberStepper } from '@/components/ui/NumberStepper'
+import { cn } from '@/lib/cn'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
 
 interface Candidate { id: number; firstName: string; lastName: string; order: number }
 interface ListData { id: number; name: string; color: string; candidateMayor: string | null; candidates: Candidate[] }
@@ -13,7 +19,6 @@ interface Props {
   existingTurnout: { votersActual: number; ballotsValid?: number; ballotsNull?: number; ballotsBlank?: number } | null
   existingListResults: ListResult[]
   theoreticalVoters: number
-  /** Solo per ruolo entry: sezione bloccata dall’admin */
   readOnly?: boolean
 }
 
@@ -61,30 +66,9 @@ export default function SectionEntryForm({
   const needsResaveRef = useRef(false)
 
   function setTurn(k: string, v: string) { setTurnout(t => ({ ...t, [k]: v })) }
-  function setListVote(listId: number, value: string) {
-    setListVotes(m => ({ ...m, [listId]: value }))
-  }
+  function setListVote(listId: number, value: string) { setListVotes(m => ({ ...m, [listId]: value })) }
   function setPreference(listId: number, candidateId: number, value: string) {
-    setPreferences(m => ({
-      ...m,
-      [listId]: { ...(m[listId] || {}), [candidateId]: value },
-    }))
-  }
-  function incrementPreference(listId: number, candidateId: number) {
-    const current = Number(preferences[listId]?.[candidateId]) || 0
-    setPreference(listId, candidateId, String(current + 1))
-  }
-  function decrementPreference(listId: number, candidateId: number) {
-    const current = Number(preferences[listId]?.[candidateId]) || 0
-    setPreference(listId, candidateId, String(Math.max(0, current - 1)))
-  }
-  function incrementListVote(listId: number) {
-    const current = Number(listVotes[listId]) || 0
-    setListVote(listId, String(current + 1))
-  }
-  function decrementListVote(listId: number) {
-    const current = Number(listVotes[listId]) || 0
-    setListVote(listId, String(Math.max(0, current - 1)))
+    setPreferences(m => ({ ...m, [listId]: { ...(m[listId] || {}), [candidateId]: value } }))
   }
 
   function togglePreferences(listId: number) {
@@ -160,209 +144,200 @@ export default function SectionEntryForm({
     }
     setDirty(true)
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(() => {
-      void persistData()
-    }, 500)
-
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
+    saveTimeoutRef.current = setTimeout(() => { void persistData() }, 500)
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }
   }, [turnout, listVotes, preferences, readOnly])
 
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [])
+  useEffect(() => () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }, [])
 
-  function saveStatusText() {
-    if (readOnly) return 'Sola lettura'
-    if (saving) return 'Salvataggio automatico...'
-    if (error) return 'Errore di salvataggio'
-    if (dirty) return 'Modifiche in attesa di salvataggio...'
-    if (lastSavedAt) return `Salvato alle ${lastSavedAt.toLocaleTimeString('it-IT')}`
-    return 'Nessuna modifica'
+  function saveVariant(): 'info' | 'success' | 'warning' | 'error' {
+    if (error) return 'error'
+    if (readOnly) return 'info'
+    if (saving || dirty) return 'info'
+    if (lastSavedAt) return 'success'
+    return 'info'
+  }
+
+  function saveMessage() {
+    if (readOnly) return 'Sola lettura — la sezione è chiusa dall\'amministratore.'
+    if (saving) return 'Salvataggio automatico in corso…'
+    if (error) return error
+    if (dirty) return 'Modifiche in attesa di salvataggio…'
+    if (lastSavedAt) return `Ultimo salvataggio alle ${lastSavedAt.toLocaleTimeString('it-IT')}`
+    return 'Nessuna modifica registrata.'
   }
 
   return (
     <div className="space-y-6">
-      {/* Affluenza */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-4">Affluenza</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Votanti reali *
-              {actualVoters > 0 && theoreticalVoters > 0 && (
-                <span className="text-xs font-normal text-blue-600 ml-1">
-                  ({((actualVoters / theoreticalVoters) * 100).toFixed(1)}%)
-                </span>
-              )}
-            </label>
-            <input
-              type="number" min="0" value={turnout.votersActual}
-              onChange={e => setTurn('votersActual', e.target.value)}
-              disabled={readOnly}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder="0" required
-            />
-          </div>
-          {[['Schede valide', 'ballotsValid'], ['Schede nulle', 'ballotsNull'], ['Schede bianche', 'ballotsBlank']].map(([label, key]) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input type="number" min="0" value={(turnout as Record<string, string | number>)[key]}
-                onChange={e => setTurn(key, e.target.value)}
-                disabled={readOnly}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="—" />
-            </div>
-          ))}
-        </div>
-        {validBallots > 0 && totalListVotes > 0 && (
-          <div className={`mt-3 text-sm rounded-lg px-3 py-2 ${Math.abs(validBallots - totalListVotes) <= 2 ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-            Totale voti di lista: <strong>{totalListVotes.toLocaleString('it-IT')}</strong> su {validBallots.toLocaleString('it-IT')} schede valide
-            {' '}({Math.abs(validBallots - totalListVotes) > 0 ? `differenza: ${validBallots - totalListVotes}` : '✓ quadratura corretta'})
-          </div>
-        )}
-      </div>
-
-      {/* Voti per lista */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-900">Voti di lista</h3>
-          {totalListVotes > 0 && (
-            <span className="text-sm text-gray-500">Totale: <strong className="text-gray-900">{totalListVotes.toLocaleString('it-IT')}</strong></span>
-          )}
-        </div>
-        <div className="space-y-3">
-          {lists.map(list => {
-            const v = Number(listVotes[list.id]) || 0
-            const total = validBallots || totalListVotes
-            const pct = total > 0 ? (v / total) * 100 : 0
-            const isOpen = openListId === list.id
-
-            return (
-              <div
-                key={list.id}
-                id={`list-panel-${list.id}`}
-                className={`border rounded-xl p-3 transition-shadow ${
-                  isOpen ? 'border-indigo-200 shadow-md ring-1 ring-indigo-100' : 'border-gray-100'
-                }`}
-              >
-                <div className={`flex items-center gap-3 ${isOpen ? 'sticky top-0 z-10 bg-white pb-2 -mx-1 px-1' : ''}`}>
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: list.color }} />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <div>
-                        <span className="font-medium text-sm text-gray-800">{list.name}</span>
-                        {list.candidateMayor && <span className="text-xs text-gray-400 ml-2">{list.candidateMayor}</span>}
-                      </div>
-                      {v > 0 && <span className="text-xs text-gray-500">{pct.toFixed(1)}%</span>}
-                    </div>
-                    {v > 0 && (
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                        <div className="h-1.5 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => incrementListVote(list.id)}
-                      disabled={readOnly}
-                      className="w-7 h-7 rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                      aria-label={`Aumenta voti di lista per ${list.name}`}
-                    >
-                      +
-                    </button>
-                    <input
-                      type="number" min="0" value={listVotes[list.id]}
-                      onChange={e => setListVote(list.id, e.target.value)}
-                      disabled={readOnly}
-                      className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      placeholder="0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => decrementListVote(list.id)}
-                      disabled={readOnly}
-                      className="w-7 h-7 rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                      aria-label={`Diminuisci voti di lista per ${list.name}`}
-                    >
-                      −
-                    </button>
-                  </div>
-                </div>
-
-                {/* Preferenze: una lista aperta, scroll solo nell'area candidati */}
-                {list.candidates.length > 0 && (
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => togglePreferences(list.id)}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      {isOpen ? '▲ Nascondi preferenze' : '▼ Preferenze candidati'}
-                    </button>
-                    {isOpen && (
-                      <div className="mt-2 max-h-[min(55vh,22rem)] overflow-y-auto overscroll-contain pr-1 border-t border-indigo-50 pt-2">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {list.candidates.map(c => (
-                            <div key={c.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-                              <span className="text-xs text-gray-700 flex-1">
-                                {c.order}. {c.lastName} {c.firstName}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => incrementPreference(list.id, c.id)}
-                                disabled={readOnly}
-                                className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                                aria-label={`Aumenta preferenze per ${c.lastName} ${c.firstName}`}
-                              >
-                                +
-                              </button>
-                              <input
-                                type="number"
-                                min="0"
-                                value={preferences[list.id]?.[c.id] ?? ''}
-                                onChange={e => setPreference(list.id, c.id, e.target.value)}
-                                disabled={readOnly}
-                                className="w-20 border border-gray-200 rounded px-2 py-1 text-right text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                placeholder="0"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => decrementPreference(list.id, c.id)}
-                                disabled={readOnly}
-                                className="w-7 h-7 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-                                aria-label={`Diminuisci preferenze per ${c.lastName} ${c.firstName}`}
-                              >
-                                −
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+      <Card>
+        <CardBody>
+          <CardTitle className="mb-4">Affluenza</CardTitle>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Votanti reali *
+                {actualVoters > 0 && theoreticalVoters > 0 && (
+                  <span className="text-xs font-normal text-brand-600 ml-1 tabular-nums">
+                    ({((actualVoters / theoreticalVoters) * 100).toFixed(1)}%)
+                  </span>
                 )}
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={turnout.votersActual}
+                onChange={e => setTurn('votersActual', e.target.value)}
+                disabled={readOnly}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 text-lg font-semibold tabular-nums disabled:bg-gray-100"
+                placeholder="0"
+                required
+              />
+            </div>
+            {[['Schede valide', 'ballotsValid'], ['Schede nulle', 'ballotsNull'], ['Schede bianche', 'ballotsBlank']].map(([label, key]) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={(turnout as Record<string, string>)[key]}
+                  onChange={e => setTurn(key, e.target.value)}
+                  disabled={readOnly}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 tabular-nums disabled:bg-gray-100"
+                  placeholder="—"
+                />
               </div>
-            )
-          })}
-        </div>
-      </div>
+            ))}
+          </div>
+          {validBallots > 0 && totalListVotes > 0 && (
+            <Alert
+              variant={Math.abs(validBallots - totalListVotes) <= 2 ? 'success' : 'warning'}
+              className="mt-4"
+              title="Quadratura voti lista"
+            >
+              Totale voti di lista: <strong className="tabular-nums">{totalListVotes.toLocaleString('it-IT')}</strong> su{' '}
+              <strong className="tabular-nums">{validBallots.toLocaleString('it-IT')}</strong> schede valide
+              {Math.abs(validBallots - totalListVotes) > 0 && (
+                <> (differenza: <span className="tabular-nums">{validBallots - totalListVotes}</span>)</>
+              )}
+            </Alert>
+          )}
+        </CardBody>
+      </Card>
 
-      <div className={`rounded-lg px-4 py-3 text-sm font-medium ${error ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
-        {saveStatusText()}
-      </div>
-      {error && <div className="bg-red-50   text-red-700   rounded-lg px-4 py-3">{error}</div>}
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between mb-4">
+            <CardTitle>Voti di lista</CardTitle>
+            {totalListVotes > 0 && (
+              <span className="text-sm text-gray-500 tabular-nums">
+                Totale: <strong className="text-gray-900">{totalListVotes.toLocaleString('it-IT')}</strong>
+              </span>
+            )}
+          </div>
+          <div className={cn('space-y-3', openListId != null && 'relative')}>
+            {lists.map(list => {
+              const v = Number(listVotes[list.id]) || 0
+              const total = validBallots || totalListVotes
+              const pct = total > 0 ? (v / total) * 100 : 0
+              const isOpen = openListId === list.id
+              const dimOthers = openListId != null && !isOpen
 
-      <div className="flex gap-3">
-        <a href={`/entry/${electionId}`}
-          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium">
-          ← Torna alle sezioni
-        </a>
-      </div>
+              return (
+                <div
+                  key={list.id}
+                  id={`list-panel-${list.id}`}
+                  className={cn(
+                    'border rounded-xl p-3 transition-all',
+                    isOpen ? 'border-indigo-300 shadow-md ring-1 ring-indigo-100 z-10 bg-white' : 'border-gray-100',
+                    dimOthers && 'opacity-50 pointer-events-none'
+                  )}
+                >
+                  <div className={cn('flex items-center gap-3', isOpen && 'sticky top-0 z-10 bg-white pb-2')}>
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: list.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="min-w-0">
+                          <span className="font-medium text-sm text-gray-800">{list.name}</span>
+                          {list.candidateMayor && (
+                            <span className="text-xs text-gray-400 ml-2 hidden sm:inline">{list.candidateMayor}</span>
+                          )}
+                        </div>
+                        {v > 0 && <span className="text-xs text-gray-500 tabular-nums shrink-0">{pct.toFixed(1)}%</span>}
+                      </div>
+                      {v > 0 && (
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div
+                            className="h-1.5 rounded-full transition-all"
+                            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <NumberStepper
+                      value={listVotes[list.id] ?? ''}
+                      onChange={val => setListVote(list.id, val)}
+                      disabled={readOnly}
+                      tone="brand"
+                      aria-label={`Voti lista ${list.name}`}
+                    />
+                  </div>
+
+                  {list.candidates.length > 0 && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        onClick={() => togglePreferences(list.id)}
+                        className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-medium"
+                        aria-expanded={isOpen}
+                      >
+                        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
+                        Preferenze candidati
+                      </button>
+                      {isOpen && (
+                        <div className="mt-2 max-h-[min(55vh,22rem)] overflow-y-auto overscroll-contain border-t border-indigo-100 pt-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {list.candidates.map(c => (
+                              <div
+                                key={c.id}
+                                className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2"
+                              >
+                                <span className="text-xs text-gray-700 flex-1 min-w-[8rem]">
+                                  {c.order}. {c.lastName} {c.firstName}
+                                </span>
+                                <NumberStepper
+                                  value={preferences[list.id]?.[c.id] ?? ''}
+                                  onChange={val => setPreference(list.id, c.id, val)}
+                                  disabled={readOnly}
+                                  tone="indigo"
+                                  inputClassName="w-16 text-xs"
+                                  className="shrink-0"
+                                  aria-label={`Preferenze ${c.lastName} ${c.firstName}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Alert variant={saveVariant()} title="Stato dati">
+        {saveMessage()}
+      </Alert>
+
+      <Link
+        href={`/entry/${electionId}`}
+        className="inline-flex items-center justify-center gap-2 h-11 px-5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" aria-hidden />
+        Torna alle sezioni
+      </Link>
     </div>
   )
 }

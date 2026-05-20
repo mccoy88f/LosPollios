@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { SiteTopNav } from '@/components/SiteTopNav'
+import { Alert } from '@/components/ui/Alert'
+import { SectionStatusBadge, sectionLiveCellClasses } from '@/components/ui/SectionStatusBadge'
+import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
 
 interface ListResult {
   listId: number; listName: string; shortName: string | null; color: string
@@ -107,30 +110,28 @@ function SectionGrid({ sections }: { sections: SectionStatus[] }) {
       </div>
       <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
         {sections.map(s => {
-          const hasTurnoutData = (s.votersActual ?? 0) > 0
-          const hasVotesData = s.hasResults
-          const hasData = hasTurnoutData || hasVotesData
-          const warn = s.sectionWarnings?.length ? s.sectionWarnings.join('\n') : ''
-          const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}\n${s.locked ? 'Scrutinio terminato' : hasData ? 'In corso' : 'Da compilare'}`
-          const title = warn ? `${titleBase}\n\n⚠ ${warn}` : titleBase
+          const hasData = sectionHasEntryData(s.votersActual, s.hasResults)
+          const status = resolveSectionUiStatus(s.locked, hasData)
+          const hasWarning = (s.sectionWarnings?.length ?? 0) > 0
+          const warn = hasWarning ? s.sectionWarnings!.join('\n') : ''
+          const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
+          const title = warn ? `${titleBase}\n\n${warn}` : titleBase
           return (
             <div
               key={s.id}
               title={title}
-              className={`aspect-square rounded flex items-center justify-center text-xs font-semibold transition-colors ring-2 ring-offset-1
-              ${s.sectionWarnings?.length ? 'ring-amber-500 ring-offset-gray-50' : 'ring-transparent'}
-              ${s.locked ? 'bg-green-500 text-white' : hasData ? 'bg-orange-400 text-orange-950' : 'bg-gray-100 text-gray-400'}`}
+              className={sectionLiveCellClasses(status, hasWarning)}
             >
               {s.number}
             </div>
           )
         })}
       </div>
-      <div className="flex gap-4 mt-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border border-gray-200" /> Da compilare</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-400 inline-block" /> In corso</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500 inline-block" /> Scrutinio terminato (chiusa admin)</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded ring-2 ring-amber-500 inline-block bg-transparent" /> Dato da verificare (tooltip sulla cella)</span>
+      <div className="flex flex-wrap gap-3 mt-3">
+        <SectionStatusBadge status="pending" />
+        <SectionStatusBadge status="in_progress" />
+        <SectionStatusBadge status="closed" />
+        <span className="text-xs text-gray-500 self-center">Anello ambra = dato da verificare (passa il mouse sulla cella)</span>
       </div>
     </div>
   )
@@ -306,26 +307,22 @@ export default function LiveDashboard({
 
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {(dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0) && (
-          <div
-            role="status"
-            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          >
-            <p className="font-semibold">Controllo coerenza dati</p>
+          <Alert variant="warning" title="Controllo coerenza dati">
             {dataQuality?.listVotesExceedRegisteredVoters && (
-              <p className="mt-1">
+              <p className="mb-2">
                 La somma dei voti di lista supera i votanti reali registrati in affluenza: verificare le sezioni o
                 l&apos;aggregato prima di usare le percentuali di scrutinio.
               </p>
             )}
             {(dataQuality?.sectionsWithDataWarnings ?? 0) > 0 && (
-              <p className="mt-1">
+              <p>
                 {dataQuality!.sectionsWithDataWarnings === 1
                   ? 'Una sezione presenta incongruenze'
                   : `${dataQuality!.sectionsWithDataWarnings} sezioni presentano incongruenze`}{' '}
-                (schede valide, voti lista o preferenze). Passa il mouse sulle celle evidenziate in giallo nella griglia.
+                (schede valide, voti lista o preferenze). Passa il mouse sulle celle con anello ambra nella griglia.
               </p>
             )}
-          </div>
+          </Alert>
         )}
         {/* Turnout stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

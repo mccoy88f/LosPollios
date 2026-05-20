@@ -4,6 +4,10 @@ import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/Card'
+import { SectionStatusBadge, sectionEntryCardClasses } from '@/components/ui/SectionStatusBadge'
+import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
+import { Building2 } from 'lucide-react'
 import { EntryContextNav } from '@/components/EntryContextNav'
 import EntrySectionLockToggle from './EntrySectionLockToggle'
 
@@ -53,40 +57,27 @@ export default async function EntryIndexPage({ params }: Props) {
       />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">{election.name}</h1>
-          <p className="text-gray-500">{election.commune} · {formatDate(election.date)}</p>
-          <div className="flex gap-6 mt-3 text-sm">
-            <span className="text-gray-600">
-              <span className="font-semibold text-blue-600">{counted}</span> / {sections.length} sezioni con affluenza
-            </span>
-            <span className="text-gray-600">
-              <span className="font-semibold text-green-600">{completed}</span> / {sections.length} sezioni con voti
-            </span>
-          </div>
-        </div>
+        <PageHeader
+          title={election.name}
+          description={`${election.commune} · ${formatDate(election.date)} · ${counted}/${sections.length} con affluenza · ${completed}/${sections.length} con voti`}
+        />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {sections.map((s) => {
-            const hasTurnoutData = (s.turnout?.votersActual ?? 0) > 0
-            const hasVotesData = s.listResults.some(r => r.listVotes > 0)
-            const hasData = hasTurnoutData || hasVotesData
-            const colors = s.locked
-              ? 'border-green-300 bg-green-50 text-green-800'
-              : hasData
-                ? 'border-orange-300 bg-orange-50 text-orange-800'
-                : 'border-gray-200 bg-white text-gray-700'
+            const hasData = sectionHasEntryData(
+              s.turnout?.votersActual,
+              s.listResults.some(r => r.listVotes > 0)
+            )
+            const status = resolveSectionUiStatus(s.locked, hasData)
 
             return (
               <Link
                 key={s.id}
                 href={`/entry/${electionId}/${s.id}`}
-                className={`rounded-xl border-2 p-4 text-center hover:shadow-md transition-all ${colors}`}
+                className={sectionEntryCardClasses(status)}
               >
-                <div className="text-2xl font-bold">{s.number}</div>
-                <div className="text-xs mt-1 font-medium">
-                  {s.locked ? '✅ Scrutinio terminato' : hasData ? '🟠 In corso' : 'Da compilare'}
-                </div>
+                <div className="text-2xl font-bold tabular-nums">{s.number}</div>
+                <SectionStatusBadge status={status} />
                 {session.role === 'admin' && (
                   <EntrySectionLockToggle
                     electionId={election.id}
@@ -95,7 +86,7 @@ export default async function EntryIndexPage({ params }: Props) {
                   />
                 )}
                 {s.turnout && (
-                  <div className="text-xs mt-1 opacity-70">{s.turnout.votersActual} votanti</div>
+                  <div className="text-xs opacity-80 tabular-nums">{s.turnout.votersActual} votanti</div>
                 )}
               </Link>
             )
@@ -104,7 +95,7 @@ export default async function EntryIndexPage({ params }: Props) {
 
         {sections.length === 0 && (
           <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🏛️</p>
+            <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" aria-hidden />
             <p>Nessuna sezione configurata per questa elezione.</p>
           </div>
         )}

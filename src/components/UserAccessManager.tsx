@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { confirmDelete } from '@/lib/confirmDelete'
+import { Button } from '@/components/ui/Button'
+import { Alert } from '@/components/ui/Alert'
+import { Pencil, Trash2 } from 'lucide-react'
 
 type Section = { id: number; number: number; name: string | null }
 type ElectionList = { id: number; name: string }
@@ -223,7 +226,7 @@ export function UserAccessManager({
 
   return (
     <div className="space-y-6">
-      {msg && <div className="bg-blue-50 text-blue-700 text-sm rounded-lg px-4 py-2">{msg}</div>}
+      {msg && <Alert variant="info">{msg}</Alert>}
 
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 mb-4">Nuovo utente</h2>
@@ -296,14 +299,14 @@ export function UserAccessManager({
             <SectionPicker selected={form.sectionIds} onChange={ids => setF('sectionIds', ids)} />
           </div>
         )}
-        <button
+        <Button
           type="button"
           onClick={() => void createUser()}
           disabled={!form.username || !form.password || saving}
-          className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-medium"
+          className="mt-4"
         >
           Crea utente
-        </button>
+        </Button>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -414,21 +417,12 @@ export function UserAccessManager({
                       Account attivo
                     </label>
                     <div className="flex gap-2 mt-4">
-                      <button
-                        type="button"
-                        onClick={() => void saveEdit()}
-                        disabled={saving}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-                      >
+                      <Button type="button" onClick={() => void saveEdit()} disabled={saving}>
                         Salva
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                        className="border px-4 py-2 rounded-lg text-sm"
-                      >
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
                         Annulla
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 ) : (
@@ -456,17 +450,27 @@ export function UserAccessManager({
                         {u.active ? 'Attivo' : 'Off'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                      <button type="button" onClick={() => startEdit(u)} className="text-xs text-blue-600 font-medium">
-                        Modifica
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void removeUser(u)}
-                        className="text-xs text-red-500 font-medium"
-                      >
-                        Elimina
-                      </button>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon={<Pencil className="w-3.5 h-3.5" />}
+                          onClick={() => startEdit(u)}
+                        >
+                          Modifica
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
+                          onClick={() => void removeUser(u)}
+                        >
+                          Elimina
+                        </Button>
+                      </div>
                     </td>
                   </>
                 )}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { LogoutButton } from '@/components/LogoutButton'
+import { Vote } from 'lucide-react'
 
 export type NavCrumb = { label: string; href?: string }
 
@@ -27,21 +28,21 @@ export function SiteTopNav({
   maxWidthClass = 'max-w-7xl',
 }: Props) {
   return (
-    <nav className="bg-blue-800 text-white shadow">
+    <nav className="bg-brand-800 text-white shadow">
       <div className={`${maxWidthClass} mx-auto px-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-h-14 py-2`}>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
-          <Link href="/" className="font-bold text-lg flex items-center gap-2 shrink-0 hover:text-blue-100 transition-colors">
-            <span aria-hidden>🗳️</span>
+          <Link href="/" className="font-bold text-lg flex items-center gap-2 shrink-0 hover:text-brand-100 transition-colors">
+            <Vote className="w-5 h-5" aria-hidden />
             <span>LosPollios</span>
           </Link>
 
           {primaryLinks && primaryLinks.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1 text-sm border-l border-blue-600 pl-4">
+            <div className="flex flex-wrap items-center gap-1 text-sm border-l border-brand-600 pl-4">
               {primaryLinks.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-blue-200 hover:text-white px-2 py-1 rounded-md hover:bg-blue-700/50 transition-colors"
+                  className="text-brand-200 hover:text-white px-2 py-1 rounded-md hover:bg-brand-700/50 transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -50,12 +51,12 @@ export function SiteTopNav({
           )}
 
           {crumbs.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-blue-100 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-brand-100 min-w-0">
               {crumbs.map((c, i) => (
                 <span key={`${c.label}-${i}`} className="flex items-center gap-1.5 min-w-0">
-                  {i > 0 && <span className="text-blue-500 select-none" aria-hidden>/</span>}
+                  {i > 0 && <span className="text-brand-500 select-none" aria-hidden>/</span>}
                   {c.href ? (
-                    <Link href={c.href} className="hover:text-white text-blue-200 truncate max-w-[12rem] sm:max-w-xs">
+                    <Link href={c.href} className="hover:text-white text-brand-200 truncate max-w-[12rem] sm:max-w-xs">
                       {c.label}
                     </Link>
                   ) : (
@@ -74,14 +75,14 @@ export function SiteTopNav({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-blue-200 hover:text-white px-2 py-1 rounded-md border border-blue-600 hover:border-blue-400 transition-colors"
+                  className="text-brand-200 hover:text-white px-2 py-1 rounded-md border border-brand-600 hover:border-brand-400 transition-colors"
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
           )}
-          {username ? <span className="text-blue-200 text-sm hidden sm:inline max-w-[10rem] truncate">{username}</span> : null}
+          {username ? <span className="text-brand-200 text-sm hidden sm:inline max-w-[10rem] truncate">{username}</span> : null}
           {showLogout ? <LogoutButton /> : null}
         </div>
       </div>

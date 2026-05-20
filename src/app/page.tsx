@@ -2,111 +2,116 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { LogoutButton } from '@/components/LogoutButton'
+import { SiteTopNav } from '@/components/SiteTopNav'
+import { Card, CardBody, PageHeader } from '@/components/ui/Card'
+import { BarChart3, ClipboardList, Radio, Settings, Vote } from 'lucide-react'
 
 export default async function HomePage() {
   const session = await getSession()
   const elections = await prisma.election.findMany({
     where: { status: { not: 'setup' } },
     orderBy: { date: 'desc' },
-    take: 10,
+    take: 12,
   })
 
-  const allElections = await prisma.election.findMany({ orderBy: { date: 'desc' } })
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 rounded-2xl mb-6">
-            <span className="text-4xl">🗳️</span>
-          </div>
-          <h1 className="text-5xl font-bold text-white mb-3">LosPollios</h1>
-          <p className="text-blue-200 text-lg">Gestione spoglio elezioni comunali in tempo reale</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <SiteTopNav
+        crumbs={[{ label: 'Home' }]}
+        username={session?.username}
+        showLogout
+        primaryLinks={
+          session?.role === 'admin'
+            ? [
+                { label: 'Elezioni', href: '/admin' },
+                { label: 'Accessi', href: '/admin/users' },
+              ]
+            : undefined
+        }
+      />
 
-        {/* Active elections */}
-        {elections.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-blue-200 text-sm font-semibold uppercase tracking-wider mb-4">
-              Elezioni attive
-            </h2>
-            <div className="grid gap-4">
-              {elections.map((e) => (
-                <div key={e.id} className="bg-white/10 backdrop-blur rounded-xl p-5 flex items-center justify-between hover:bg-white/15 transition-colors">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">{e.name}</h3>
-                    <p className="text-blue-200 text-sm">{e.commune} · {formatDate(e.date)}</p>
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <PageHeader
+          title="LosPollios"
+          description="Hub operativo per spoglio, live e inserimento dati di sezione."
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2 mb-8">
+          {session?.role === 'admin' && (
+            <Link href="/admin" className="block group">
+              <Card className="p-5 h-full hover:border-brand-300 hover:shadow-md transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-brand-50 text-brand-700">
+                    <Settings className="w-6 h-6" />
                   </div>
-                  <div className="flex gap-3">
-                    <Link
-                      href={`/live/${e.id}`}
-                      className="bg-green-500 hover:bg-green-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Live
-                    </Link>
-                    <Link
-                      href={`/dashboard/${e.id}`}
-                      className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Analisi
-                    </Link>
+                  <div>
+                    <h2 className="font-semibold text-gray-900 group-hover:text-brand-700">Pannello admin</h2>
+                    <p className="text-sm text-gray-500 mt-1">Elezioni, sezioni, liste e accessi</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Quick links: flex così un solo riquadro (es. Accedi) resta centrato, non incollato a sinistra */}
-        <div className="flex flex-wrap justify-center gap-4">
-          {session?.role === 'admin' || session?.role === 'entry' ? (
-            <Link
-              href={session.role === 'admin' ? '/admin' : `/entry/${session.electionId}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors group w-full max-w-sm"
-            >
-              <div className="text-3xl mb-3">{session.role === 'admin' ? '⚙️' : '📝'}</div>
-              <h3 className="text-white font-semibold">
-                {session.role === 'admin' ? 'Pannello Admin' : 'Inserimento dati'}
-              </h3>
-              <p className="text-blue-200 text-sm mt-1">
-                {session.role === 'admin' ? 'Gestisci elezioni e configurazione' : 'Inserisci i voti della tua sezione'}
-              </p>
-            </Link>
-          ) : null}
-
-          {allElections.length > 0 && (
-            <Link
-              href={`/live/${allElections[0].id}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
-            >
-              <div className="text-3xl mb-3">📊</div>
-              <h3 className="text-white font-semibold">Risultati Live</h3>
-              <p className="text-blue-200 text-sm mt-1">Segui lo spoglio in diretta</p>
+              </Card>
             </Link>
           )}
-
-          {allElections.length > 0 && (
-            <Link
-              href={`/dashboard/${allElections[0].id}`}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-xl p-6 text-center transition-colors w-full max-w-sm"
-            >
-              <div className="text-3xl mb-3">🔍</div>
-              <h3 className="text-white font-semibold">Analisi & Proiezioni</h3>
-              <p className="text-blue-200 text-sm mt-1">Confronti e proiezioni seggi</p>
+          {session?.role === 'entry' && session.electionId && (
+            <Link href={`/entry/${session.electionId}`} className="block group">
+              <Card className="p-5 h-full hover:border-brand-300 hover:shadow-md transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-brand-50 text-brand-700">
+                    <ClipboardList className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900 group-hover:text-brand-700">Inserimento dati</h2>
+                    <p className="text-sm text-gray-500 mt-1">Vai alle sezioni assegnate</p>
+                  </div>
+                </div>
+              </Card>
             </Link>
           )}
         </div>
 
-        {session && (
-          <p className="text-center text-blue-300 text-sm mt-8">
-            Connesso come <strong className="text-white">{session.username}</strong> ({session.role})
-            {' · '}
-            <LogoutButton className="underline hover:text-white text-blue-300 bg-transparent border-0 p-0 cursor-pointer text-sm font-inherit inline" />
-          </p>
+        {elections.length > 0 ? (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Elezioni</h2>
+            <div className="space-y-3">
+              {elections.map(e => (
+                <Card key={e.id}>
+                  <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{e.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {e.commune} · {formatDate(e.date)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/live/${e.id}`}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
+                      >
+                        <Radio className="w-4 h-4" aria-hidden />
+                        Live
+                      </Link>
+                      <Link
+                        href={`/dashboard/${e.id}`}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <BarChart3 className="w-4 h-4" aria-hidden />
+                        Analisi
+                      </Link>
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <Card>
+            <CardBody className="text-center text-gray-500 py-12">
+              <Vote className="w-10 h-10 mx-auto mb-3 text-gray-300" aria-hidden />
+              <p>Nessuna elezione attiva al momento.</p>
+            </CardBody>
+          </Card>
         )}
-      </div>
+      </main>
     </div>
   )
 }

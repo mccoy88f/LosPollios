@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { Plus } from 'lucide-react'
 
 const STATUS_LABEL: Record<string, string> = { setup: 'Configurazione', active: 'Attiva', closed: 'Chiusa' }
 const STATUS_COLOR: Record<string, string> = { setup: 'bg-yellow-100 text-yellow-800', active: 'bg-green-100 text-green-800', closed: 'bg-gray-100 text-gray-700' }
@@ -76,9 +77,10 @@ export default async function AdminPage() {
         </div>
         <Link
           href="/admin/elections/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
         >
-          + Nuova elezione
+          <Plus className="w-4 h-4" aria-hidden />
+          Nuova elezione
         </Link>
       </div>
 

@@ -4,6 +4,7 @@ import { assertEntryCanWriteSection } from '@/lib/userAccess'
 import { redirect, notFound } from 'next/navigation'
 import SectionEntryForm from './SectionEntryForm'
 import { EntryContextNav } from '@/components/EntryContextNav'
+import { Alert } from '@/components/ui/Alert'
 
 type Props = { params: Promise<{ electionId: string; sectionId: string }> }
 
@@ -83,9 +84,9 @@ export default async function SectionEntryPage({ params }: Props) {
         </div>
 
         {readOnly && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-900 text-sm">
-            Questa sezione è stata chiusa dall’amministratore: i dati sono in sola lettura.
-          </div>
+          <Alert variant="warning" title="Sezione chiusa" className="mb-6">
+            L&apos;amministratore ha terminato lo scrutinio su questa sezione: i dati sono in sola lettura.
+          </Alert>
         )}
 
         <SectionEntryForm
