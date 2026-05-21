@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { TabBar } from '@/components/ui/TabBar'
 import { LiveKpiStrip } from '@/components/live/LiveKpiStrip'
+import AnalysisPanel, { type HistElection } from '@/components/live/AnalysisPanel'
 import {
   LiveCoalitionByField,
   LiveCoalitionMini,
@@ -11,13 +12,11 @@ import {
   LiveListBarChart,
   LiveListRanking,
   LivePreferenzePanel,
-  LiveSeatProjection,
   LiveSectionGrid,
   LiveTurnoutCards,
-  type SeatProjectionRow,
 } from '@/components/live/LiveShared'
 import type { LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
-import { electionHasCoalitions, isLiveViewId, type LiveViewId } from '@/lib/liveElection'
+import { electionHasCoalitions, normalizeLiveViewParam, type LiveViewId } from '@/lib/liveElection'
 import {
   BarChart3,
   Grid3X3,
@@ -27,22 +26,12 @@ import {
   Users,
 } from 'lucide-react'
 
-interface ProjectionPayload {
-  totalSections: number
-  sectionsCounted: number
-  coverage: number
-  totalSeats: number
-  current: {
-    seats: SeatProjectionRow[]
-  }
-}
-
 const VIEW_LABELS: Record<LiveViewId, string> = {
   panorama: 'Panoramica',
   liste: 'Liste',
   sezioni: 'Sezioni',
   coalizioni: 'Coalizioni',
-  seggi: 'Seggi',
+  analisi: 'Analisi',
   preferenze: 'Preferenze',
 }
 
@@ -54,18 +43,18 @@ function LiveDashboardInner({
   electionId,
   electionName,
   commune,
+  historicalElections,
 }: {
   electionId: number
   electionName: string
   commune: string
+  historicalElections: HistElection[]
 }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [data, setData] = useState<LiveResultsData | null>(null)
-  const [proj, setProj] = useState<ProjectionPayload | null>(null)
   const [loading, setLoading] = useState(true)
-  const [projLoading, setProjLoading] = useState(false)
   const [lastPulse, setLastPulse] = useState<Date | null>(null)
   const [selectedListId, setSelectedListId] = useState<number | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null)
@@ -77,14 +66,15 @@ function LiveDashboardInner({
   const availableViews = useMemo((): LiveViewId[] => {
     const base: LiveViewId[] = ['panorama', 'liste', 'sezioni']
     if (hasCoalitions) base.push('coalizioni')
-    base.push('seggi')
+    base.push('analisi')
     if (hasPreferenze) base.push('preferenze')
     return base
   }, [hasCoalitions, hasPreferenze])
 
   const viewParam = searchParams.get('view')
   const view: LiveViewId = useMemo(() => {
-    if (isLiveViewId(viewParam) && availableViews.includes(viewParam)) return viewParam
+    const normalized = normalizeLiveViewParam(viewParam)
+    if (normalized && availableViews.includes(normalized)) return normalized
     return 'panorama'
   }, [viewParam, availableViews])
 
@@ -115,34 +105,16 @@ function LiveDashboardInner({
     setLoading(false)
   }, [electionId])
 
-  const fetchProjections = useCallback(async () => {
-    setProjLoading(true)
-    try {
-      const res = await fetch(`/api/elections/${electionId}/projections`)
-      if (res.ok) setProj(await res.json())
-    } catch {
-      /* ignore */
-    }
-    setProjLoading(false)
-  }, [electionId])
-
   useEffect(() => {
     fetchData()
     const evtSource = new EventSource(`/api/elections/${electionId}/stream`)
-    evtSource.onmessage = () => {
-      fetchData()
-      if (view === 'seggi') fetchProjections()
-    }
+    evtSource.onmessage = () => fetchData()
     const interval = setInterval(fetchData, 30000)
     return () => {
       evtSource.close()
       clearInterval(interval)
     }
-  }, [electionId, fetchData, fetchProjections, view])
-
-  useEffect(() => {
-    if (view === 'seggi' && !proj && !projLoading) fetchProjections()
-  }, [view, proj, projLoading, fetchProjections])
+  }, [electionId, fetchData])
 
   if (loading) {
     return (
@@ -162,6 +134,8 @@ function LiveDashboardInner({
   const hasWarnings =
     !!dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0
 
+  const showListRanking = lists.length > 0 && view !== 'liste' && view !== 'analisi'
+
   const tabs = availableViews.map(id => ({
     id,
     label: VIEW_LABELS[id],
@@ -174,7 +148,7 @@ function LiveDashboardInner({
             ? Grid3X3
             : id === 'coalizioni'
               ? PieChart
-              : id === 'seggi'
+              : id === 'analisi'
                 ? BarChart3
                 : Users,
   }))
@@ -192,7 +166,7 @@ function LiveDashboardInner({
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-4">
       <LiveKpiStrip data={data} lastPulse={lastPulse} hasWarnings={hasWarnings} />
 
-      {lists.length > 0 && view !== 'liste' && (
+      {showListRanking && (
         <LiveListRanking {...listRankingProps} limit={view === 'panorama' ? 6 : undefined} />
       )}
 
@@ -248,23 +222,14 @@ function LiveDashboardInner({
         </div>
       )}
 
-      {view === 'seggi' && (
-        <div className="space-y-6">
-          {projLoading && !proj ? (
-            <div className="text-center text-gray-400 py-12">Caricamento proiezione seggi...</div>
-          ) : proj ? (
-            <LiveSeatProjection
-              seats={proj.current.seats}
-              totalSeats={proj.totalSeats}
-              coverage={proj.coverage}
-              sectionsCounted={proj.sectionsCounted}
-              totalSections={proj.totalSections}
-              electionId={electionId}
-            />
-          ) : (
-            <div className="text-center text-gray-500 py-12">Proiezione non disponibile</div>
-          )}
-        </div>
+      {view === 'analisi' && (
+        <AnalysisPanel
+          embedded
+          electionId={electionId}
+          electionName={electionName}
+          commune={commune}
+          historicalElections={historicalElections}
+        />
       )}
 
       {view === 'preferenze' && hasPreferenze && (
@@ -283,6 +248,7 @@ export default function LiveDashboard(props: {
   electionId: number
   electionName: string
   commune: string
+  historicalElections: HistElection[]
 }) {
   return (
     <Suspense

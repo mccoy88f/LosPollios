@@ -14,8 +14,22 @@ import { buttonClassName } from '@/components/ui/buttonStyles'
 import Link from 'next/link'
 import { Calendar, Crown, Landmark, RefreshCw, TrendingUp } from 'lucide-react'
 
-interface HistResult { id: number; listName: string; coalition: string | null; candidateMayor: string | null; votes: number; percentage: number; seats: number | null }
-interface HistElection { id: number; name: string; commune: string; year: number; results: HistResult[] }
+export interface HistResult {
+  id: number
+  listName: string
+  coalition: string | null
+  candidateMayor: string | null
+  votes: number
+  percentage: number
+  seats: number | null
+}
+export interface HistElection {
+  id: number
+  name: string
+  commune: string
+  year: number
+  results: HistResult[]
+}
 
 interface SeatProjection {
   listId: number; listName: string; shortName: string | null; color: string
@@ -173,16 +187,19 @@ function HistoricalComparison({ current, historical }: { current: SeatProjection
   )
 }
 
-export default function AnalysisDashboard({
+export default function AnalysisPanel({
   electionId,
   electionName,
   commune,
   historicalElections,
+  embedded = false,
 }: {
   electionId: number
   electionName: string
   commune: string
   historicalElections: HistElection[]
+  /** Tab dentro la live: senza intestazione elezione duplicata */
+  embedded?: boolean
 }) {
   const [proj, setProj] = useState<ProjectionData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -216,14 +233,13 @@ export default function AnalysisDashboard({
   const councilSeats = typeof proj.totalSeats === 'number' && proj.totalSeats > 0 ? proj.totalSeats : 32
 
   return (
-    <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
-        <Card>
-          <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{electionName}</h1>
-              <p className="text-sm text-gray-500">{commune}</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+    <div className={embedded ? 'space-y-4' : 'flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6'}>
+        {embedded ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3">
+            <p className="text-sm text-gray-600">
+              Proiezione seggi e confronto storico · {commune}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700 tabular-nums">
                 {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
               </span>
@@ -231,8 +247,25 @@ export default function AnalysisDashboard({
                 Aggiorna
               </Button>
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{electionName}</h1>
+                <p className="text-sm text-gray-500">{commune}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700 tabular-nums">
+                  {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
+                </span>
+                <Button type="button" variant="secondary" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={fetchProj}>
+                  Aggiorna
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         <TabBar
           value={tab}

@@ -9,7 +9,10 @@ export type ElectionUpdateEvent = {
   sectionName: string | null
   listName: string | null
   candidateName: string | null
+  /** Username (campo enteredBy) */
   by: string | null
+  /** Nome completo da anagrafica utente, se disponibile */
+  byDisplayName: string | null
   detail: string | null
 }
 
@@ -84,6 +87,7 @@ export async function getElectionUpdateFeed(electionId: number): Promise<Electio
       listName: null,
       candidateName: null,
       by: t.enteredBy ?? null,
+      byDisplayName: null,
       detail: detailParts.join(' · '),
     })
   }
@@ -97,6 +101,7 @@ export async function getElectionUpdateFeed(electionId: number): Promise<Electio
       listName: r.list.name,
       candidateName: null,
       by: r.enteredBy ?? null,
+      byDisplayName: null,
       detail: `${r.listVotes.toLocaleString('it-IT')} voti di lista`,
     })
   }
@@ -113,10 +118,28 @@ export async function getElectionUpdateFeed(electionId: number): Promise<Electio
       listName: list.name,
       candidateName: `${cand.firstName} ${cand.lastName}`,
       by: p.enteredBy ?? null,
+      byDisplayName: null,
       detail: `${p.votes.toLocaleString('it-IT')} voti preferenza`,
     })
   }
 
   events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+
+  const usernames = [...new Set(events.map(e => e.by).filter((u): u is string => !!u?.trim()))]
+  if (usernames.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { username: true, name: true },
+    })
+    const displayByUsername = new Map(
+      users.map(u => [u.username, (u.name?.trim() || u.username) as string])
+    )
+    for (const ev of events) {
+      if (ev.by) {
+        ev.byDisplayName = displayByUsername.get(ev.by) ?? ev.by
+      }
+    }
+  }
+
   return events.slice(0, MAX_MERGED)
 }

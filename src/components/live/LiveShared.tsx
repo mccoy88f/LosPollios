@@ -509,7 +509,7 @@ export function LiveSeatProjection({
       </div>
 
       <p className="text-center text-sm">
-        <Link href={`/dashboard/${electionId}`} className="text-brand-800 hover:underline font-medium">
+        <Link href={`/live/${electionId}?view=analisi`} className="text-brand-800 hover:underline font-medium">
           Analisi completa e confronto storico →
         </Link>
       </p>

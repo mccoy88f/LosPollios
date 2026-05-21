@@ -1,11 +1,38 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
-import { LogOut, X } from 'lucide-react'
+import {
+  BarChart3,
+  ClipboardList,
+  Database,
+  Home,
+  LogOut,
+  Radio,
+  Settings,
+  Shield,
+  User,
+  Users,
+  History,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/cn'
-import type { NavMenuSection } from '@/lib/navMenu'
+import type { NavMenuIconId, NavMenuSection } from '@/lib/navMenu'
+
+const MENU_ICONS: Record<NavMenuIconId, LucideIcon> = {
+  home: Home,
+  radio: Radio,
+  history: History,
+  barChart3: BarChart3,
+  users: Users,
+  clipboardList: ClipboardList,
+  settings: Settings,
+  shield: Shield,
+  user: User,
+  database: Database,
+}
 
 export function AppSideMenu({
   open,
@@ -17,6 +44,7 @@ export function AppSideMenu({
   sections: NavMenuSection[]
 }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (!open) return
@@ -35,11 +63,19 @@ export function AppSideMenu({
   if (!open) return null
 
   function isActive(href: string) {
-    if (href === '/') return pathname === '/'
-    if (pathname === href) return true
-    // Live: solo la pagina principale, non preferenze/aggiornamenti
-    if (/^\/live\/\d+$/.test(href)) return false
-    return pathname.startsWith(`${href}/`)
+    const qIdx = href.indexOf('?')
+    const path = qIdx >= 0 ? href.slice(0, qIdx) : href
+    const hrefParams = qIdx >= 0 ? new URLSearchParams(href.slice(qIdx + 1)) : null
+    const hrefView = hrefParams?.get('view')
+
+    if (hrefView) {
+      return pathname === path && searchParams.get('view') === hrefView
+    }
+
+    if (path === '/') return pathname === '/'
+    if (pathname === path) return true
+    if (/^\/live\/\d+$/.test(path)) return false
+    return pathname.startsWith(`${path}/`)
   }
 
   return (
@@ -79,7 +115,7 @@ export function AppSideMenu({
               )}
               <ul className="space-y-0.5">
                 {section.items.map(item => {
-                  const Icon = item.icon
+                  const Icon = MENU_ICONS[item.icon]
                   const active = isActive(item.href)
                   return (
                     <li key={item.href}>

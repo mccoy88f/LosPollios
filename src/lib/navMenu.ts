@@ -1,22 +1,22 @@
 import type { JwtPayload } from '@/lib/auth'
-import type { LucideIcon } from 'lucide-react'
-import {
-  BarChart3,
-  ClipboardList,
-  Database,
-  Home,
-  Radio,
-  Settings,
-  Shield,
-  User,
-  Users,
-  History,
-} from 'lucide-react'
+
+/** Id icona risolvibile lato client (no componenti React da server). */
+export type NavMenuIconId =
+  | 'home'
+  | 'radio'
+  | 'history'
+  | 'barChart3'
+  | 'users'
+  | 'clipboardList'
+  | 'settings'
+  | 'shield'
+  | 'user'
+  | 'database'
 
 export type NavMenuItem = {
   label: string
   href: string
-  icon: LucideIcon
+  icon: NavMenuIconId
 }
 
 export type NavMenuSection = {
@@ -38,7 +38,7 @@ export function buildAppMenuSections(
 
   const sections: NavMenuSection[] = [
     {
-      items: [{ label: 'Home', href: '/', icon: Home }],
+      items: [{ label: 'Home', href: '/', icon: 'home' }],
     },
   ]
 
@@ -47,10 +47,9 @@ export function buildAppMenuSections(
     sections.push({
       title: election.electionName,
       items: [
-        { label: 'Live', href: `/live/${id}`, icon: Radio },
-        { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti`, icon: History },
-        { label: 'Analisi', href: `/dashboard/${id}`, icon: BarChart3 },
-        { label: 'Preferenze', href: `/live/${id}/preferenze`, icon: Users },
+        { label: 'Live', href: `/live/${id}`, icon: 'radio' },
+        { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti`, icon: 'history' },
+        { label: 'Preferenze', href: `/live/${id}/preferenze`, icon: 'users' },
       ],
     })
   }
@@ -61,12 +60,16 @@ export function buildAppMenuSections(
     if (!hasElectionBlock) {
       sections.push({
         title: 'Inserimento',
-        items: [{ label: 'Sezioni', href: `/entry/${entryId}`, icon: ClipboardList }],
+        items: [{ label: 'Sezioni', href: `/entry/${entryId}`, icon: 'clipboardList' }],
       })
     } else {
       const block = sections.find(s => s.title === election!.electionName)
       if (block) {
-        block.items.push({ label: 'Inserimento sezioni', href: `/entry/${entryId}`, icon: ClipboardList })
+        block.items.push({
+          label: 'Inserimento sezioni',
+          href: `/entry/${entryId}`,
+          icon: 'clipboardList',
+        })
       }
     }
   }
@@ -75,10 +78,10 @@ export function buildAppMenuSections(
     sections.push({
       title: 'Amministrazione',
       items: [
-        { label: 'Elezioni', href: '/admin', icon: Settings },
-        { label: 'Accessi utenti', href: '/admin/users', icon: Shield },
-        { label: 'Anagrafica', href: '/admin/persons', icon: User },
-        { label: 'Dati storici', href: '/admin/historical', icon: Database },
+        { label: 'Elezioni', href: '/admin', icon: 'settings' },
+        { label: 'Accessi utenti', href: '/admin/users', icon: 'shield' },
+        { label: 'Anagrafica', href: '/admin/persons', icon: 'user' },
+        { label: 'Dati storici', href: '/admin/historical', icon: 'database' },
       ],
     })
   }

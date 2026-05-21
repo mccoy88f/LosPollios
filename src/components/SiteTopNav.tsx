@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { SiteHeader } from '@/components/nav/SiteHeader'
 import { cn } from '@/lib/cn'
 import type { ElectionNavContext, NavMenuSection } from '@/lib/navMenu'
@@ -29,13 +30,15 @@ export function SiteTopNav({
 
   return (
     <>
-      <SiteHeader
-        menuSections={menuSections}
-        election={election}
-        username={username}
-        displayName={displayName}
-        maxWidthClass={maxWidthClass}
-      />
+      <Suspense fallback={<div className="bg-brand-800 h-14 shrink-0" aria-hidden />}>
+        <SiteHeader
+          menuSections={menuSections}
+          election={election}
+          username={username}
+          displayName={displayName}
+          maxWidthClass={maxWidthClass}
+        />
+      </Suspense>
       {below ? (
         <div className="shrink-0 bg-white border-b border-gray-200">
           <div className={cn(maxWidthClass, 'mx-auto px-4 py-2')}>{below}</div>

@@ -87,7 +87,7 @@ export default async function HomePage() {
                         Live
                       </Link>
                       <Link
-                        href={`/dashboard/${e.id}`}
+                        href={`/live/${e.id}?view=analisi`}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
                       >
                         <BarChart3 className="w-4 h-4" aria-hidden />

@@ -194,8 +194,8 @@ export default function LiveAggiornamentiPage({
                         ) : null}
                       </td>
                       <td className="px-3 py-2 text-gray-600 text-xs">{ev.detail ?? '—'}</td>
-                      <td className="px-3 py-2 text-gray-800 whitespace-nowrap font-mono text-xs">
-                        {ev.by ?? <span className="text-gray-400">—</span>}
+                      <td className="px-3 py-2 text-gray-800 whitespace-nowrap text-sm">
+                        {ev.byDisplayName ?? ev.by ?? <span className="text-gray-400">—</span>}
                       </td>
                     </tr>
                   ))
