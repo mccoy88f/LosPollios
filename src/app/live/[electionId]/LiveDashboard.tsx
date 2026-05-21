@@ -17,9 +17,12 @@ import {
 } from '@/components/live/LiveShared'
 import type { LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
 import { electionHasCoalitions, normalizeLiveViewParam, type LiveViewId } from '@/lib/liveElection'
+import LiveAggiornamentiPage from '@/app/live/[electionId]/aggiornamenti/LiveAggiornamentiPage'
+import { cn } from '@/lib/cn'
 import {
   BarChart3,
   Grid3X3,
+  History,
   LayoutDashboard,
   List,
   PieChart,
@@ -33,6 +36,7 @@ const VIEW_LABELS: Record<LiveViewId, string> = {
   coalizioni: 'Coalizioni',
   analisi: 'Analisi',
   preferenze: 'Preferenze',
+  aggiornamenti: 'Aggiornamenti',
 }
 
 function toggleId(prev: number | null, id: number): number | null {
@@ -73,6 +77,7 @@ function LiveDashboardInner({
 
   const viewParam = searchParams.get('view')
   const view: LiveViewId = useMemo(() => {
+    if (viewParam === 'aggiornamenti') return 'aggiornamenti'
     const normalized = normalizeLiveViewParam(viewParam)
     if (normalized && availableViews.includes(normalized)) return normalized
     return 'panorama'
@@ -170,7 +175,31 @@ function LiveDashboardInner({
         <LiveListRanking {...listRankingProps} limit={view === 'panorama' ? 6 : undefined} />
       )}
 
-      <TabBar tabs={tabs} value={view} onChange={setView} className="w-full sm:w-auto" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <TabBar
+          tabs={tabs}
+          value={view === 'aggiornamenti' ? 'panorama' : view}
+          activeId={view === 'aggiornamenti' ? null : view}
+          onChange={setView}
+          className="w-full sm:w-auto min-w-0"
+        />
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'aggiornamenti'}
+          onClick={() => setView('aggiornamenti')}
+          className={cn(
+            'inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0',
+            'border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+            view === 'aggiornamenti'
+              ? 'bg-brand-800 text-white border-brand-800'
+              : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-200 border-gray-200 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-800'
+          )}
+        >
+          <History className="w-4 h-4 shrink-0" aria-hidden />
+          Aggiornamenti
+        </button>
+      </div>
 
       {view === 'panorama' && (
         <div className="space-y-6">
@@ -239,6 +268,15 @@ function LiveDashboardInner({
           electionId={electionId}
           selectedCandidateId={selectedCandidateId}
           onSelectCandidate={id => setSelectedCandidateId(prev => toggleId(prev, id))}
+        />
+      )}
+
+      {view === 'aggiornamenti' && (
+        <LiveAggiornamentiPage
+          embedded
+          electionId={electionId}
+          electionName={electionName}
+          commune={commune}
         />
       )}
     </div>

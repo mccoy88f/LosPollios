@@ -96,7 +96,7 @@ export function LiveMetricsHeader({
           ) : (
             <span />
           )}
-          <Link href={`/live/${electionId}/aggiornamenti`} className="text-brand-700 hover:underline font-medium">
+          <Link href={`/live/${electionId}?view=aggiornamenti`} className="text-brand-700 hover:underline font-medium">
             Cronologia aggiornamenti →
           </Link>
         </div>

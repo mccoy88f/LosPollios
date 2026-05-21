@@ -56,10 +56,13 @@ export default function LiveAggiornamentiPage({
   electionId,
   electionName,
   commune,
+  embedded = false,
 }: {
   electionId: number
   electionName: string
   commune: string
+  /** Vista tab nella dashboard live: senza titolo pagina e link indietro */
+  embedded?: boolean
 }) {
   const [data, setData] = useState<UpdatesPayload | null>(null)
   const [lastFetchAt, setLastFetchAt] = useState<Date | null>(null)
@@ -107,19 +110,25 @@ export default function LiveAggiornamentiPage({
   }
 
   return (
-    <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Aggiornamenti spoglio</h1>
-          <p className="text-gray-600 dark:text-neutral-400 text-sm mt-1">
-            {commune} — ultimi salvataggi da inserimento sezione (affluenza, voti lista, preferenze) con utente e orario
-            registrati nel database.
+    <div className={embedded ? 'space-y-6' : 'flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6'}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Aggiornamenti spoglio</h1>
+            <p className="text-gray-600 dark:text-neutral-400 text-sm mt-1">
+              {electionName} · {commune} — ultimi salvataggi da inserimento sezione con utente e orario.
+            </p>
+          </div>
+        )}
+        {embedded && (
+          <p className="text-sm text-gray-600 dark:text-neutral-400">
+            {commune} — cronologia salvataggi da inserimento (affluenza, voti lista, preferenze) con utente e orario.
           </p>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="surface-panel p-4">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ultimo dato salvato (DB)</p>
-            <p className="text-lg font-semibold text-gray-900 mt-1">
+            <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
               {data.lastDataUpdateAt ? formatWhen(data.lastDataUpdateAt) : '—'}
             </p>
             <p className="text-xs text-gray-500 mt-2">
@@ -128,9 +137,11 @@ export default function LiveAggiornamentiPage({
               <code className="text-[11px] bg-gray-100 px-1 rounded">CandidatePreference.updatedAt</code>.
             </p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ultimo aggiornamento ricevuto (pagina)</p>
-            <p className="text-lg font-semibold text-gray-900 mt-1">
+          <div className="surface-panel p-4">
+            <p className="text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wide">
+              Ultimo aggiornamento ricevuto (pagina)
+            </p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
               {lastFetchAt ? formatWhen(lastFetchAt.toISOString()) : '—'}
             </p>
             <p className="text-xs text-gray-500 mt-2">
@@ -140,13 +151,13 @@ export default function LiveAggiornamentiPage({
           </div>
         </div>
 
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-neutral-400">
           Un singolo salvataggio in sezione può produrre più righe consecutive (affluenza + una per lista + preferenze). Le
           preferenze hanno tracciamento proprio da questa versione; i record più vecchi possono non avere{' '}
           <code className="bg-gray-100 px-1 rounded">enteredBy</code> sulle preferenze.
         </p>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="surface-panel overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold text-gray-900 dark:text-white">Cronologia recente</h2>
             <span className="text-xs text-gray-500">{data.events.length} eventi</span>
@@ -205,11 +216,13 @@ export default function LiveAggiornamentiPage({
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400 pb-6">
-          <Link href={`/live/${electionId}`} className="text-brand-600 hover:underline">
-            ← Torna alla live
-          </Link>
-        </p>
+        {!embedded && (
+          <p className="text-center text-xs text-gray-400 pb-6">
+            <Link href={`/live/${electionId}`} className="text-brand-600 dark:text-brand-400 hover:underline">
+              ← Torna alla live
+            </Link>
+          </p>
+        )}
     </div>
   )
 }

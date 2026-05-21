@@ -10,6 +10,7 @@ export type LiveViewId =
   | 'coalizioni'
   | 'analisi'
   | 'preferenze'
+  | 'aggiornamenti'
 
 export const LIVE_VIEW_IDS: LiveViewId[] = [
   'panorama',
@@ -18,6 +19,7 @@ export const LIVE_VIEW_IDS: LiveViewId[] = [
   'coalizioni',
   'analisi',
   'preferenze',
+  'aggiornamenti',
 ]
 
 export function isLiveViewId(v: string | null): v is LiveViewId {

@@ -35,7 +35,7 @@ function electionSubItems(electionId: number): NavMenuItem[] {
   const id = electionId
   return [
     { label: 'Live', href: `/live/${id}`, icon: 'radio' },
-    { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti`, icon: 'history' },
+    { label: 'Aggiornamenti', href: `/live/${id}?view=aggiornamenti`, icon: 'history' },
     { label: 'Preferenze', href: `/live/${id}/preferenze`, icon: 'users' },
     { label: 'Analisi', href: `/live/${id}?view=analisi`, icon: 'barChart3' },
   ]

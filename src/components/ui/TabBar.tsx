@@ -14,11 +14,14 @@ export function TabBar<T extends string>({
   value,
   onChange,
   className,
+  /** null = nessun tab evidenziato (es. vista Aggiornamenti a destra) */
+  activeId,
 }: {
   tabs: TabItem<T>[]
   value: T
   onChange: (id: T) => void
   className?: string
+  activeId?: T | null
 }) {
   return (
     <div
@@ -30,7 +33,8 @@ export function TabBar<T extends string>({
     >
       {tabs.map(tab => {
         const Icon = tab.icon
-        const active = value === tab.id
+        const active =
+          activeId === null ? false : activeId !== undefined ? activeId === tab.id : value === tab.id
         return (
           <button
             key={tab.id}
