@@ -61,13 +61,13 @@ export default async function SectionEntryPage({ params }: Props) {
   }))
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-dvh bg-gray-50 flex flex-col overflow-hidden">
       <EntryContextNav
         electionId={election.id}
         electionName={election.name}
         section={{ id: section.id, number: section.number, name: section.name }}
       />
-      <div className="flex-1 min-h-0 flex flex-col max-w-4xl mx-auto w-full px-4 py-4 md:py-6">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-4xl mx-auto w-full px-4 py-3 md:py-4">
         <div className="shrink-0 bg-brand-50 border border-brand-200 rounded-xl p-4 mb-4">
           <div className="flex justify-between items-start">
             <div>

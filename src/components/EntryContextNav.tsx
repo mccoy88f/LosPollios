@@ -1,10 +1,10 @@
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
-import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
-import { SiteTopNav, type NavCrumb } from '@/components/SiteTopNav'
+import { SiteTopNav } from '@/components/SiteTopNav'
 import { EntrySectionTabs, type EntrySectionTab } from '@/components/nav/EntrySectionTabs'
 
 type Props = {
@@ -16,19 +16,10 @@ type Props = {
 export async function EntryContextNav({ electionId, electionName, section }: Props) {
   const session = await getSession()
   const profile = session ? await getSessionUserProfile(session) : null
-
-  const crumbs: NavCrumb[] = [
-    { label: 'Home', href: '/' },
-    { label: electionName, href: `/entry/${electionId}` },
-  ]
-  if (section) {
-    crumbs.push({
-      label: section.name ? `Sezione ${section.number} · ${section.name}` : `Sezione ${section.number}`,
-    })
-  }
+  if (!session) return null
 
   let sectionTabs: React.ReactNode = null
-  if (section && session) {
+  if (section) {
     let allowedSectionIds: number[] | null = null
     if (session.role === 'entry') {
       allowedSectionIds =
@@ -67,12 +58,12 @@ export async function EntryContextNav({ electionId, electionName, section }: Pro
 
   return (
     <SiteTopNav
-      crumbs={crumbs}
-      primaryLinks={getPrimaryNavLinks(session ?? undefined)}
-      username={session?.username}
+      menuSections={buildAppMenuSections(session, { electionId, electionName })}
+      election={{ electionId, electionName }}
+      username={session.username}
       displayName={profile?.name}
       maxWidthClass="max-w-4xl"
-      contextBarChildren={sectionTabs}
+      subHeader={sectionTabs}
     />
   )
 }

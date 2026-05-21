@@ -1,42 +1,46 @@
-import { AppHeader } from '@/components/nav/AppHeader'
-import { ContextBar } from '@/components/nav/ContextBar'
+import { SiteHeader } from '@/components/nav/SiteHeader'
+import { cn } from '@/lib/cn'
+import type { ElectionNavContext, NavMenuSection } from '@/lib/navMenu'
 
 export type NavCrumb = { label: string; href?: string }
 
-type NavLink = { label: string; href: string }
-
 type Props = {
-  crumbs?: NavCrumb[]
-  primaryLinks?: NavLink[]
-  contextLinks?: NavLink[]
-  username?: string | null
+  menuSections: NavMenuSection[]
+  election?: ElectionNavContext | null
+  username: string
   displayName?: string | null
   maxWidthClass?: string
-  /** Contenuto sotto il breadcrumb (es. tab sezioni entry) */
+  /** Contenuto sotto l'header (es. tab sezioni entry) */
+  subHeader?: React.ReactNode
+  /** Alias per subHeader (entry tabs) */
   contextBarChildren?: React.ReactNode
 }
 
 export function SiteTopNav({
-  crumbs = [],
-  primaryLinks,
-  contextLinks,
+  menuSections,
+  election = null,
   username,
   displayName,
   maxWidthClass = 'max-w-7xl',
+  subHeader,
   contextBarChildren,
 }: Props) {
+  const below = subHeader ?? contextBarChildren
+
   return (
     <>
-      <AppHeader
-        primaryLinks={primaryLinks}
-        contextLinks={contextLinks}
+      <SiteHeader
+        menuSections={menuSections}
+        election={election}
         username={username}
         displayName={displayName}
         maxWidthClass={maxWidthClass}
       />
-      <ContextBar crumbs={crumbs} maxWidthClass={maxWidthClass}>
-        {contextBarChildren}
-      </ContextBar>
+      {below ? (
+        <div className="shrink-0 bg-white border-b border-gray-200">
+          <div className={cn(maxWidthClass, 'mx-auto px-4 py-2')}>{below}</div>
+        </div>
+      ) : null}
     </>
   )
 }

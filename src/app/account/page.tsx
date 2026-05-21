@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
-import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { buildAppMenuSections } from '@/lib/navMenu'
 import { SiteTopNav } from '@/components/SiteTopNav'
 import { PageHeader } from '@/components/ui/Card'
 import { AccountSettingsForm } from './AccountSettingsForm'
@@ -19,8 +19,7 @@ export default async function AccountPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteTopNav
-        crumbs={[{ label: 'Home', href: '/' }, { label: 'Il mio account' }]}
-        primaryLinks={getPrimaryNavLinks(session)}
+        menuSections={buildAppMenuSections(session)}
         username={session.username}
         displayName={user.name}
       />

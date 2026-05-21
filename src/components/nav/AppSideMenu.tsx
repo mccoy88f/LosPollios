@@ -1,0 +1,134 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
+import { LogOut, X } from 'lucide-react'
+import { cn } from '@/lib/cn'
+import type { NavMenuSection } from '@/lib/navMenu'
+
+export function AppSideMenu({
+  open,
+  onClose,
+  sections,
+}: {
+  open: boolean
+  onClose: () => void
+  sections: NavMenuSection[]
+}) {
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  function isActive(href: string) {
+    if (href === '/') return pathname === '/'
+    if (pathname === href) return true
+    // Live: solo la pagina principale, non preferenze/aggiornamenti
+    if (/^\/live\/\d+$/.test(href)) return false
+    return pathname.startsWith(`${href}/`)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Menu">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45"
+        aria-label="Chiudi menu"
+        onClick={onClose}
+      />
+      <aside
+        className={cn(
+          'absolute left-0 top-0 bottom-0 w-[min(18.5rem,88vw)]',
+          'bg-white shadow-2xl flex flex-col',
+          'animate-slideIn'
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 shrink-0">
+          <span className="font-semibold text-gray-900">Menu</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+            aria-label="Chiudi"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-5">
+          {sections.map((section, si) => (
+            <div key={si}>
+              {section.title && (
+                <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 truncate">
+                  {section.title}
+                </p>
+              )}
+              <ul className="space-y-0.5">
+                {section.items.map(item => {
+                  const Icon = item.icon
+                  const active = isActive(item.href)
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={onClose}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                          active
+                            ? 'bg-brand-800 text-white'
+                            : 'text-gray-800 hover:bg-gray-100'
+                        )}
+                      >
+                        <Icon className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="shrink-0 border-t border-gray-200 p-3 space-y-0.5">
+          <Link
+            href="/account"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              pathname === '/account' ? 'bg-brand-800 text-white' : 'text-gray-800 hover:bg-gray-100'
+            )}
+          >
+            Il mio account
+          </Link>
+          <button
+            type="button"
+            onClick={async () => {
+              onClose()
+              await fetch('/api/auth/logout', { method: 'POST' })
+              window.location.href = '/login'
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50"
+          >
+            <LogOut className="w-5 h-5 shrink-0" aria-hidden />
+            Esci
+          </button>
+        </div>
+      </aside>
+    </div>
+  )
+}

@@ -21,17 +21,7 @@ export default async function DashboardPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <ElectionSiteNav
-        crumbs={[
-          { label: 'Home', href: '/' },
-          { label: election.name },
-          { label: 'Analisi' },
-        ]}
-        contextLinks={[
-          { label: 'Live', href: `/live/${id}` },
-          { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti` },
-        ]}
-      />
+      <ElectionSiteNav electionId={id} electionName={election.name} />
       <AnalysisDashboard
         electionId={id}
         electionName={election.name}

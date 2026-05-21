@@ -3,14 +3,15 @@ import { getSession } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { SiteTopNav } from '@/components/SiteTopNav'
-import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { Card, CardBody, PageHeader } from '@/components/ui/Card'
 import { BarChart3, ClipboardList, Radio, Settings, Vote } from 'lucide-react'
 
 export default async function HomePage() {
   const session = await getSession()
-  const profile = session ? await getSessionUserProfile(session) : null
+  if (!session) return null
+  const profile = await getSessionUserProfile(session)
   const elections = await prisma.election.findMany({
     where: { status: { not: 'setup' } },
     orderBy: { date: 'desc' },
@@ -18,22 +19,21 @@ export default async function HomePage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteTopNav
-        crumbs={[{ label: 'Home' }]}
-        username={session?.username}
+        menuSections={buildAppMenuSections(session)}
+        username={session.username}
         displayName={profile?.name}
-        primaryLinks={getPrimaryNavLinks(session ?? undefined)}
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-8 flex-1 w-full">
         <PageHeader
           title="LosPollios"
           description="Hub operativo per spoglio, live e inserimento dati di sezione."
         />
 
         <div className="grid gap-4 sm:grid-cols-2 mb-8">
-          {session?.role === 'admin' && (
+          {session.role === 'admin' && (
             <Link href="/admin" className="block group">
               <Card className="p-5 h-full hover:border-brand-300 hover:shadow-md transition-all">
                 <div className="flex items-start gap-3">
@@ -48,7 +48,7 @@ export default async function HomePage() {
               </Card>
             </Link>
           )}
-          {session?.role === 'entry' && session.electionId && (
+          {session.role === 'entry' && session.electionId && (
             <Link href={`/entry/${session.electionId}`} className="block group">
               <Card className="p-5 h-full hover:border-brand-300 hover:shadow-md transition-all">
                 <div className="flex items-start gap-3">
@@ -81,14 +81,14 @@ export default async function HomePage() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/live/${e.id}`}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg bg-brand-800 text-white hover:bg-brand-900 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-800 text-white text-sm font-medium hover:bg-brand-900"
                       >
                         <Radio className="w-4 h-4" aria-hidden />
                         Live
                       </Link>
                       <Link
                         href={`/dashboard/${e.id}`}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
                       >
                         <BarChart3 className="w-4 h-4" aria-hidden />
                         Analisi
@@ -101,8 +101,8 @@ export default async function HomePage() {
           </section>
         ) : (
           <Card>
-            <CardBody className="text-center text-gray-500 py-12">
-              <Vote className="w-10 h-10 mx-auto mb-3 text-gray-300" aria-hidden />
+            <CardBody className="py-8 text-center text-gray-500">
+              <Vote className="w-10 h-10 mx-auto mb-2 text-gray-300" aria-hidden />
               <p>Nessuna elezione attiva al momento.</p>
             </CardBody>
           </Card>

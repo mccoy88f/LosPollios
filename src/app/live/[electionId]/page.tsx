@@ -13,17 +13,7 @@ export default async function LivePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <ElectionSiteNav
-        crumbs={[
-          { label: 'Home', href: '/' },
-          { label: election.name },
-          { label: 'Live' },
-        ]}
-        contextLinks={[
-          { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti` },
-          { label: 'Analisi', href: `/dashboard/${id}` },
-        ]}
-      />
+      <ElectionSiteNav electionId={id} electionName={election.name} />
       <LiveDashboard electionId={id} electionName={election.name} commune={election.commune} />
     </div>
   )

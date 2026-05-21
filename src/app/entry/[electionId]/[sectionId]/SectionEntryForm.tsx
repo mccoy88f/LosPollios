@@ -24,11 +24,6 @@ interface Props {
   className?: string
 }
 
-function defaultOpenListId(lists: ListData[]): number | null {
-  const withCandidates = lists.find(l => l.candidates.length > 0)
-  return (withCandidates ?? lists[0])?.id ?? null
-}
-
 export default function SectionEntryForm({
   electionId,
   sectionId,
@@ -68,9 +63,7 @@ export default function SectionEntryForm({
     ]))
   )
 
-  const [openListId, setOpenListId] = useState<number | null>(() =>
-    hadTurnout ? defaultOpenListId(lists) : null
-  )
+  const [openListId, setOpenListId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
@@ -82,10 +75,12 @@ export default function SectionEntryForm({
 
   function setTurn(k: string, v: string) { setTurnout(t => ({ ...t, [k]: v })) }
 
+  /** Apre questa lista e chiude le altre; se già aperta non fa nulla. */
   function openList(listId: number) {
     setOpenListId(prev => (prev === listId ? prev : listId))
   }
 
+  /** Tap sulla riga: apre o chiude; una sola aperta alla volta. */
   function toggleList(listId: number) {
     setOpenListId(prev => (prev === listId ? null : listId))
   }
@@ -104,7 +99,7 @@ export default function SectionEntryForm({
     if (turnout.votersActual === '' || Number(turnout.votersActual) < 0) return
     setListsPhase(true)
     setAffluenzaExpanded(false)
-    if (openListId == null) setOpenListId(defaultOpenListId(lists))
+    // Liste tutte chiuse: l’operatore apre quella che serve (tap o +/−)
   }
 
   function expandAffluenza() {
@@ -304,10 +299,7 @@ export default function SectionEntryForm({
           {quadraturaAlert && <div className="shrink-0 px-4 pb-2">{quadraturaAlert}</div>}
 
           <div
-            className={cn(
-              'flex flex-col flex-1 min-h-0 gap-2 px-3 pb-3',
-              lists.length > 4 ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
-            )}
+            className="flex flex-col flex-1 min-h-0 gap-2 px-3 pb-3 overflow-hidden"
             role="region"
             aria-label="Liste elettorali"
           >
@@ -325,7 +317,7 @@ export default function SectionEntryForm({
                   className={cn(
                     'flex flex-col shrink-0 rounded-xl border bg-white overflow-hidden min-h-0 transition-shadow',
                     isOpen
-                      ? 'flex-1 border-indigo-300 shadow-md ring-1 ring-indigo-100'
+                      ? 'flex-1 min-h-0 border-accent-300 shadow-md ring-1 ring-accent-100'
                       : 'border-gray-200'
                   )}
                 >
@@ -376,7 +368,7 @@ export default function SectionEntryForm({
                     </div>
                     {hasCandidates && (
                       <ChevronDown
-                        className={cn('w-5 h-5 shrink-0 text-indigo-600 transition-transform', isOpen && 'rotate-180')}
+                        className={cn('w-5 h-5 shrink-0 text-accent-600 transition-transform', isOpen && 'rotate-180')}
                         aria-hidden
                       />
                     )}
@@ -385,14 +377,14 @@ export default function SectionEntryForm({
                   {hasCandidates && isOpen && (
                     <div
                       id={`candidates-${list.id}`}
-                      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-indigo-50/40 border-t border-indigo-100"
+                      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-accent-50/50 border-t border-accent-100"
                       role="region"
                       aria-label={`Preferenze ${list.name}`}
                     >
                       {list.candidates.map(c => (
                         <div
                           key={c.id}
-                          className="flex items-center justify-between gap-3 px-3 py-3 border-b border-indigo-100/80 last:border-0"
+                          className="flex items-center justify-between gap-3 px-3 py-3 border-b border-accent-100/80 last:border-0"
                         >
                           <p className="flex-1 min-w-0 text-sm leading-snug text-gray-800">
                             <span className="text-gray-500 tabular-nums">{c.order}.</span>{' '}
@@ -417,6 +409,9 @@ export default function SectionEntryForm({
               )
             })}
           </div>
+          <p className="shrink-0 px-4 pb-2 text-[11px] text-center text-gray-500">
+            Tap sulla lista o usa +/− per aprire a tutta altezza · un’altra lista si chiude da sola
+          </p>
         </div>
       )}
 

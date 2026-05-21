@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { SiteTopNav } from '@/components/SiteTopNav'
-import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -13,9 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteTopNav
-        crumbs={[{ label: 'Amministrazione' }]}
-        primaryLinks={getPrimaryNavLinks(session)}
-        contextLinks={[{ label: 'Home', href: '/' }]}
+        menuSections={buildAppMenuSections(session)}
         username={session.username}
         displayName={profile?.name}
       />

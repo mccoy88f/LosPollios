@@ -1,30 +1,36 @@
 import { getSession } from '@/lib/auth'
-import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { buildAppMenuSections, type ElectionNavContext } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
-import { SiteTopNav, type NavCrumb } from '@/components/SiteTopNav'
-
-type NavLink = { label: string; href: string }
+import { SiteTopNav } from '@/components/SiteTopNav'
 
 export async function ElectionSiteNav({
-  crumbs,
-  contextLinks,
+  electionId,
+  electionName,
   maxWidthClass = 'max-w-7xl',
+  subHeader,
+  contextBarChildren,
 }: {
-  crumbs: NavCrumb[]
-  contextLinks?: NavLink[]
+  electionId: number
+  electionName: string
   maxWidthClass?: string
+  subHeader?: React.ReactNode
+  contextBarChildren?: React.ReactNode
 }) {
   const session = await getSession()
   const profile = session ? await getSessionUserProfile(session) : null
+  if (!session) return null
+
+  const election: ElectionNavContext = { electionId, electionName }
 
   return (
     <SiteTopNav
-      crumbs={crumbs}
-      contextLinks={contextLinks}
-      primaryLinks={getPrimaryNavLinks(session ?? undefined)}
-      username={session?.username}
+      menuSections={buildAppMenuSections(session, election)}
+      election={election}
+      username={session.username}
       displayName={profile?.name}
       maxWidthClass={maxWidthClass}
+      subHeader={subHeader}
+      contextBarChildren={contextBarChildren}
     />
   )
 }
