@@ -119,7 +119,7 @@ function LiveDashboardInner({
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-1 py-24">
-        <div className="text-center text-gray-400">
+        <div className="text-center text-gray-400 dark:text-neutral-500">
           <div className="text-4xl mb-3 animate-spin">⏳</div>
           <p>Caricamento risultati...</p>
         </div>

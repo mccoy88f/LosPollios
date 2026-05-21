@@ -8,12 +8,16 @@
   --color-text: #111827;
   --color-text-muted: #4b5563;
   --color-surface: #ffffff;
+  --chart-grid-stroke: #f0f0f0;
+  --chart-axis-stroke: #9ca3af;
 }
 
 html.dark {
   --color-text: #fafafa;
   --color-text-muted: #a3a3a3;
   --color-surface: #171717;
+  --chart-grid-stroke: #404040;
+  --chart-axis-stroke: #737373;
 }
 
 @layer base {
@@ -30,65 +34,134 @@ html.dark {
   .surface-card {
     @apply bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white;
   }
+
+  .surface-panel {
+    @apply bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl text-gray-900 dark:text-white;
+  }
 }
 
-/* Admin: tema scuro coerente (nero/bianco, no slate/blu) */
-html.dark .admin-zone {
-  color: #fff;
-}
-
-html.dark .admin-zone .bg-white,
-html.dark .admin-zone .bg-white\/80 {
+/* === Tema scuro globale: superfici e testi (live, analisi, entry, ecc.) === */
+html.dark .bg-white,
+html.dark .bg-white\/90 {
   background-color: #171717;
 }
 
-html.dark .admin-zone .bg-gray-50,
-html.dark .admin-zone .bg-gray-50\/90,
-html.dark .admin-zone thead.bg-gray-50 {
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/90,
+html.dark .bg-gray-50\/80,
+html.dark thead.bg-gray-50,
+html.dark tr.bg-gray-50\/80 {
   background-color: #0a0a0a;
 }
 
-html.dark .admin-zone .border-gray-100,
-html.dark .admin-zone .border-gray-200,
-html.dark .admin-zone .border-gray-300 {
-  border-color: #404040;
-}
-
-html.dark .admin-zone .text-gray-900,
-html.dark .admin-zone .text-gray-800 {
-  color: #fff;
-}
-
-html.dark .admin-zone .text-gray-700,
-html.dark .admin-zone .text-gray-600 {
-  color: #d4d4d4;
-}
-
-html.dark .admin-zone .text-gray-500,
-html.dark .admin-zone .text-gray-400 {
-  color: #a3a3a3;
-}
-
-html.dark .admin-zone .hover\:bg-gray-50:hover,
-html.dark .admin-zone .hover\:bg-gray-100:hover {
+html.dark .bg-gray-100 {
   background-color: #262626;
 }
 
-html.dark .admin-zone input:not([type='checkbox']):not([type='radio']):not([type='color']),
-html.dark .admin-zone select,
-html.dark .admin-zone textarea {
-  background-color: #171717;
-  border-color: #525252;
-  color: #fff;
+html.dark .bg-brand-50,
+html.dark .bg-brand-50\/50 {
+  background-color: #0f2920;
 }
 
-html.dark .admin-zone input::placeholder,
-html.dark .admin-zone textarea::placeholder {
-  color: #737373;
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: #404040;
 }
 
-html.dark .admin-zone .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+html.dark .text-gray-900,
+html.dark .text-gray-800 {
+  color: #fafafa;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #d4d4d4;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: #a3a3a3;
+}
+
+/* Verde brand su sfondo scuro: tono chiaro leggibile */
+html.dark .text-brand-950,
+html.dark .text-brand-900,
+html.dark .text-brand-800,
+html.dark .text-brand-700,
+html.dark .text-brand-600 {
+  color: #a8d4c4;
+}
+
+html.dark .hover\:text-brand-700:hover,
+html.dark .hover\:text-brand-800:hover,
+html.dark .hover\:underline.text-brand-600 {
+  color: #d5ebe3;
+}
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover {
+  background-color: #262626;
+}
+
+html.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
   border-color: #262626;
+}
+
+html.dark code.bg-gray-100,
+html.dark code[class*='bg-gray-100'] {
+  background-color: #262626 !important;
+  color: #e5e5e5;
+}
+
+html.dark .bg-green-100 {
+  background-color: #14532d;
+}
+
+html.dark .text-green-700,
+html.dark .text-green-800 {
+  color: #86efac;
+}
+
+html.dark .bg-red-100 {
+  background-color: #450a0a;
+}
+
+html.dark .text-red-600,
+html.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+html.dark .bg-amber-100 {
+  background-color: #451a03;
+}
+
+html.dark .text-amber-900,
+html.dark .text-amber-950 {
+  color: #fcd34d;
+}
+
+html.dark .bg-accent-100 {
+  background-color: #3d2a00;
+}
+
+html.dark .bg-violet-100 {
+  background-color: #2e1065;
+}
+
+html.dark .text-violet-900 {
+  color: #ddd6fe;
+}
+
+/* Alert info: niente verde scuro su verde scuro */
+html.dark .bg-brand-50.border-brand-200 {
+  background-color: #171717;
+  border-color: #3d8f6a;
+  color: #fafafa;
+}
+
+html.dark .admin-zone {
+  color: #fff;
 }
 
 @layer utilities {

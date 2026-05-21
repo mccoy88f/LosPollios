@@ -176,7 +176,7 @@ export default function LivePreferenzePage({
                   <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">{c.name}</p>
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} domain={[0, 'auto']} tickFormatter={v => `${v}%`} />
                       <Tooltip

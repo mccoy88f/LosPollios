@@ -6,7 +6,7 @@ type Variant = 'info' | 'success' | 'warning' | 'error'
 
 const styles: Record<Variant, { box: string; icon: typeof Info }> = {
   info: {
-    box: 'bg-brand-50 border-brand-200 text-brand-950 dark:bg-brand-950/50 dark:border-brand-700 dark:text-brand-100',
+    box: 'bg-brand-50 border-brand-200 text-brand-950 dark:bg-neutral-900 dark:border-brand-600 dark:text-white',
     icon: Info,
   },
   success: {

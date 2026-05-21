@@ -30,9 +30,9 @@ export function LiveListPreferencesDetail({
   const prefTotal = sorted.reduce((s, c) => s + c.votes, 0)
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100">
+    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <h4 className="text-sm font-semibold text-gray-900">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
           Preferenze · {list.listName}
         </h4>
         <LivePanelClose onClose={onClose} />
@@ -129,11 +129,11 @@ export function LiveSectionDetailPanel({
   const listTotal = data?.lists.reduce((s, l) => s + l.listVotes, 0) ?? 0
 
   return (
-    <div className="bg-white rounded-xl border-2 border-brand-800/20 p-5 shadow-sm">
+    <div className="surface-panel border-2 border-brand-800/20 dark:border-brand-500/40 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="font-semibold text-gray-900">Sezione {sectionNumber}</h3>
-          {data?.section.name && <p className="text-sm text-gray-500">{data.section.name}</p>}
+          <h3 className="font-semibold text-gray-900 dark:text-white">Sezione {sectionNumber}</h3>
+          {data?.section.name && <p className="text-sm text-gray-500 dark:text-neutral-400">{data.section.name}</p>}
         </div>
         <LivePanelClose onClose={onClose} />
       </div>
@@ -265,9 +265,9 @@ export function LiveCandidateSectionsPanel({
   }, [electionId, candidateId])
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100">
+    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <h4 className="text-sm font-semibold text-gray-900">Preferenze per sezione · {candidateName}</h4>
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Preferenze per sezione · {candidateName}</h4>
         <LivePanelClose onClose={onClose} />
       </div>
 
@@ -313,7 +313,7 @@ export function LiveCandidateSectionsPanel({
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-gray-50 rounded-lg px-3 py-2">
+    <div className="bg-gray-50 dark:bg-neutral-950 rounded-lg px-3 py-2">
       <p className="text-[10px] text-gray-500 uppercase tracking-wide">{label}</p>
       <p className="text-lg font-bold text-gray-900 tabular-nums">{value}</p>
       {sub && <p className="text-xs text-brand-800 font-medium">{sub}</p>}
@@ -324,6 +324,8 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 export function liveSelectableRowClass(selected: boolean) {
   return cn(
     'cursor-pointer transition-colors rounded-lg -mx-1 px-1',
-    selected ? 'bg-brand-50 ring-2 ring-brand-800/30' : 'hover:bg-gray-50'
+    selected
+      ? 'bg-brand-50 dark:bg-brand-950/50 ring-2 ring-brand-800/30 dark:ring-brand-500/40'
+      : 'hover:bg-gray-50 dark:hover:bg-neutral-800'
   )
 }

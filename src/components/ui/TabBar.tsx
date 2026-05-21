@@ -23,7 +23,7 @@ export function TabBar<T extends string>({
   return (
     <div
       className={cn(
-        'flex flex-wrap gap-1 bg-white rounded-xl border border-gray-200 p-1 w-fit',
+        'flex flex-wrap gap-1 bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-1 w-fit max-w-full',
         className
       )}
       role="tablist"
@@ -41,7 +41,9 @@ export function TabBar<T extends string>({
             className={cn(
               'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
-              active ? 'bg-brand-800 text-white' : 'text-gray-900 hover:bg-gray-100'
+              active
+                ? 'bg-brand-800 text-white'
+                : 'text-gray-900 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800'
             )}
           >
             {Icon ? <Icon className="w-4 h-4 shrink-0" aria-hidden /> : null}

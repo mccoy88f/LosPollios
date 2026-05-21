@@ -67,10 +67,10 @@ export function LiveTurnoutCards({
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {items.map(s => (
-        <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4">
+        <div key={s.label} className="surface-panel p-4">
           <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-          <p className="text-2xl font-bold text-gray-900 tabular-nums">{s.value}</p>
-          {s.sub && <p className="text-sm text-brand-800 font-medium">{s.sub}</p>}
+          <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{s.value}</p>
+          {s.sub && <p className="text-sm text-brand-800 dark:text-brand-300 font-medium">{s.sub}</p>}
         </div>
       ))}
     </div>
@@ -103,9 +103,9 @@ export function LiveListRanking({
   if (!lists.length) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="surface-panel p-5">
       <div className="flex items-center justify-between mb-1 gap-2">
-        <h3 className="font-semibold text-gray-900">Risultati liste</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white">Risultati liste</h3>
         {showAllLink && sorted.length > (limit ?? 0) && onShowAll && (
           <button type="button" onClick={onShowAll} className="text-sm text-brand-800 hover:underline font-medium">
             Vedi tutte →
@@ -212,11 +212,11 @@ export function LiveListBarChart({ lists, totalListVotes }: { lists: LiveListRes
   if (!chartData.length) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-4">Confronto liste (%)</h3>
+    <div className="surface-panel p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Confronto liste (%)</h3>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
           <XAxis dataKey="name" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `${v}%`} />
           <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, 'Percentuale']} />
@@ -264,15 +264,15 @@ export function LiveCoalitionByField({ lists }: { lists: LiveListResult[] }) {
 
   if (!coalitions.length) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+      <div className="surface-panel p-8 text-center text-gray-500 dark:text-neutral-400">
         Nessuna coalizione con voti registrati.
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-4">Coalizioni</h3>
+    <div className="surface-panel p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Coalizioni</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
         <div>
           {coalitions.map((c, i) => (
@@ -329,8 +329,8 @@ export function LiveCoalitionMini({ lists }: { lists: LiveListResult[] }) {
   if (!top.length) return null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-3">Top coalizioni</h3>
+    <div className="surface-panel p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Top coalizioni</h3>
       <div className="space-y-2">
         {top.map((c, i) => (
           <div key={c.name} className="flex items-center justify-between text-sm">
@@ -366,7 +366,7 @@ export function LiveSectionGrid({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-5">
+      <div className="surface-panel p-5">
         <div className="flex items-center justify-between mb-1 gap-2">
           <h3 className="font-semibold text-gray-900 dark:text-white">Sezioni</h3>
           <span className="text-sm text-gray-500 dark:text-neutral-400 tabular-nums">
@@ -470,8 +470,8 @@ export function LiveSeatProjection({
         {coverage.toFixed(1)}%). I seggi possono variare al completamento dello spoglio.
       </Alert>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-2">Distribuzione seggi (stima)</h3>
+      <div className="surface-panel p-5">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Distribuzione seggi (stima)</h3>
         <p className="text-sm text-gray-500 mb-4">Totale seggi: {totalSeats}</p>
         {filtered.length > 0 && (
           <div className="flex h-8 rounded-lg overflow-hidden mb-4">
@@ -508,7 +508,7 @@ export function LiveSeatProjection({
                 <td className="py-1.5 text-right tabular-nums">{formatPercent(s.percentage)}</td>
                 <td className="py-1.5 text-right font-bold tabular-nums">{s.aboveThreshold ? s.seats : '—'}</td>
                 <td className="py-1.5 text-right text-xs">
-                  <span className={`px-1.5 py-0.5 rounded ${s.aboveThreshold ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                  <span className={`px-1.5 py-0.5 rounded ${s.aboveThreshold ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300'}`}>
                     {s.aboveThreshold ? '✓' : '✗'}
                   </span>
                 </td>
@@ -543,7 +543,7 @@ export function LivePreferenzePanel({
   const withCandidates = lists.filter(l => l.candidates.length > 0)
   if (!withCandidates.length) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+      <div className="surface-panel p-8 text-center text-gray-500 dark:text-neutral-400">
         Nessun candidato configurato sulle liste.
       </div>
     )
@@ -563,7 +563,7 @@ export function LivePreferenzePanel({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="surface-panel p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="font-semibold text-gray-900">
             {compact ? 'Top preferenze' : 'Preferenze candidati (aggregate)'}

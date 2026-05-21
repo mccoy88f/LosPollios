@@ -92,7 +92,7 @@ export default function LiveAggiornamentiPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-400">
+      <div className="flex-1 flex items-center justify-center py-24 text-gray-400 dark:text-neutral-500">
         Caricamento aggiornamenti…
       </div>
     )
@@ -109,8 +109,8 @@ export default function LiveAggiornamentiPage({
   return (
     <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Aggiornamenti spoglio</h1>
-          <p className="text-gray-600 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Aggiornamenti spoglio</h1>
+          <p className="text-gray-600 dark:text-neutral-400 text-sm mt-1">
             {commune} — ultimi salvataggi da inserimento sezione (affluenza, voti lista, preferenze) con utente e orario
             registrati nel database.
           </p>
@@ -148,7 +148,7 @@ export default function LiveAggiornamentiPage({
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-semibold text-gray-900">Cronologia recente</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">Cronologia recente</h2>
             <span className="text-xs text-gray-500">{data.events.length} eventi</span>
           </div>
           <div className="overflow-x-auto">

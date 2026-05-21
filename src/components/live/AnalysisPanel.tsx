@@ -53,9 +53,9 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
   const filtered = seats.filter(s => s.seats > 0)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 mb-4">Totale seggi: {totalSeats}</p>
+    <div className="surface-panel p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">Totale seggi: {totalSeats}</p>
 
       {/* Seat bar visualization */}
       <div className="flex h-8 rounded-lg overflow-hidden mb-4">
@@ -72,7 +72,7 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
       </div>
 
       <table className="w-full text-sm">
-        <thead><tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+        <thead><tr className="text-left text-xs text-gray-500 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-800">
           <th className="pb-2">Lista</th>
           <th className="text-right pb-2">Voti %</th>
           <th className="text-right pb-2">Seggi</th>
@@ -80,7 +80,7 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
         </tr></thead>
         <tbody>
           {[...seats].sort((a, b) => b.votes - a.votes).map(s => (
-            <tr key={s.listId} className={`border-b border-gray-50 last:border-0 ${!s.aboveThreshold ? 'opacity-50' : ''}`}>
+            <tr key={s.listId} className={`border-b border-gray-50 dark:border-neutral-800 last:border-0 ${!s.aboveThreshold ? 'opacity-50' : ''}`}>
               <td className="py-1.5">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
@@ -90,7 +90,7 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
               <td className="py-1.5 text-right">{formatPercent(s.percentage)}</td>
               <td className="py-1.5 text-right font-bold">{s.aboveThreshold ? s.seats : '—'}</td>
               <td className="py-1.5 text-right text-xs">
-                <span className={`px-1.5 py-0.5 rounded ${s.aboveThreshold ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                <span className={`px-1.5 py-0.5 rounded ${s.aboveThreshold ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300'}`}>
                   {s.aboveThreshold ? '✓' : '✗'}
                 </span>
               </td>
@@ -167,15 +167,15 @@ function HistoricalComparison({ current, historical }: { current: SeatProjection
   const COLORS = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#0891b2']
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="font-semibold text-gray-900 mb-4">Confronto storico – % voti per lista</h3>
-      <p className="text-xs text-gray-500 mb-3">
+    <div className="surface-panel p-5">
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Confronto storico – % voti per lista</h3>
+      <p className="text-xs text-gray-500 dark:text-neutral-400 mb-3">
         Le serie storiche sono accoppiate alla lista attuale solo se coincide il <strong>candidato sindaco</strong>;
         in assenza di sindaco confrontabile si usa la <strong>coalizione</strong>. Nessun accoppiamento sul solo nome lista.
       </p>
       <ResponsiveContainer width="100%" height={340}>
         <BarChart data={compareData} margin={{ top: 8, right: 12, bottom: 100, left: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
           <XAxis dataKey="listName" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" height={70} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
           <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
@@ -226,7 +226,7 @@ export default function AnalysisPanel({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center flex-1 py-24 text-gray-400">Caricamento...</div>
+      <div className="flex items-center justify-center flex-1 py-24 text-gray-400 dark:text-neutral-500">Caricamento...</div>
     )
   }
   if (!proj) {
@@ -238,12 +238,12 @@ export default function AnalysisPanel({
   return (
     <div className={embedded ? 'space-y-4' : 'flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6'}>
         {embedded ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3">
-            <p className="text-sm text-gray-600">
+          <div className="surface-panel px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-gray-600 dark:text-neutral-300">
               Proiezione seggi e confronto storico · {commune}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700 tabular-nums">
+              <span className="text-sm bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-700 px-3 py-1.5 rounded-lg text-gray-700 dark:text-neutral-200 tabular-nums">
                 {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
               </span>
               <Button type="button" variant="secondary" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={fetchProj}>
@@ -255,11 +255,11 @@ export default function AnalysisPanel({
           <Card>
             <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{electionName}</h1>
-                <p className="text-sm text-gray-500">{commune}</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">{electionName}</h1>
+                <p className="text-sm text-gray-500 dark:text-neutral-400">{commune}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg text-gray-700 tabular-nums">
+                <span className="text-sm bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-700 px-3 py-1.5 rounded-lg text-gray-700 dark:text-neutral-200 tabular-nums">
                   {proj.sectionsCounted} / {proj.totalSections} sezioni ({proj.coverage.toFixed(1)}%)
                 </span>
                 <Button type="button" variant="secondary" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={fetchProj}>
@@ -298,22 +298,22 @@ export default function AnalysisPanel({
 
             {/* Coalitions */}
             {hasCoalitions && proj.current.coalitions.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 mb-4">Coalizioni</h3>
+              <div className="surface-panel p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Coalizioni</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                   <div className="space-y-2">
                     {proj.current.coalitions.map((c, i) => (
-                      <div key={c.coalition} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div key={c.coalition} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-950 rounded-xl">
                         <div className="flex items-center gap-2">
                           {i === 0 && <Crown className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />}
                           <div>
                             <p className="font-semibold text-sm">{c.candidateMayor || c.coalition}</p>
-                            {c.candidateMayor && <p className="text-xs text-gray-500">{c.coalition}</p>}
+                            {c.candidateMayor && <p className="text-xs text-gray-500 dark:text-neutral-400">{c.coalition}</p>}
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="font-bold">{formatPercent(c.percentage)}</p>
-                          <p className="text-xs text-gray-400">{formatNumber(c.totalVotes)}</p>
+                          <p className="text-xs text-gray-400 dark:text-neutral-500">{formatNumber(c.totalVotes)}</p>
                         </div>
                       </div>
                     ))}
@@ -351,8 +351,8 @@ export default function AnalysisPanel({
             <SeatChart seats={proj.projected.seats} totalSeats={councilSeats} title="Proiezione seggi – stima voti finali" />
 
             {/* Projected votes comparison */}
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">Voti attuali vs proiettati</h3>
+            <div className="surface-panel p-5">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Voti attuali vs proiettati</h3>
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart
                   data={proj.projectedLists.map(l => ({
@@ -363,7 +363,7 @@ export default function AnalysisPanel({
                   }))}
                   margin={{ top: 8, right: 12, bottom: 100, left: 8 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" height={70} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={v => formatNumber(v)} />
                   <Tooltip formatter={(v: number) => [formatNumber(v), '']} />
@@ -394,17 +394,17 @@ export default function AnalysisPanel({
 
                 {/* Historical tables */}
                 {historicalElections.map(h => (
-                  <div key={h.id} className="bg-white rounded-xl border border-gray-200 p-5">
-                    <h3 className="font-semibold text-gray-900 mb-3">{h.name} ({h.year})</h3>
+                  <div key={h.id} className="surface-panel p-5">
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{h.name} ({h.year})</h3>
                     <table className="w-full text-sm">
-                      <thead><tr className="text-xs text-gray-500 border-b border-gray-100 text-left">
+                      <thead><tr className="text-xs text-gray-500 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-800 text-left">
                         <th className="pb-2">Lista</th><th className="pb-2">Coalizione</th><th className="text-right pb-2">Voti</th><th className="text-right pb-2">%</th><th className="text-right pb-2">Seggi</th>
                       </tr></thead>
                       <tbody>
                         {h.results.map(r => (
-                          <tr key={r.id} className="border-b border-gray-50 last:border-0">
-                            <td className="py-1.5 font-medium">{r.listName}</td>
-                            <td className="py-1.5 text-gray-500 text-xs">{r.coalition || '—'}</td>
+                          <tr key={r.id} className="border-b border-gray-50 dark:border-neutral-800 last:border-0">
+                            <td className="py-1.5 font-medium text-gray-900 dark:text-white">{r.listName}</td>
+                            <td className="py-1.5 text-gray-500 dark:text-neutral-400 text-xs">{r.coalition || '—'}</td>
                             <td className="py-1.5 text-right">{formatNumber(r.votes)}</td>
                             <td className="py-1.5 text-right">{r.percentage.toFixed(1)}%</td>
                             <td className="py-1.5 text-right font-bold">{r.seats ?? '—'}</td>
