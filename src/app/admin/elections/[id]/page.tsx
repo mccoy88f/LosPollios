@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import DeleteElectionButton from './DeleteElectionButton'
+import ClearElectionEntryDataButton from './ClearElectionEntryDataButton'
+import { getElectionEntryDataCounts } from '@/lib/clearElectionEntryData'
 import ElectionDetailInfoCard from './ElectionDetailInfoCard'
 import { AdminNavCard } from '@/components/ui/AdminNavCard'
 import { Alert } from '@/components/ui/Alert'
@@ -24,6 +26,7 @@ export default async function ElectionDetailPage({ params }: Props) {
   const totalVoters  = sections.reduce((s, sec) => s + sec.theoreticalVoters, 0)
   const actualVoters = turnouts.reduce((s, t) => s + t.votersActual, 0)
   const sectionsCounted = new Set(turnouts.map(t => t.sectionId)).size
+  const entryDataCounts = await getElectionEntryDataCounts(election.id)
 
   const navItems = [
     { href: `/admin/elections/${id}/sections`, icon: Landmark, title: 'Sezioni', description: `${election._count.sections} sezioni configurate` },
@@ -78,13 +81,31 @@ export default async function ElectionDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-4">
         <Alert variant="error" title="Zona pericolosa">
-          <p className="mb-3 max-w-2xl">
-            L&apos;eliminazione è irreversibile. Puoi eliminare un&apos;elezione in qualsiasi stato; i dati collegati
-            vengono rimossi dal database.
-          </p>
-          <DeleteElectionButton electionId={election.id} electionName={election.name} />
+          <div className="space-y-6 max-w-2xl">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 mb-1">Azzera dati di inserimento</p>
+              <p className="text-sm text-gray-700 mb-3">
+                Rimuove affluenze per sezione, voti di lista e preferenze candidato (tutto ciò che si inserisce da{' '}
+                <strong>/entry</strong>). Restano il tetto comunale, i votanti/aventi diritto a livello elezione, le
+                sezioni con i loro aventi diritto configurati, liste e candidati.
+              </p>
+              <ClearElectionEntryDataButton
+                electionId={election.id}
+                electionName={election.name}
+                counts={entryDataCounts}
+              />
+            </div>
+            <div className="border-t border-red-200 pt-5">
+              <p className="text-sm font-semibold text-gray-900 mb-1">Elimina elezione</p>
+              <p className="text-sm text-gray-700 mb-3">
+                L&apos;eliminazione è irreversibile. Puoi eliminare un&apos;elezione in qualsiasi stato; i dati collegati
+                vengono rimossi dal database.
+              </p>
+              <DeleteElectionButton electionId={election.id} electionName={election.name} />
+            </div>
+          </div>
         </Alert>
       </div>
     </div>
