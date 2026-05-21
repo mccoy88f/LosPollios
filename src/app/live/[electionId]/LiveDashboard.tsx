@@ -16,7 +16,7 @@ import {
   LiveTurnoutCards,
   type SeatProjectionRow,
 } from '@/components/live/LiveShared'
-import type { LiveResultsData } from '@/components/live/liveTypes'
+import type { LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
 import { electionHasCoalitions, isLiveViewId, type LiveViewId } from '@/lib/liveElection'
 import {
   BarChart3,
@@ -46,6 +46,10 @@ const VIEW_LABELS: Record<LiveViewId, string> = {
   preferenze: 'Preferenze',
 }
 
+function toggleId(prev: number | null, id: number): number | null {
+  return prev === id ? null : id
+}
+
 function LiveDashboardInner({
   electionId,
   electionName,
@@ -63,6 +67,9 @@ function LiveDashboardInner({
   const [loading, setLoading] = useState(true)
   const [projLoading, setProjLoading] = useState(false)
   const [lastPulse, setLastPulse] = useState<Date | null>(null)
+  const [selectedListId, setSelectedListId] = useState<number | null>(null)
+  const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null)
+  const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null)
 
   const hasCoalitions = data ? electionHasCoalitions(data.lists) : false
   const hasPreferenze = data ? data.lists.some(l => l.candidates.length > 0) : false
@@ -75,22 +82,17 @@ function LiveDashboardInner({
     return base
   }, [hasCoalitions, hasPreferenze])
 
-  const [view, setView] = useState<LiveViewId>('panorama')
+  const viewParam = searchParams.get('view')
+  const view: LiveViewId = useMemo(() => {
+    if (isLiveViewId(viewParam) && availableViews.includes(viewParam)) return viewParam
+    return 'panorama'
+  }, [viewParam, availableViews])
 
-  useEffect(() => {
-    const urlView = searchParams.get('view')
-    if (isLiveViewId(urlView) && availableViews.includes(urlView)) {
-      setView(urlView)
-      return
-    }
-    if (!availableViews.includes(view)) {
-      setView('panorama')
-    }
-  }, [searchParams, availableViews, view])
-
-  const setViewAndUrl = useCallback(
+  const setView = useCallback(
     (id: LiveViewId) => {
-      setView(id)
+      setSelectedListId(null)
+      setSelectedSectionId(null)
+      setSelectedCandidateId(null)
       const params = new URLSearchParams(searchParams.toString())
       if (id === 'panorama') params.delete('view')
       else params.set('view', id)
@@ -177,6 +179,15 @@ function LiveDashboardInner({
                 : Users,
   }))
 
+  const listRankingProps = {
+    lists,
+    totalListVotes,
+    selectedListId,
+    onSelectList: (id: number) => setSelectedListId(prev => toggleId(prev, id)),
+  }
+
+  const sectionSelect = (s: LiveSectionStatus) => setSelectedSectionId(prev => toggleId(prev, s.id))
+
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-4">
       <LiveKpiStrip
@@ -188,31 +199,40 @@ function LiveDashboardInner({
         hasWarnings={hasWarnings}
       />
 
-      <TabBar tabs={tabs} value={view} onChange={setViewAndUrl} className="w-full sm:w-auto" />
+      {lists.length > 0 && view !== 'liste' && (
+        <LiveListRanking {...listRankingProps} limit={view === 'panorama' ? 6 : undefined} />
+      )}
+
+      <TabBar tabs={tabs} value={view} onChange={setView} className="w-full sm:w-auto" />
 
       {view === 'panorama' && (
         <div className="space-y-6">
           <LiveDataQualityAlert dataQuality={dataQuality} />
           <LiveTurnoutCards turnout={data.turnout} totalListVotes={totalListVotes} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LiveListRanking
+          {hasCoalitions && <LiveCoalitionMini lists={lists} />}
+          <LiveSectionGrid
+            sections={sectionStatus}
+            compact
+            electionId={electionId}
+            selectedSectionId={selectedSectionId}
+            onSelectSection={sectionSelect}
+          />
+          {hasPreferenze && (
+            <LivePreferenzePanel
               lists={lists}
-              totalListVotes={totalListVotes}
-              limit={3}
-              showAllLink
-              onShowAll={() => setViewAndUrl('liste')}
+              electionId={electionId}
+              compact
+              selectedCandidateId={selectedCandidateId}
+              onSelectCandidate={id => setSelectedCandidateId(prev => toggleId(prev, id))}
             />
-            {hasCoalitions && <LiveCoalitionMini lists={lists} />}
-          </div>
-          <LiveSectionGrid sections={sectionStatus} compact />
-          {hasPreferenze && <LivePreferenzePanel lists={lists} electionId={electionId} compact />}
+          )}
         </div>
       )}
 
       {view === 'liste' && (
         <div className="space-y-6">
           <LiveDataQualityAlert dataQuality={dataQuality} />
-          <LiveListRanking lists={lists} totalListVotes={totalListVotes} />
+          <LiveListRanking {...listRankingProps} />
           <LiveListBarChart lists={lists} totalListVotes={totalListVotes} />
         </div>
       )}
@@ -220,7 +240,12 @@ function LiveDashboardInner({
       {view === 'sezioni' && (
         <div className="space-y-6">
           <LiveDataQualityAlert dataQuality={dataQuality} />
-          <LiveSectionGrid sections={sectionStatus} />
+          <LiveSectionGrid
+            sections={sectionStatus}
+            electionId={electionId}
+            selectedSectionId={selectedSectionId}
+            onSelectSection={sectionSelect}
+          />
         </div>
       )}
 
@@ -250,7 +275,12 @@ function LiveDashboardInner({
       )}
 
       {view === 'preferenze' && hasPreferenze && (
-        <LivePreferenzePanel lists={lists} electionId={electionId} />
+        <LivePreferenzePanel
+          lists={lists}
+          electionId={electionId}
+          selectedCandidateId={selectedCandidateId}
+          onSelectCandidate={id => setSelectedCandidateId(prev => toggleId(prev, id))}
+        />
       )}
     </div>
   )

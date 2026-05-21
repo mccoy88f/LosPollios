@@ -3,11 +3,18 @@
 import Link from 'next/link'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
+import { cn } from '@/lib/cn'
 import { Alert } from '@/components/ui/Alert'
 import { SectionStatusBadge, sectionLiveCellClasses } from '@/components/ui/SectionStatusBadge'
 import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
 import { Crown } from 'lucide-react'
 import type { LiveListResult, LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
+import {
+  LiveCandidateSectionsPanel,
+  LiveListPreferencesDetail,
+  LiveSectionDetailPanel,
+  liveSelectableRowClass,
+} from '@/components/live/LiveDetailPanels'
 
 export function LiveDataQualityAlert({ dataQuality }: { dataQuality: LiveResultsData['dataQuality'] }) {
   if (!dataQuality) return null
@@ -73,21 +80,28 @@ export function LiveListRanking({
   limit,
   showAllLink,
   onShowAll,
+  selectedListId,
+  onSelectList,
+  hint,
 }: {
   lists: LiveListResult[]
   totalListVotes: number
   limit?: number
   showAllLink?: boolean
   onShowAll?: () => void
+  selectedListId?: number | null
+  onSelectList?: (listId: number) => void
+  hint?: string
 }) {
   const sorted = [...lists].sort((a, b) => b.votes - a.votes)
   const shown = limit != null ? sorted.slice(0, limit) : sorted
+  const selectedList = selectedListId != null ? lists.find(l => l.listId === selectedListId) : null
 
   if (!lists.length) return null
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1 gap-2">
         <h3 className="font-semibold text-gray-900">Risultati liste</h3>
         {showAllLink && sorted.length > (limit ?? 0) && onShowAll && (
           <button type="button" onClick={onShowAll} className="text-sm text-brand-800 hover:underline font-medium">
@@ -95,18 +109,59 @@ export function LiveListRanking({
           </button>
         )}
       </div>
+      {hint && <p className="text-xs text-gray-500 mb-3">{hint}</p>}
+      {!hint && onSelectList && (
+        <p className="text-xs text-gray-500 mb-3">Clicca una lista per le preferenze aggregate</p>
+      )}
       <div className="space-y-2">
         {shown.map(list => (
-          <ListRow key={list.listId} list={list} pct={totalListVotes > 0 ? (list.votes / totalListVotes) * 100 : 0} />
+          <ListRow
+            key={list.listId}
+            list={list}
+            pct={totalListVotes > 0 ? (list.votes / totalListVotes) * 100 : 0}
+            selected={selectedListId === list.listId}
+            onSelect={onSelectList ? () => onSelectList(list.listId) : undefined}
+          />
         ))}
       </div>
+      {selectedList && onSelectList && (
+        <LiveListPreferencesDetail list={selectedList} onClose={() => onSelectList(selectedList.listId)} />
+      )}
     </div>
   )
 }
 
-function ListRow({ list, pct }: { list: LiveListResult; pct: number }) {
+function ListRow({
+  list,
+  pct,
+  selected,
+  onSelect,
+}: {
+  list: LiveListResult
+  pct: number
+  selected?: boolean
+  onSelect?: () => void
+}) {
+  const interactive = !!onSelect
+
   return (
-    <div>
+    <div className={interactive ? liveSelectableRowClass(!!selected) : undefined}>
+      <div
+        className={cn(interactive && 'py-1')}
+        role={interactive ? 'button' : undefined}
+        tabIndex={interactive ? 0 : undefined}
+        onClick={interactive ? onSelect : undefined}
+        onKeyDown={
+          interactive
+            ? e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onSelect?.()
+                }
+              }
+            : undefined
+        }
+      >
       <div className="flex items-center justify-between mb-1 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {list.listLogoUrl ? (
@@ -135,6 +190,7 @@ function ListRow({ list, pct }: { list: LiveListResult; pct: number }) {
           className="h-2 rounded-full transition-all duration-700"
           style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }}
         />
+      </div>
       </div>
     </div>
   )
@@ -291,42 +347,32 @@ export function LiveCoalitionMini({ lists }: { lists: LiveListResult[] }) {
 export function LiveSectionGrid({
   sections,
   compact,
+  electionId,
+  selectedSectionId,
+  onSelectSection,
 }: {
   sections: LiveSectionStatus[]
   compact?: boolean
+  electionId?: number
+  selectedSectionId?: number | null
+  onSelectSection?: (section: LiveSectionStatus) => void
 }) {
   const counted = sections.filter(s => s.locked).length
-  const pending = sections.filter(s => {
-    const hasData = sectionHasEntryData(s.votersActual, s.hasResults)
-    return resolveSectionUiStatus(s.locked, hasData) === 'pending'
-  })
+  const selected = selectedSectionId != null ? sections.find(s => s.id === selectedSectionId) : null
+  const clickable = !!electionId && !!onSelectSection
 
   return (
     <div className="space-y-4">
-      {pending.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2">Da completare ({pending.length})</h3>
-          <p className="text-xs text-gray-500 mb-2">Sezioni senza affluenza né voti lista</p>
-          <div className="flex flex-wrap gap-1.5">
-            {pending.map(s => (
-              <span
-                key={s.id}
-                className="inline-flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-lg border border-gray-200 bg-gray-50 text-sm font-bold text-gray-600"
-              >
-                {s.number}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1 gap-2">
           <h3 className="font-semibold text-gray-900">Sezioni</h3>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 tabular-nums">
             {counted} / {sections.length} chiuse
           </span>
         </div>
+        {clickable && (
+          <p className="text-xs text-gray-500 mb-3">Clicca una sezione per il resoconto</p>
+        )}
         <div
           className={
             compact
@@ -341,10 +387,22 @@ export function LiveSectionGrid({
             const warn = hasWarning ? s.sectionWarnings!.join('\n') : ''
             const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
             const title = warn ? `${titleBase}\n\n${warn}` : titleBase
+            const isSelected = selectedSectionId === s.id
             return (
-              <div key={s.id} title={title} className={sectionLiveCellClasses(status, hasWarning)}>
+              <button
+                key={s.id}
+                type="button"
+                title={title}
+                disabled={!clickable}
+                onClick={clickable ? () => onSelectSection!(s) : undefined}
+                className={cn(
+                  sectionLiveCellClasses(status, hasWarning),
+                  clickable && 'cursor-pointer hover:ring-2 hover:ring-brand-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                  isSelected && 'ring-2 ring-brand-800 ring-offset-1'
+                )}
+              >
                 {s.number}
-              </div>
+              </button>
             )
           })}
         </div>
@@ -355,6 +413,15 @@ export function LiveSectionGrid({
           <span className="text-xs text-gray-500 self-center">Anello ambra = da verificare</span>
         </div>
       </div>
+
+      {selected && electionId && onSelectSection && (
+        <LiveSectionDetailPanel
+          electionId={electionId}
+          sectionId={selected.id}
+          sectionNumber={selected.number}
+          onClose={() => onSelectSection(selected)}
+        />
+      )}
     </div>
   )
 }
@@ -454,10 +521,14 @@ export function LivePreferenzePanel({
   lists,
   electionId,
   compact,
+  selectedCandidateId,
+  onSelectCandidate,
 }: {
   lists: LiveListResult[]
   electionId: number
   compact?: boolean
+  selectedCandidateId?: number | null
+  onSelectCandidate?: (candidateId: number) => void
 }) {
   const withCandidates = lists.filter(l => l.candidates.length > 0)
   if (!withCandidates.length) {
@@ -494,8 +565,11 @@ export function LivePreferenzePanel({
 
         {!compact && (
           <p className="text-xs text-gray-500 mb-4">
-            Dati da tutte le sezioni già inserite. La colonna % è sul totale voti di lista della rispettiva lista.
+            Dati aggregati da tutte le sezioni inserite. Clicca un candidato per il dettaglio per sezione.
           </p>
+        )}
+        {compact && onSelectCandidate && (
+          <p className="text-xs text-gray-500 mb-3">Clicca un candidato per il dettaglio per sezione</p>
         )}
 
         <div className="mb-6">
@@ -505,23 +579,51 @@ export function LivePreferenzePanel({
           <div className="space-y-1">
             {globalTop.map((c, i) => {
               const pct = c.listVotes > 0 ? (c.votes / c.listVotes) * 100 : 0
+              const clickable = !!onSelectCandidate
+              const selected = selectedCandidateId === c.candidateId
               return (
-                <div
-                  key={c.candidateId}
-                  className="flex items-center justify-between gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-gray-400 w-5 tabular-nums">{i + 1}.</span>
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-gray-900 truncate">
-                      <strong>{c.name}</strong>
-                      <span className="text-gray-500 font-normal"> · {c.listName}</span>
-                    </span>
+                <div key={c.candidateId}>
+                  <div
+                    role={clickable ? 'button' : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    onClick={clickable ? () => onSelectCandidate!(c.candidateId) : undefined}
+                    onKeyDown={
+                      clickable
+                        ? e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              onSelectCandidate!(c.candidateId)
+                            }
+                          }
+                        : undefined
+                    }
+                    className={cn(
+                      'flex items-center justify-between gap-2 text-sm rounded-lg px-3 py-2',
+                      clickable && liveSelectableRowClass(selected),
+                      !clickable && 'bg-gray-50'
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-gray-400 w-5 tabular-nums">{i + 1}.</span>
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className="text-gray-900 truncate">
+                        <strong>{c.name}</strong>
+                        <span className="text-gray-500 font-normal"> · {c.listName}</span>
+                      </span>
+                    </div>
+                    <div className="shrink-0 text-right tabular-nums">
+                      <span className="text-xs text-gray-500">{pct.toFixed(1)}%</span>
+                      <span className="font-semibold text-gray-900 ml-2">{formatNumber(c.votes)}</span>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right tabular-nums">
-                    <span className="text-xs text-gray-500">{pct.toFixed(1)}%</span>
-                    <span className="font-semibold text-gray-900 ml-2">{formatNumber(c.votes)}</span>
-                  </div>
+                  {selected && onSelectCandidate && (
+                    <LiveCandidateSectionsPanel
+                      electionId={electionId}
+                      candidateId={c.candidateId}
+                      candidateName={c.name}
+                      onClose={() => onSelectCandidate(c.candidateId)}
+                    />
+                  )}
                 </div>
               )
             })}
@@ -545,14 +647,42 @@ export function LivePreferenzePanel({
                       .slice(0, 5)
                       .map(c => {
                         const pctList = list.votes > 0 ? (c.votes / list.votes) * 100 : 0
+                        const clickable = !!onSelectCandidate
+                        const selected = selectedCandidateId === c.candidateId
                         return (
-                          <div
-                            key={c.candidateId}
-                            className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5 gap-2"
-                          >
-                            <span className="text-gray-700 truncate">{c.name}</span>
-                            <span className="shrink-0 font-semibold tabular-nums">{formatNumber(c.votes)}</span>
-                            <span className="shrink-0 text-xs text-gray-500 w-12 text-right">{pctList.toFixed(1)}%</span>
+                          <div key={c.candidateId}>
+                            <div
+                              role={clickable ? 'button' : undefined}
+                              tabIndex={clickable ? 0 : undefined}
+                              onClick={clickable ? () => onSelectCandidate!(c.candidateId) : undefined}
+                              onKeyDown={
+                                clickable
+                                  ? e => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        onSelectCandidate!(c.candidateId)
+                                      }
+                                    }
+                                  : undefined
+                              }
+                              className={cn(
+                                'flex items-center justify-between text-sm rounded px-3 py-1.5 gap-2',
+                                clickable && liveSelectableRowClass(selected),
+                                !clickable && 'bg-gray-50'
+                              )}
+                            >
+                              <span className="text-gray-700 truncate">{c.name}</span>
+                              <span className="shrink-0 font-semibold tabular-nums">{formatNumber(c.votes)}</span>
+                              <span className="shrink-0 text-xs text-gray-500 w-12 text-right">{pctList.toFixed(1)}%</span>
+                            </div>
+                            {selected && onSelectCandidate && (
+                              <LiveCandidateSectionsPanel
+                                electionId={electionId}
+                                candidateId={c.candidateId}
+                                candidateName={c.name}
+                                onClose={() => onSelectCandidate(c.candidateId)}
+                              />
+                            )}
                           </div>
                         )
                       })}
