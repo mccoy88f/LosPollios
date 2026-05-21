@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getElectionLastDataUpdateAt } from '@/lib/electionUpdates'
+import { countSectionListsFilled } from '@/lib/sectionScrutiny'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -70,10 +71,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return m
   }, new Map<number, typeof listResults>())
 
+  const totalLists = election.lists.length
+
   const sectionStatus = sections.map(sec => {
     const sectionResults = resultsBySection.get(sec.id) ?? []
     const hasPositiveListVotes = sectionResults.some(r => r.listVotes > 0)
     const hasPositivePreferences = sectionResults.some(r => r.preferences.some(p => p.votes > 0))
+    const listsFilled = countSectionListsFilled(sectionResults)
     const listVotesSum = sectionResults.reduce((s, r) => s + r.listVotes, 0)
     const turnoutRow = turnoutBySection.get(sec.id)
     const ballotsValid = turnoutRow?.ballotsValid ?? null
@@ -106,9 +110,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
       name: sec.name,
       locked: sec.locked,
       theoreticalVoters: sec.theoreticalVoters,
-      hasTurnout: turnoutBySection.has(sec.id),
+      hasTurnout: (votersActual ?? 0) > 0,
       // "Ha risultati" solo se c'e' almeno un dato voto reale (non semplice presenza righe a zero).
       hasResults: hasPositiveListVotes || hasPositivePreferences,
+      listsFilled,
+      totalLists,
       votersActual,
       listVotesSum,
       ballotsValid,

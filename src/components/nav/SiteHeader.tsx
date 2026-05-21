@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, Vote } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { AppLogo } from '@/components/AppLogo'
 import { cn } from '@/lib/cn'
 import { AppSideMenu } from '@/components/nav/AppSideMenu'
 import type { ElectionNavContext, NavMenuSection } from '@/lib/navMenu'
@@ -48,7 +49,7 @@ export function SiteHeader({
             href="/"
             className="font-bold text-base sm:text-lg flex items-center gap-1.5 shrink-0 hover:text-brand-100 transition-colors min-w-0"
           >
-            <Vote className="w-5 h-5 shrink-0" aria-hidden />
+            <AppLogo size={20} className="text-white shrink-0" />
             <span className="truncate">LosPollios</span>
           </Link>
 

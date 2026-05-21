@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
 import './globals.css'
+import { AppBootSplash } from '@/components/AppBootSplash'
 import { PwaRegister } from '@/components/PwaRegister'
 import { ThemeScript } from '@/components/ThemeScript'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
   title: 'LosPollios – Spoglio Elezioni',
   description: 'Gestione spoglio elezioni comunali in tempo reale',
   applicationName: 'LosPollios',
+  icons: {
+    icon: [{ url: '/icon', type: 'image/png' }],
+    apple: [{ url: '/apple-icon', type: 'image/png' }],
+  },
   appleWebApp: {
     capable: true,
     title: 'LosPollios',
@@ -41,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ThemeProvider preference={preference}>
           <div className="min-h-dvh flex flex-col">
+            <AppBootSplash />
             <PwaRegister />
             <div className="flex-1 flex flex-col min-h-0">{children}</div>
             <SiteFooter />

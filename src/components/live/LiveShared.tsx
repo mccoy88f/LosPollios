@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/SectionStatusBadge'
 import { Crown } from 'lucide-react'
 import type { LiveListResult, LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
+import { sectionScrutinyPercent } from '@/lib/sectionScrutiny'
 import {
   LiveCandidateSectionsPanel,
   LiveListPreferencesDetail,
@@ -388,13 +389,21 @@ export function LiveSectionGrid({
             const progress = {
               sectionNumber: s.number,
               locked: s.locked,
-              hasTurnout: s.hasTurnout,
-              hasResults: s.hasResults,
+              votersActual: s.votersActual,
+              listsFilled: s.listsFilled,
+              totalLists: s.totalLists,
               hasWarning,
             }
             const warn = hasWarning ? s.sectionWarnings!.join('\n') : ''
-            const pct = progress.hasResults || progress.locked ? 100 : progress.hasTurnout ? 50 : 0
-            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''} · spoglio ${pct}%${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
+            const pct = sectionScrutinyPercent(
+              progress.locked,
+              progress.votersActual,
+              progress.listsFilled,
+              progress.totalLists
+            )
+            const listsHint =
+              s.listsFilled > 0 && s.totalLists > 0 ? `\n${s.listsFilled}/${s.totalLists} liste` : ''
+            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''} · spoglio ${pct}%${listsHint}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
             const title = warn ? `${titleBase}\n\n${warn}` : titleBase
             const isSelected = selectedSectionId === s.id
             return (

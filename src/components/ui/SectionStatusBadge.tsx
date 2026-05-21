@@ -50,23 +50,47 @@ export function SectionStatusBadge({
   )
 }
 
-type SectionProgressInput = {
+export type SectionProgressInput = {
   sectionNumber: number
   locked: boolean
-  hasTurnout: boolean
-  hasResults: boolean
+  votersActual: number | null
+  listsFilled: number
+  totalLists: number
   hasWarning?: boolean
 }
 
-function sectionProgressStyle({
-  sectionNumber,
-  locked,
-  hasTurnout,
-  hasResults,
-}: SectionProgressInput) {
-  const pct = sectionScrutinyPercent(locked, hasTurnout, hasResults)
-  const fill = getSectionFillColor(sectionNumber)
+function sectionProgressStyle(input: SectionProgressInput) {
+  const pct = sectionScrutinyPercent(
+    input.locked,
+    input.votersActual,
+    input.listsFilled,
+    input.totalLists
+  )
+  const fill = getSectionFillColor(input.sectionNumber)
   return { pct, fill }
+}
+
+function SectionProgressFill({
+  input,
+  className,
+}: {
+  input: SectionProgressInput
+  className?: string
+}) {
+  const { pct, fill } = sectionProgressStyle(input)
+  return (
+    <div
+      className={cn(
+        'absolute left-0 right-0 bottom-0 transition-[top] duration-500 ease-out pointer-events-none',
+        className
+      )}
+      style={{
+        top: pct <= 0 ? '100%' : `${100 - pct}%`,
+        backgroundColor: fill,
+      }}
+      aria-hidden
+    />
+  )
 }
 
 /** Card sezione entry: barra di riempimento dal basso con colore sezione */
@@ -81,14 +105,7 @@ export function sectionEntryCardClasses(input: SectionProgressInput): string {
 }
 
 export function SectionEntryProgressFill(input: SectionProgressInput) {
-  const { pct, fill } = sectionProgressStyle(input)
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0 transition-all duration-500 ease-out opacity-90 dark:opacity-80"
-      style={{ height: `${pct}%`, backgroundColor: fill }}
-      aria-hidden
-    />
-  )
+  return <SectionProgressFill input={input} className="opacity-90 dark:opacity-80" />
 }
 
 /** Cella sezione live: barra di riempimento dal basso */
@@ -102,12 +119,5 @@ export function sectionLiveCellClasses(input: SectionProgressInput): string {
 }
 
 export function SectionLiveProgressFill(input: SectionProgressInput) {
-  const { pct, fill } = sectionProgressStyle(input)
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0 transition-all duration-500 ease-out"
-      style={{ height: `${pct}%`, backgroundColor: fill }}
-      aria-hidden
-    />
-  )
+  return <SectionProgressFill input={input} />
 }

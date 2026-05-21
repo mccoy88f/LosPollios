@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import { Vote } from 'lucide-react'
+import { AppLogo } from '@/components/AppLogo'
 
 function LoginForm() {
   const router = useRouter()
@@ -48,7 +48,7 @@ function LoginForm() {
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 w-full max-w-sm shrink-0">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-800 mb-3">
-            <Vote className="w-8 h-8" aria-hidden />
+            <AppLogo size={32} className="text-brand-800" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">LosPollios</h1>
           <p className="text-gray-500 text-sm mt-1">Accedi al sistema di spoglio</p>

@@ -26,6 +26,8 @@ export interface LiveSectionStatus {
   theoreticalVoters: number
   hasTurnout: boolean
   hasResults: boolean
+  listsFilled: number
+  totalLists: number
   votersActual: number | null
   turnoutPct: number | null
   listVotesSum: number

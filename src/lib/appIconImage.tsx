@@ -1,7 +1,8 @@
-/** Icona PWA / favicon: verde brand + simbolo urna (come Vote in header). */
+/** Icona PWA / favicon: verde brand + urna con spunta (come header). */
 export function AppIconImage({ size }: { size: number }) {
   const r = Math.round(size * 0.18)
   const icon = Math.round(size * 0.52)
+  const stroke = Math.max(1.5, size * 0.08)
   return (
     <div
       style={{
@@ -10,25 +11,32 @@ export function AppIconImage({ size }: { size: number }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(145deg, #063C25 0%, #084530 55%, #042f1c 100%)',
+        background: '#063C25',
         borderRadius: r,
       }}
     >
-      <svg
-        width={icon}
-        height={icon}
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden
-      >
+      <svg width={icon} height={icon} viewBox="0 0 24 24" fill="none" aria-hidden>
         <path
-          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 0 0 1.946-.806 3.42 3.42 0 0 1 4.438 0 3.42 3.42 0 0 0 1.946.806 3.42 3.42 0 0 1 3.138 3.138 3.42 3.42 0 0 0 .806 1.946 3.42 3.42 0 0 1 0 4.438 3.42 3.42 0 0 0-.806 1.946 3.42 3.42 0 0 1-3.138 3.138 3.42 3.42 0 0 0-1.946.806 3.42 3.42 0 0 1-4.438 0 3.42 3.42 0 0 0-1.946-.806 3.42 3.42 0 0 1-3.138-3.138 3.42 3.42 0 0 0-.806-1.946 3.42 3.42 0 0 1 0-4.438 3.42 3.42 0 0 0 .806-1.946 3.42 3.42 0 0 1 3.138-3.138z"
+          d="m9 12 2 2 4-4"
           stroke="#ffffff"
-          strokeWidth="2"
+          strokeWidth={stroke}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="18" cy="6" r="2.5" fill="#E18901" />
+        <path
+          d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"
+          stroke="#ffffff"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M22 19H2"
+          stroke="#ffffff"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   )

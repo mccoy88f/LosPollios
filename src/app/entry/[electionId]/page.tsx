@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/SectionStatusBadge'
 import { sectionHasEntryData } from '@/lib/sectionStatus'
 import { resolveSectionUiStatus } from '@/lib/sectionStatus'
+import { countSectionListsFilled, sectionScrutinyPercent } from '@/lib/sectionScrutiny'
 import { Building2 } from 'lucide-react'
 import { EntryContextNav } from '@/components/EntryContextNav'
 import EntrySectionLockToggle from './EntrySectionLockToggle'
@@ -25,8 +26,10 @@ export default async function EntryIndexPage({ params }: Props) {
 
   const election = await prisma.election.findUnique({
     where: { id: Number(electionId) },
+    include: { _count: { select: { lists: true } } },
   })
   if (!election) notFound()
+  const totalLists = election._count.lists
 
   if (session.role === 'entry' && election.archived) {
     redirect('/')
@@ -46,12 +49,14 @@ export default async function EntryIndexPage({ params }: Props) {
     orderBy: { number: 'asc' },
     include: {
       turnout: true,
-      listResults: true,
+      listResults: { include: { preferences: true } },
     },
   })
 
   const counted   = sections.filter(s => s.turnout).length
-  const completed = sections.filter(s => s.listResults.length > 0).length
+  const completed = sections.filter(s =>
+    s.listResults.some(r => r.listVotes > 0 || r.preferences.some(p => p.votes > 0))
+  ).length
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
@@ -70,19 +75,23 @@ export default async function EntryIndexPage({ params }: Props) {
               s.listResults.some(r => r.listVotes > 0)
             )
             const status = resolveSectionUiStatus(s.locked, hasData)
+            const listsFilled = countSectionListsFilled(s.listResults)
+            const votersActual = s.turnout?.votersActual ?? null
             const progress = {
               sectionNumber: s.number,
               locked: s.locked,
-              hasTurnout: !!s.turnout,
-              hasResults: s.listResults.some(r => r.listVotes > 0),
+              votersActual,
+              listsFilled,
+              totalLists,
             }
+            const scrutinyPct = sectionScrutinyPercent(s.locked, votersActual, listsFilled, totalLists)
 
             return (
               <Link
                 key={s.id}
                 href={`/entry/${electionId}/${s.id}`}
                 className={sectionEntryCardClasses(progress)}
-                title={`Sezione ${s.number} · spoglio ${progress.hasResults || progress.locked ? 100 : progress.hasTurnout ? 50 : 0}%`}
+                title={`Sezione ${s.number} · spoglio ${scrutinyPct}%${listsFilled > 0 && totalLists > 0 ? ` · ${listsFilled}/${totalLists} liste` : ''}`}
               >
                 <SectionEntryProgressFill {...progress} />
                 <div className="relative z-10 flex flex-col items-center gap-1">

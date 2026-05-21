@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Vote } from 'lucide-react'
+import { AppLogo } from '@/components/AppLogo'
 import { UserMenu } from '@/components/nav/UserMenu'
 import type { NavLink } from '@/lib/navLinks'
 
@@ -28,7 +28,7 @@ export function AppHeader({
             href="/"
             className="font-bold text-lg flex items-center gap-2 shrink-0 hover:text-brand-100 transition-colors"
           >
-            <Vote className="w-5 h-5" aria-hidden />
+            <AppLogo size={20} className="text-white shrink-0" />
             <span>LosPollios</span>
           </Link>
 
