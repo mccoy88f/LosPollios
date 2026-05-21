@@ -73,8 +73,15 @@ export function AppSideMenu({
     }
 
     if (path === '/') return pathname === '/'
+
+    // Live base: attiva solo panoramica (nessun ?view o view=panorama)
+    if (/^\/live\/\d+$/.test(path)) {
+      if (pathname !== path) return false
+      const currentView = searchParams.get('view')
+      return !currentView || currentView === 'panorama'
+    }
+
     if (pathname === path) return true
-    if (/^\/live\/\d+$/.test(path)) return false
     if (/^\/entry\/\d+$/.test(path)) return pathname === path
     return pathname.startsWith(`${path}/`) || pathname === path
   }
@@ -90,16 +97,16 @@ export function AppSideMenu({
       <aside
         className={cn(
           'absolute left-0 top-0 bottom-0 w-[min(18.5rem,88vw)]',
-          'bg-white shadow-2xl flex flex-col',
+          'bg-white dark:bg-slate-900 shadow-2xl flex flex-col',
           'animate-slideIn'
         )}
       >
-        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 shrink-0">
-          <span className="font-semibold text-gray-900">Menu</span>
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-700 shrink-0">
+          <span className="font-semibold text-gray-900 dark:text-slate-100">Menu</span>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+            className="p-2 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             aria-label="Chiudi"
           >
             <X className="w-5 h-5" />
@@ -132,7 +139,7 @@ export function AppSideMenu({
                           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                           active
                             ? 'bg-brand-800 text-white'
-                            : 'text-gray-800 hover:bg-gray-100'
+                            : 'text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800'
                         )}
                       >
                         <Icon className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
@@ -146,13 +153,15 @@ export function AppSideMenu({
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-gray-200 p-3 space-y-0.5">
+        <div className="shrink-0 border-t border-gray-200 dark:border-slate-700 p-3 space-y-0.5">
           <Link
             href="/account"
             onClick={onClose}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              pathname === '/account' ? 'bg-brand-800 text-white' : 'text-gray-800 hover:bg-gray-100'
+              pathname === '/account'
+                ? 'bg-brand-800 text-white'
+                : 'text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800'
             )}
           >
             Il mio account
@@ -164,7 +173,7 @@ export function AppSideMenu({
               await fetch('/api/auth/logout', { method: 'POST' })
               window.location.href = '/login'
             }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
           >
             <LogOut className="w-5 h-5 shrink-0" aria-hidden />
             Esci

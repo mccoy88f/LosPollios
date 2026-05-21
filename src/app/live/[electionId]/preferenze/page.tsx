@@ -12,7 +12,7 @@ export default async function PreferenzeLiveRoute({ params }: Props) {
   const id = election.id
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="page-shell">
       <ElectionSiteNav electionId={id} electionName={election.name} />
       <LivePreferenzePage electionId={id} electionName={election.name} commune={election.commune} />
     </div>

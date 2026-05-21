@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/db'
 import { getSession, signToken, setTokenCookie } from '@/lib/auth'
+import { isThemePreference, setThemeCookie } from '@/lib/theme'
 import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 
 export async function GET() {
@@ -19,6 +20,7 @@ export async function GET() {
       listId: true,
       election: { select: { id: true, name: true, commune: true } },
       list: { select: { id: true, name: true } },
+      themePreference: true,
     },
   })
 
@@ -42,9 +44,14 @@ export async function PATCH(req: NextRequest) {
   const name = typeof body.name === 'string' ? body.name.trim() : undefined
   const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : ''
   const newPassword = typeof body.newPassword === 'string' ? body.newPassword : ''
+  const themeRaw = typeof body.themePreference === 'string' ? body.themePreference : undefined
 
   if (name !== undefined && name.length > 120) {
     return NextResponse.json({ error: 'Nome troppo lungo' }, { status: 400 })
+  }
+
+  if (themeRaw !== undefined && !isThemePreference(themeRaw)) {
+    return NextResponse.json({ error: 'Tema non valido' }, { status: 400 })
   }
 
   if (newPassword) {
@@ -59,7 +66,7 @@ export async function PATCH(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: session.userId } })
   if (!user) return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 })
 
-  const patch: { name?: string | null; password?: string } = {}
+  const patch: { name?: string | null; password?: string; themePreference?: string } = {}
 
   if (name !== undefined) {
     patch.name = name || null
@@ -71,6 +78,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Password attuale non corretta' }, { status: 400 })
     }
     patch.password = await bcrypt.hash(newPassword, 10)
+  }
+
+  if (themeRaw !== undefined) {
+    patch.themePreference = themeRaw
   }
 
   if (!Object.keys(patch).length) {
@@ -87,6 +98,7 @@ export async function PATCH(req: NextRequest) {
       role: true,
       electionId: true,
       listId: true,
+      themePreference: true,
     },
   })
 
@@ -104,5 +116,8 @@ export async function PATCH(req: NextRequest) {
 
   const res = NextResponse.json({ user: { ...updated, allowedSectionIds: allowed } })
   res.cookies.set(setTokenCookie(token))
+  if (themeRaw !== undefined) {
+    res.cookies.set(setThemeCookie(themeRaw))
+  }
   return res
 }

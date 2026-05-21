@@ -31,18 +31,14 @@ export type ElectionNavContext = {
   electionName: string
 }
 
-function electionSubItems(electionId: number, session: JwtPayload): NavMenuItem[] {
+function electionSubItems(electionId: number): NavMenuItem[] {
   const id = electionId
-  const items: NavMenuItem[] = [
+  return [
     { label: 'Live', href: `/live/${id}`, icon: 'radio' },
     { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti`, icon: 'history' },
     { label: 'Preferenze', href: `/live/${id}/preferenze`, icon: 'users' },
     { label: 'Analisi', href: `/live/${id}?view=analisi`, icon: 'barChart3' },
   ]
-  if (session.role === 'entry' || session.role === 'admin') {
-    items.push({ label: 'Inserimento sezioni', href: `/entry/${id}`, icon: 'clipboardList' })
-  }
-  return items
 }
 
 /**
@@ -59,13 +55,25 @@ export function buildAppMenuSections(
     { items: [{ label: 'Home', href: '/', icon: 'home' }] },
   ]
 
+  if (session.role === 'entry' && session.electionId) {
+    sections.push({
+      items: [
+        {
+          label: 'Inserimento dati',
+          href: `/entry/${session.electionId}`,
+          icon: 'clipboardList',
+        },
+      ],
+    })
+  }
+
   const electionId = election?.electionId ?? (session.role === 'entry' ? session.electionId : null)
   const electionName = election?.electionName
 
   if (electionId && electionName) {
     sections.push({
       title: electionName,
-      items: electionSubItems(electionId, session),
+      items: electionSubItems(electionId),
     })
   }
 

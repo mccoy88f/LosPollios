@@ -10,9 +10,21 @@
   --color-surface: #ffffff;
 }
 
+html.dark {
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-surface: #1e293b;
+}
+
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col;
   }
 }
 

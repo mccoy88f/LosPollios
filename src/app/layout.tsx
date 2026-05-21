@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from 'next'
+import { cookies } from 'next/headers'
 import './globals.css'
 import { PwaRegister } from '@/components/PwaRegister'
+import { ThemeScript } from '@/components/ThemeScript'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { isThemePreference, UI_THEME_COOKIE, type ThemePreference } from '@/lib/theme'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -23,12 +27,21 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies()
+  const raw = cookieStore.get(UI_THEME_COOKIE)?.value
+  const preference: ThemePreference = raw && isThemePreference(raw) ? raw : 'system'
+
   return (
-    <html lang="it">
+    <html lang="it" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body>
-        <PwaRegister />
-        {children}
+        <ThemeProvider preference={preference}>
+          <PwaRegister />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

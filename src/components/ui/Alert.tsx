@@ -5,10 +5,22 @@ import type { ReactNode } from 'react'
 type Variant = 'info' | 'success' | 'warning' | 'error'
 
 const styles: Record<Variant, { box: string; icon: typeof Info }> = {
-  info: { box: 'bg-brand-50 border-brand-200 text-brand-950', icon: Info },
-  success: { box: 'bg-emerald-50 border-emerald-200 text-emerald-900', icon: CheckCircle2 },
-  warning: { box: 'bg-amber-50 border-amber-200 text-amber-950', icon: TriangleAlert },
-  error: { box: 'bg-red-50 border-red-200 text-red-900', icon: AlertCircle },
+  info: {
+    box: 'bg-brand-50 border-brand-200 text-brand-950 dark:bg-brand-950/50 dark:border-brand-700 dark:text-brand-100',
+    icon: Info,
+  },
+  success: {
+    box: 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-100',
+    icon: CheckCircle2,
+  },
+  warning: {
+    box: 'bg-amber-50 border-amber-200 text-amber-950 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-100',
+    icon: TriangleAlert,
+  },
+  error: {
+    box: 'bg-red-50 border-red-200 text-red-900 dark:bg-red-950/40 dark:border-red-800 dark:text-red-100',
+    icon: AlertCircle,
+  },
 }
 
 export function Alert({

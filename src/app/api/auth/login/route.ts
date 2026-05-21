@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/db'
 import { signToken, setTokenCookie } from '@/lib/auth'
+import { isThemePreference, setThemeCookie } from '@/lib/theme'
 import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 
 export async function POST(req: NextRequest) {
@@ -45,5 +46,7 @@ export async function POST(req: NextRequest) {
     },
   })
   res.cookies.set(setTokenCookie(token))
+  const theme = isThemePreference(user.themePreference) ? user.themePreference : 'system'
+  res.cookies.set(setThemeCookie(theme))
   return res
 }

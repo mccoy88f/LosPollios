@@ -13,6 +13,7 @@ export async function getSessionUserProfile(session: JwtPayload) {
       listId: true,
       election: { select: { id: true, name: true, commune: true } },
       list: { select: { id: true, name: true } },
+      themePreference: true,
     },
   })
 }

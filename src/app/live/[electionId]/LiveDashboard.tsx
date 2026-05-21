@@ -66,8 +66,8 @@ function LiveDashboardInner({
   const availableViews = useMemo((): LiveViewId[] => {
     const base: LiveViewId[] = ['panorama', 'liste', 'sezioni']
     if (hasCoalitions) base.push('coalizioni')
-    base.push('analisi')
     if (hasPreferenze) base.push('preferenze')
+    base.push('analisi')
     return base
   }, [hasCoalitions, hasPreferenze])
 
@@ -134,7 +134,7 @@ function LiveDashboardInner({
   const hasWarnings =
     !!dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0
 
-  const showListRanking = lists.length > 0 && view !== 'liste' && view !== 'analisi'
+  const showListRanking = lists.length > 0 && view !== 'liste'
 
   const tabs = availableViews.map(id => ({
     id,

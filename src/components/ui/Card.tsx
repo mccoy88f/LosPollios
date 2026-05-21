@@ -4,7 +4,10 @@ import type { HTMLAttributes, ReactNode } from 'react'
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('bg-white rounded-xl border border-gray-200 shadow-sm', className)}
+      className={cn(
+        'bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm',
+        className
+      )}
       {...props}
     />
   )
@@ -16,7 +19,7 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 
 export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('font-semibold text-gray-900', className)} {...props}>
+    <h3 className={cn('font-semibold text-gray-900 dark:text-slate-100', className)} {...props}>
       {children}
     </h3>
   )
@@ -38,8 +41,10 @@ export function PageHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {description ? <p className="text-gray-500 text-sm mt-1">{description}</p> : null}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{title}</h1>
+        {description ? (
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">{description}</p>
+        ) : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2 shrink-0">{actions}</div> : null}
     </div>

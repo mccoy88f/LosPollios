@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const profile = await getSessionUserProfile(session)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="page-shell">
       <SiteTopNav
         menuSections={buildAppMenuSections(session)}
         username={session.username}

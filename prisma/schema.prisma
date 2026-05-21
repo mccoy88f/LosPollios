@@ -196,6 +196,8 @@ model User {
   listId     Int?
   list       ElectionList? @relation(fields: [listId], references: [id], onDelete: SetNull)
   active     Boolean       @default(true)
+  /** light | dark | system — preferenza tema interfaccia */
+  themePreference String    @default("system")
   createdAt  DateTime      @default(now())
   /** Sezioni consentite per inserimento; vuoto = tutte le sezioni dell'elezione */
   allowedSections UserSection[]

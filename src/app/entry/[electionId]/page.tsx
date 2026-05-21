@@ -49,7 +49,7 @@ export default async function EntryIndexPage({ params }: Props) {
   const completed = sections.filter(s => s.listResults.length > 0).length
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <EntryContextNav electionId={election.id} electionName={election.name} />
 
       <div className="max-w-4xl mx-auto px-4 py-8">

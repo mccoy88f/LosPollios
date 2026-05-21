@@ -6,7 +6,7 @@ import { SiteTopNav } from '@/components/SiteTopNav'
 import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { Card, CardBody, PageHeader } from '@/components/ui/Card'
-import { BarChart3, ClipboardList, Radio, Settings, Vote } from 'lucide-react'
+import { BarChart3, ClipboardList, History, Radio, Settings, Users, Vote } from 'lucide-react'
 
 export default async function HomePage() {
   const session = await getSession()
@@ -19,7 +19,7 @@ export default async function HomePage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="page-shell">
       <SiteTopNav
         menuSections={buildAppMenuSections(session)}
         username={session.username}
@@ -87,8 +87,22 @@ export default async function HomePage() {
                         Live
                       </Link>
                       <Link
+                        href={`/live/${e.id}/aggiornamenti`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      >
+                        <History className="w-4 h-4" aria-hidden />
+                        Aggiornamenti
+                      </Link>
+                      <Link
+                        href={`/live/${e.id}/preferenze`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      >
+                        <Users className="w-4 h-4" aria-hidden />
+                        Preferenze
+                      </Link>
+                      <Link
                         href={`/live/${e.id}?view=analisi`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
                       >
                         <BarChart3 className="w-4 h-4" aria-hidden />
                         Analisi
