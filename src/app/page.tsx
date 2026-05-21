@@ -6,7 +6,7 @@ import { SiteTopNav } from '@/components/SiteTopNav'
 import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { Card, CardBody, PageHeader } from '@/components/ui/Card'
-import { BarChart3, ClipboardList, History, Radio, Settings, Users, Vote } from 'lucide-react'
+import { ClipboardList, Radio, Settings, Vote } from 'lucide-react'
 
 export default async function HomePage() {
   const session = await getSession()
@@ -70,46 +70,24 @@ export default async function HomePage() {
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Elezioni</h2>
             <div className="space-y-3">
               {elections.map(e => (
-                <Card key={e.id}>
-                  <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{e.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {e.commune} · {formatDate(e.date)}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/live/${e.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-800 text-white text-sm font-medium hover:bg-brand-900"
-                      >
+                <Link key={e.id} href={`/live/${e.id}`} className="block group">
+                  <Card className="hover:border-brand-400 dark:hover:border-brand-600 hover:shadow-md transition-all">
+                    <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-400">
+                          {e.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-neutral-400">
+                          {e.commune} · {formatDate(e.date)}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-800 dark:text-brand-400 shrink-0">
                         <Radio className="w-4 h-4" aria-hidden />
-                        Live
-                      </Link>
-                      <Link
-                        href={`/live/${e.id}/aggiornamenti`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                      >
-                        <History className="w-4 h-4" aria-hidden />
-                        Aggiornamenti
-                      </Link>
-                      <Link
-                        href={`/live/${e.id}/preferenze`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                      >
-                        <Users className="w-4 h-4" aria-hidden />
-                        Preferenze
-                      </Link>
-                      <Link
-                        href={`/live/${e.id}?view=analisi`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
-                      >
-                        <BarChart3 className="w-4 h-4" aria-hidden />
-                        Analisi
-                      </Link>
-                    </div>
-                  </CardBody>
-                </Card>
+                        Apri live
+                      </span>
+                    </CardBody>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn'
-import { getSectionColors } from '@/lib/sectionColors'
+import { getSectionFillColor } from '@/lib/sectionColors'
+import { sectionScrutinyPercent } from '@/lib/sectionScrutiny'
 import { sectionStatusLabels, type SectionUiStatus } from '@/lib/sectionStatus'
 import { CheckCircle2, Circle, Clock } from 'lucide-react'
 
@@ -49,38 +50,64 @@ export function SectionStatusBadge({
   )
 }
 
-const statusRing: Record<SectionUiStatus, string> = {
-  pending: '',
-  in_progress: 'ring-2 ring-orange-400 dark:ring-orange-500',
-  closed: 'ring-2 ring-emerald-500 dark:ring-emerald-500',
+type SectionProgressInput = {
+  sectionNumber: number
+  locked: boolean
+  hasTurnout: boolean
+  hasResults: boolean
+  hasWarning?: boolean
 }
 
-/** Classi per card/link sezione in griglia entry (colore per numero sezione) */
-export function sectionEntryCardClasses(
-  status: SectionUiStatus,
-  sectionNumber: number,
-  hasWarning?: boolean
-): string {
-  const colors = getSectionColors(sectionNumber)
+function sectionProgressStyle({
+  sectionNumber,
+  locked,
+  hasTurnout,
+  hasResults,
+}: SectionProgressInput) {
+  const pct = sectionScrutinyPercent(locked, hasTurnout, hasResults)
+  const fill = getSectionFillColor(sectionNumber)
+  return { pct, fill }
+}
+
+/** Card sezione entry: barra di riempimento dal basso con colore sezione */
+export function sectionEntryCardClasses(input: SectionProgressInput): string {
   return cn(
-    'rounded-xl border-2 p-4 text-center hover:shadow-md transition-all min-h-[5.5rem] flex flex-col items-center justify-center gap-1',
-    colors.card,
-    colors.darkCard,
-    statusRing[status],
-    hasWarning && 'ring-2 ring-amber-400 ring-offset-1 dark:ring-amber-500 dark:ring-offset-neutral-950'
+    'relative overflow-hidden rounded-xl border-2 border-gray-200 dark:border-neutral-700',
+    'p-4 text-center hover:shadow-md transition-all min-h-[5.5rem]',
+    'flex flex-col items-center justify-center gap-1',
+    'bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white',
+    input.hasWarning && 'ring-2 ring-amber-400 ring-offset-1 dark:ring-amber-500 dark:ring-offset-neutral-950'
   )
 }
 
-/** Classi per cella numerica in griglia live (colore per numero sezione) */
-export function sectionLiveCellClasses(
-  sectionNumber: number,
-  hasWarning?: boolean
-): string {
-  const colors = getSectionColors(sectionNumber)
+export function SectionEntryProgressFill(input: SectionProgressInput) {
+  const { pct, fill } = sectionProgressStyle(input)
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 transition-all duration-500 ease-out opacity-90 dark:opacity-80"
+      style={{ height: `${pct}%`, backgroundColor: fill }}
+      aria-hidden
+    />
+  )
+}
+
+/** Cella sezione live: barra di riempimento dal basso */
+export function sectionLiveCellClasses(input: SectionProgressInput): string {
   return cn(
-    'aspect-square rounded flex items-center justify-center text-xs font-semibold tabular-nums transition-colors border border-transparent',
-    colors.cell,
-    colors.darkCell,
-    hasWarning && 'ring-2 ring-amber-500 ring-offset-1 ring-offset-white dark:ring-offset-neutral-950'
+    'relative overflow-hidden aspect-square rounded flex items-center justify-center',
+    'text-xs font-semibold tabular-nums transition-colors',
+    'bg-gray-200 dark:bg-neutral-800 text-gray-800 dark:text-white border border-gray-300/80 dark:border-neutral-600',
+    input.hasWarning && 'ring-2 ring-amber-500 ring-offset-1 ring-offset-white dark:ring-offset-neutral-950'
+  )
+}
+
+export function SectionLiveProgressFill(input: SectionProgressInput) {
+  const { pct, fill } = sectionProgressStyle(input)
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 transition-all duration-500 ease-out"
+      style={{ height: `${pct}%`, backgroundColor: fill }}
+      aria-hidden
+    />
   )
 }

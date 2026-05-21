@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { AppIconImage } from '@/lib/appIconImage'
 
 const ALLOWED = new Set([192, 512])
 
@@ -12,35 +13,8 @@ export async function GET(
     return new Response('Not found', { status: 404 })
   }
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(145deg, #063C25 0%, #084530 50%, #042f1c 100%)',
-          borderRadius: size === 512 ? '22%' : '18%',
-        }}
-      >
-        <span
-          style={{
-            fontSize: size * 0.22,
-            fontWeight: 800,
-            color: 'white',
-            fontFamily: 'system-ui, sans-serif',
-            letterSpacing: '-0.05em',
-          }}
-        >
-          LP
-        </span>
-      </div>
-    ),
-    {
-      width: size,
-      height: size,
-    }
-  )
+  return new ImageResponse(<AppIconImage size={size} />, {
+    width: size,
+    height: size,
+  })
 }

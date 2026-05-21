@@ -229,6 +229,7 @@ function LiveDashboardInner({
           electionName={electionName}
           commune={commune}
           historicalElections={historicalElections}
+          hasCoalitions={hasCoalitions}
         />
       )}
 

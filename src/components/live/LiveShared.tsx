@@ -5,8 +5,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/cn'
 import { Alert } from '@/components/ui/Alert'
-import { SectionStatusBadge, sectionLiveCellClasses } from '@/components/ui/SectionStatusBadge'
-import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
+import {
+  SectionLiveProgressFill,
+  SectionStatusBadge,
+  sectionLiveCellClasses,
+} from '@/components/ui/SectionStatusBadge'
 import { Crown } from 'lucide-react'
 import type { LiveListResult, LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
 import {
@@ -381,11 +384,17 @@ export function LiveSectionGrid({
           }
         >
           {sections.map(s => {
-            const hasData = sectionHasEntryData(s.votersActual, s.hasResults)
-            const status = resolveSectionUiStatus(s.locked, hasData)
             const hasWarning = (s.sectionWarnings?.length ?? 0) > 0
+            const progress = {
+              sectionNumber: s.number,
+              locked: s.locked,
+              hasTurnout: s.hasTurnout,
+              hasResults: s.hasResults,
+              hasWarning,
+            }
             const warn = hasWarning ? s.sectionWarnings!.join('\n') : ''
-            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
+            const pct = progress.hasResults || progress.locked ? 100 : progress.hasTurnout ? 50 : 0
+            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''} · spoglio ${pct}%${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
             const title = warn ? `${titleBase}\n\n${warn}` : titleBase
             const isSelected = selectedSectionId === s.id
             return (
@@ -396,12 +405,13 @@ export function LiveSectionGrid({
                 disabled={!clickable}
                 onClick={clickable ? () => onSelectSection!(s) : undefined}
                 className={cn(
-                  sectionLiveCellClasses(s.number, hasWarning),
+                  sectionLiveCellClasses(progress),
                   clickable && 'cursor-pointer hover:ring-2 hover:ring-brand-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
                   isSelected && 'ring-2 ring-brand-800 ring-offset-1'
                 )}
               >
-                {s.number}
+                <SectionLiveProgressFill {...progress} />
+                <span className="relative z-10">{s.number}</span>
               </button>
             )
           })}

@@ -5,8 +5,13 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/Card'
-import { SectionStatusBadge, sectionEntryCardClasses } from '@/components/ui/SectionStatusBadge'
-import { resolveSectionUiStatus, sectionHasEntryData } from '@/lib/sectionStatus'
+import {
+  SectionEntryProgressFill,
+  SectionStatusBadge,
+  sectionEntryCardClasses,
+} from '@/components/ui/SectionStatusBadge'
+import { sectionHasEntryData } from '@/lib/sectionStatus'
+import { resolveSectionUiStatus } from '@/lib/sectionStatus'
 import { Building2 } from 'lucide-react'
 import { EntryContextNav } from '@/components/EntryContextNav'
 import EntrySectionLockToggle from './EntrySectionLockToggle'
@@ -65,13 +70,22 @@ export default async function EntryIndexPage({ params }: Props) {
               s.listResults.some(r => r.listVotes > 0)
             )
             const status = resolveSectionUiStatus(s.locked, hasData)
+            const progress = {
+              sectionNumber: s.number,
+              locked: s.locked,
+              hasTurnout: !!s.turnout,
+              hasResults: s.listResults.some(r => r.listVotes > 0),
+            }
 
             return (
               <Link
                 key={s.id}
                 href={`/entry/${electionId}/${s.id}`}
-                className={sectionEntryCardClasses(status, s.number)}
+                className={sectionEntryCardClasses(progress)}
+                title={`Sezione ${s.number} · spoglio ${progress.hasResults || progress.locked ? 100 : progress.hasTurnout ? 50 : 0}%`}
               >
+                <SectionEntryProgressFill {...progress} />
+                <div className="relative z-10 flex flex-col items-center gap-1">
                 <div className="text-2xl font-bold tabular-nums">{s.number}</div>
                 <SectionStatusBadge status={status} />
                 {session.role === 'admin' && (
@@ -84,6 +98,7 @@ export default async function EntryIndexPage({ params }: Props) {
                 {s.turnout && (
                   <div className="text-xs opacity-80 tabular-nums">{s.turnout.votersActual} votanti</div>
                 )}
+                </div>
               </Link>
             )
           })}

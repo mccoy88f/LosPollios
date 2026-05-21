@@ -4,6 +4,7 @@ import './globals.css'
 import { PwaRegister } from '@/components/PwaRegister'
 import { ThemeScript } from '@/components/ThemeScript'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { SiteFooter } from '@/components/SiteFooter'
 import { isThemePreference, UI_THEME_COOKIE, type ThemePreference } from '@/lib/theme'
 
 export const viewport: Viewport = {
@@ -39,8 +40,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ThemeProvider preference={preference}>
-          <PwaRegister />
-          {children}
+          <div className="min-h-dvh flex flex-col">
+            <PwaRegister />
+            <div className="flex-1 flex flex-col min-h-0">{children}</div>
+            <SiteFooter />
+          </div>
         </ThemeProvider>
       </body>
     </html>

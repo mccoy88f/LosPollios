@@ -192,12 +192,15 @@ export default function AnalysisPanel({
   electionName,
   commune,
   historicalElections,
+  hasCoalitions = false,
   embedded = false,
 }: {
   electionId: number
   electionName: string
   commune: string
   historicalElections: HistElection[]
+  /** Coalizioni configurate in admin (campo coalition sulle liste) */
+  hasCoalitions?: boolean
   /** Tab dentro la live: senza intestazione elezione duplicata */
   embedded?: boolean
 }) {
@@ -294,7 +297,7 @@ export default function AnalysisPanel({
             <SeatChart seats={proj.current.seats} totalSeats={councilSeats} title="Proiezione seggi – dati attuali" />
 
             {/* Coalitions */}
-            {proj.current.coalitions.length > 0 && (
+            {hasCoalitions && proj.current.coalitions.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 className="font-semibold text-gray-900 mb-4">Coalizioni</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">

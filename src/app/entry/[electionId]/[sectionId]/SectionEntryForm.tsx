@@ -338,18 +338,24 @@ export default function SectionEntryForm({
                   key={list.id}
                   id={`list-panel-${list.id}`}
                   className={cn(
-                    'flex flex-col shrink-0 rounded-xl border bg-white overflow-hidden min-h-0 transition-shadow',
-                    isOpen
-                      ? 'flex-1 min-h-0 border-accent-300 shadow-md ring-1 ring-accent-100'
-                      : 'border-gray-200'
+                    'flex flex-col shrink-0 rounded-xl border-2 overflow-hidden min-h-0 transition-shadow',
+                    isOpen ? 'flex-1 min-h-0 shadow-md' : 'border-gray-200 dark:border-neutral-700'
                   )}
+                  style={{
+                    borderColor: isOpen ? list.color : undefined,
+                    backgroundColor: isOpen ? `${list.color}12` : undefined,
+                  }}
                 >
                   <div
                     role="button"
                     tabIndex={0}
                     aria-expanded={isOpen}
                     aria-controls={hasCandidates ? `candidates-${list.id}` : undefined}
-                    className="shrink-0 flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
+                    className={cn(
+                      'shrink-0 flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500',
+                      isOpen ? 'bg-white/90 dark:bg-neutral-900/90' : 'bg-white dark:bg-neutral-900 border-transparent'
+                    )}
+                    style={isOpen ? { borderBottomColor: `${list.color}40` } : undefined}
                     onClick={e => {
                       if ((e.target as HTMLElement).closest('[data-list-votes]')) return
                       toggleList(list.id)
