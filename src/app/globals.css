@@ -164,6 +164,36 @@ html.dark .admin-zone {
   color: #fff;
 }
 
+/* Campi form: sfondo scuro e testo chiaro (evita input bianchi / testo grigio illeggibile) */
+html.dark input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+html.dark select,
+html.dark textarea {
+  background-color: #262626;
+  color: #fafafa;
+  border-color: #525252;
+}
+
+html.dark input:not([type='checkbox']):not([type='radio'])::placeholder,
+html.dark textarea::placeholder {
+  color: #737373;
+}
+
+html.dark input:not([type='checkbox']):not([type='radio']):disabled,
+html.dark select:disabled,
+html.dark textarea:disabled {
+  background-color: #171717;
+  color: #a3a3a3;
+}
+
+html.dark select option {
+  background-color: #262626;
+  color: #fafafa;
+}
+
+html.dark input[type='number'] {
+  color-scheme: dark;
+}
+
 @layer utilities {
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-in-out;

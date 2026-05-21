@@ -55,19 +55,27 @@ export function buildAppMenuSections(
     { items: [{ label: 'Home', href: '/', icon: 'home' }] },
   ]
 
-  if (session.role === 'entry' && session.electionId) {
+  const electionId = election?.electionId ?? (session.role === 'entry' ? session.electionId : null)
+
+  /** Inserimento: utenti entry sulla propria elezione; admin con contesto elezione (live, entry, scheda elezione). */
+  const entryHrefElectionId =
+    session.role === 'entry' && session.electionId
+      ? session.electionId
+      : session.role === 'admin' && electionId
+        ? electionId
+        : null
+
+  if (entryHrefElectionId) {
     sections.push({
       items: [
         {
           label: 'Inserimento dati',
-          href: `/entry/${session.electionId}`,
+          href: `/entry/${entryHrefElectionId}`,
           icon: 'clipboardList',
         },
       ],
     })
   }
-
-  const electionId = election?.electionId ?? (session.role === 'entry' ? session.electionId : null)
   const electionName = election?.electionName
 
   if (electionId && electionName) {

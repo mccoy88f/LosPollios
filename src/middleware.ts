@@ -8,8 +8,16 @@ const PUBLIC_API_PATHS = ['/api/auth/login']
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-pathname', pathname)
+
+  const withPathname = () =>
+    NextResponse.next({
+      request: { headers: requestHeaders },
+    })
+
   if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
-    return NextResponse.next()
+    return withPathname()
   }
 
   if (
@@ -20,7 +28,7 @@ export async function middleware(req: NextRequest) {
     pathname === '/icon.png' ||
     pathname.startsWith('/apple-icon')
   ) {
-    return NextResponse.next()
+    return withPathname()
   }
 
   const session = await getSessionFromRequest(req)
@@ -45,7 +53,7 @@ export async function middleware(req: NextRequest) {
             : '/'
       return NextResponse.redirect(new URL(dest, req.url))
     }
-    return NextResponse.next()
+    return withPathname()
   }
 
   if (!session) {
@@ -75,7 +83,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return withPathname()
 }
 
 export const config = {

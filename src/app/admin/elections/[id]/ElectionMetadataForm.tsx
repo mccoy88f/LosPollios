@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toElectionDateInputValue } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { formFieldClass } from '@/lib/formFieldStyles'
 
 type Initial = {
   name: string
@@ -96,7 +97,7 @@ export default function ElectionMetadataForm({
             min={0}
             value={form.eligibleVotersTotal}
             onChange={e => set('eligibleVotersTotal', e.target.value)}
-            className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass + ' max-w-xs'}
             placeholder="es. 12.500 (vuoto = nessun limite)"
           />
           <p className="text-xs text-gray-400 mt-1">
@@ -109,7 +110,7 @@ export default function ElectionMetadataForm({
             value={form.name}
             onChange={e => set('name', e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
           />
         </div>
         <div>
@@ -118,7 +119,7 @@ export default function ElectionMetadataForm({
             value={form.commune}
             onChange={e => set('commune', e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
           />
         </div>
         <div>
@@ -128,7 +129,7 @@ export default function ElectionMetadataForm({
             value={form.date}
             onChange={e => set('date', e.target.value)}
             required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
           />
         </div>
         <div>
@@ -136,7 +137,7 @@ export default function ElectionMetadataForm({
           <select
             value={form.type}
             onChange={e => set('type', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
           >
             <option value="large">Grande (&gt;15.000 ab.) – doppio turno</option>
             <option value="small">Piccolo (&le;15.000 ab.) – turno unico</option>
@@ -149,7 +150,7 @@ export default function ElectionMetadataForm({
             min={1}
             value={form.totalSeats}
             onChange={e => set('totalSeats', e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
           />
         </div>
         {form.type === 'large' && (
@@ -162,7 +163,7 @@ export default function ElectionMetadataForm({
               max={10}
               value={form.threshold}
               onChange={e => set('threshold', e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={formFieldClass}
             />
           </div>
         )}
@@ -172,7 +173,7 @@ export default function ElectionMetadataForm({
             value={form.notes}
             onChange={e => set('notes', e.target.value)}
             rows={2}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formFieldClass}
             placeholder="Opzionali"
           />
         </div>

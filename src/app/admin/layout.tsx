@@ -1,6 +1,8 @@
+import { headers } from 'next/headers'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { SiteTopNav } from '@/components/SiteTopNav'
+import { getElectionNavFromAdminPath } from '@/lib/adminElectionNav'
 import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 
@@ -9,11 +11,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session || session.role !== 'admin') redirect('/login')
 
   const profile = await getSessionUserProfile(session)
+  const pathname = (await headers()).get('x-pathname')
+  const election = await getElectionNavFromAdminPath(pathname)
 
   return (
     <div className="page-shell">
       <SiteTopNav
-        menuSections={buildAppMenuSections(session)}
+        menuSections={buildAppMenuSections(session, election)}
+        election={election}
         username={session.username}
         displayName={profile?.name}
       />

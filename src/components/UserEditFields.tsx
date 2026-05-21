@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/Button'
+import { formFieldClass } from '@/lib/formFieldStyles'
 
 type Section = { id: number; number: number; name: string | null }
 type ElectionList = { id: number; name: string }
@@ -51,8 +52,7 @@ export function SectionPicker({
   )
 }
 
-const inputClass =
-  'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500'
+const inputClass = formFieldClass
 
 export function UserEditFields({
   form,

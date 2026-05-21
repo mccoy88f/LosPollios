@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { AppLogo } from '@/components/AppLogo'
+import { formFieldClass } from '@/lib/formFieldStyles'
 
 function LoginForm() {
   const router = useRouter()
@@ -61,7 +62,7 @@ function LoginForm() {
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+              className={formFieldClass}
               placeholder="username"
               required
               autoComplete="username"
@@ -73,7 +74,7 @@ function LoginForm() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+              className={formFieldClass}
               placeholder="••••••••"
               required
               autoComplete="current-password"

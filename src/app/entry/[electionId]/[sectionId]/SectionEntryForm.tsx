@@ -6,6 +6,7 @@ import { Card, CardBody, CardTitle } from '@/components/ui/Card'
 import { NumberStepper } from '@/components/ui/NumberStepper'
 import { buttonClassName } from '@/components/ui/buttonStyles'
 import { cn } from '@/lib/cn'
+import { formFieldClassLg } from '@/lib/formFieldStyles'
 import { ChevronDown } from 'lucide-react'
 
 interface Candidate { id: number; firstName: string; lastName: string; order: number }
@@ -240,7 +241,7 @@ export default function SectionEntryForm({
                   value={turnout.votersActual}
                   onChange={e => setTurn('votersActual', e.target.value)}
                   disabled={readOnly}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 text-lg font-semibold tabular-nums disabled:bg-gray-100"
+                  className={cn(formFieldClassLg, 'focus-visible:ring-brand-500')}
                   placeholder="0"
                   required
                 />
@@ -254,7 +255,7 @@ export default function SectionEntryForm({
                     value={(turnout as Record<string, string>)[key]}
                     onChange={e => setTurn(key, e.target.value)}
                     disabled={readOnly}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 tabular-nums disabled:bg-gray-100"
+                    className={cn(formFieldClassLg, 'font-normal text-base focus-visible:ring-brand-500')}
                     placeholder="—"
                   />
                 </div>
