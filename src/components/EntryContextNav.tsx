@@ -52,6 +52,7 @@ export async function EntryContextNav({ electionId, electionName, section }: Pro
         electionId={electionId}
         sections={tabs}
         currentSectionId={section.id}
+        currentSectionNumber={section.number}
       />
     )
   }

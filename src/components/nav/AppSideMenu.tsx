@@ -75,7 +75,8 @@ export function AppSideMenu({
     if (path === '/') return pathname === '/'
     if (pathname === path) return true
     if (/^\/live\/\d+$/.test(path)) return false
-    return pathname.startsWith(`${path}/`)
+    if (/^\/entry\/\d+$/.test(path)) return pathname === path
+    return pathname.startsWith(`${path}/`) || pathname === path
   }
 
   return (
@@ -109,11 +110,16 @@ export function AppSideMenu({
           {sections.map((section, si) => (
             <div key={si}>
               {section.title && (
-                <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 truncate">
+                <p className="px-2 mb-1 text-xs font-bold text-brand-900 truncate" title={section.title}>
                   {section.title}
                 </p>
               )}
-              <ul className="space-y-0.5">
+              <ul
+                className={cn(
+                  'space-y-0.5',
+                  section.title && 'ml-2 pl-2 border-l-2 border-brand-100'
+                )}
+              >
                 {section.items.map(item => {
                   const Icon = MENU_ICONS[item.icon]
                   const active = isActive(item.href)

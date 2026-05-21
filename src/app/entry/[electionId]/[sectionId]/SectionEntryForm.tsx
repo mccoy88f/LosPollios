@@ -6,8 +6,7 @@ import { Card, CardBody, CardTitle } from '@/components/ui/Card'
 import { NumberStepper } from '@/components/ui/NumberStepper'
 import { buttonClassName } from '@/components/ui/buttonStyles'
 import { cn } from '@/lib/cn'
-import { ArrowLeft, ChevronDown } from 'lucide-react'
-import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
 
 interface Candidate { id: number; firstName: string; lastName: string; order: number }
 interface ListData { id: number; name: string; color: string; candidateMayor: string | null; candidates: Candidate[] }
@@ -22,6 +21,9 @@ interface Props {
   theoreticalVoters: number
   readOnly?: boolean
   className?: string
+  onListFocusChange?: (focused: boolean) => void
+  /** Nasconde affluenza, stato salvataggio (gestiti dal layout esterno) */
+  hideChrome?: boolean
 }
 
 export default function SectionEntryForm({
@@ -33,6 +35,8 @@ export default function SectionEntryForm({
   theoreticalVoters,
   readOnly = false,
   className,
+  onListFocusChange,
+  hideChrome = false,
 }: Props) {
   const hadTurnout = existingTurnout?.votersActual !== undefined && existingTurnout.votersActual > 0
 
@@ -77,6 +81,7 @@ export default function SectionEntryForm({
 
   /** Apre questa lista e chiude le altre; se già aperta non fa nulla. */
   function openList(listId: number) {
+    setAffluenzaExpanded(false)
     setOpenListId(prev => (prev === listId ? prev : listId))
   }
 
@@ -175,6 +180,12 @@ export default function SectionEntryForm({
 
   useEffect(() => () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }, [])
 
+  const listFocusMode = listsPhase && !affluenzaExpanded && openListId != null
+
+  useEffect(() => {
+    onListFocusChange?.(listFocusMode)
+  }, [listFocusMode, onListFocusChange])
+
   function saveVariant(): 'info' | 'success' | 'warning' | 'error' {
     if (error) return 'error'
     if (readOnly) return 'info'
@@ -207,9 +218,9 @@ export default function SectionEntryForm({
     ) : null
 
   return (
-    <div className={cn('flex flex-col flex-1 min-h-0 gap-3', className)}>
+    <div className={cn('flex flex-col flex-1 min-h-0', listFocusMode ? 'gap-0' : 'gap-3', className)}>
       {/* Affluenza: espansa prima del passaggio alle liste */}
-      {!listsPhase || affluenzaExpanded ? (
+      {!hideChrome && (!listsPhase || affluenzaExpanded) ? (
         <Card className="shrink-0">
           <CardBody>
             <CardTitle className="mb-4">Affluenza</CardTitle>
@@ -271,7 +282,7 @@ export default function SectionEntryForm({
             {!listsPhase && quadraturaAlert && <div className="mt-4">{quadraturaAlert}</div>}
           </CardBody>
         </Card>
-      ) : (
+      ) : !hideChrome ? (
         <button
           type="button"
           onClick={expandAffluenza}
@@ -282,21 +293,33 @@ export default function SectionEntryForm({
           </span>
           <span className="text-brand-700/80 ml-2 text-xs">· tocca per modificare</span>
         </button>
-      )}
+      ) : null}
 
       {/* Voti lista: layout a tutta altezza come demo */}
       {listsPhase && !affluenzaExpanded && (
-        <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
-          <div className="shrink-0 flex items-center justify-between px-4 pt-3 pb-1">
+        <div
+          className={cn(
+            'flex flex-col flex-1 min-h-0 overflow-hidden',
+            listFocusMode
+              ? 'rounded-none border-0 bg-gray-50'
+              : 'rounded-xl border border-gray-200 bg-gray-50'
+          )}
+        >
+          <div className="shrink-0 flex items-center justify-between gap-2 px-4 pt-3 pb-1">
             <h2 className="font-semibold text-gray-900 text-base">Voti di lista</h2>
-            {totalListVotes > 0 && (
-              <span className="text-sm text-gray-500 tabular-nums">
-                Totale: <strong className="text-gray-900">{totalListVotes.toLocaleString('it-IT')}</strong>
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              {totalListVotes > 0 && (
+                <span className="text-sm text-gray-500 tabular-nums">
+                  Totale: <strong className="text-gray-900">{totalListVotes.toLocaleString('it-IT')}</strong>
+                </span>
+              )}
+              {listFocusMode && (
+                <span className="text-[10px] text-gray-500 max-w-[10rem] text-right truncate">{saveMessage()}</span>
+              )}
+            </div>
           </div>
 
-          {quadraturaAlert && <div className="shrink-0 px-4 pb-2">{quadraturaAlert}</div>}
+          {!listFocusMode && quadraturaAlert && <div className="shrink-0 px-4 pb-2">{quadraturaAlert}</div>}
 
           <div
             className="flex flex-col flex-1 min-h-0 gap-2 px-3 pb-3 overflow-hidden"
@@ -409,26 +432,19 @@ export default function SectionEntryForm({
               )
             })}
           </div>
-          <p className="shrink-0 px-4 pb-2 text-[11px] text-center text-gray-500">
-            Tap sulla lista o usa +/− per aprire a tutta altezza · un’altra lista si chiude da sola
-          </p>
+          {!listFocusMode && (
+            <p className="shrink-0 px-4 pb-2 text-[11px] text-center text-gray-500">
+              Tap sulla lista o usa +/− per aprire a tutta altezza · un’altra lista si chiude da sola
+            </p>
+          )}
         </div>
       )}
 
-      <Alert variant={saveVariant()} title="Stato dati" className="shrink-0">
-        {saveMessage()}
-      </Alert>
-
-      <Link
-        href={`/entry/${electionId}`}
-        className={cn(
-          'shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 text-sm font-medium rounded-lg',
-          'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors'
-        )}
-      >
-        <ArrowLeft className="w-4 h-4" aria-hidden />
-        Torna alle sezioni
-      </Link>
+      {!hideChrome && (
+        <Alert variant={saveVariant()} title="Stato dati" className="shrink-0">
+          {saveMessage()}
+        </Alert>
+      )}
     </div>
   )
 }

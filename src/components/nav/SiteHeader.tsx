@@ -60,8 +60,8 @@ export function SiteHeader({
               <Link
                 href={`/live/${election.electionId}`}
                 className={cn(
-                  'min-w-0 flex-1 sm:flex-initial text-sm sm:text-base font-semibold',
-                  'text-accent-300 hover:text-accent-200 truncate transition-colors',
+                  'min-w-0 max-w-[42vw] sm:max-w-[14rem] md:max-w-md text-sm sm:text-base font-semibold',
+                  'text-accent-300 hover:text-accent-200 truncate transition-colors shrink',
                   'focus-visible:outline-none focus-visible:underline'
                 )}
                 title={election.electionName}
