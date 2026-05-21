@@ -88,21 +88,21 @@ export default async function HomePage() {
                       </Link>
                       <Link
                         href={`/live/${e.id}/aggiornamenti`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
                       >
                         <History className="w-4 h-4" aria-hidden />
                         Aggiornamenti
                       </Link>
                       <Link
                         href={`/live/${e.id}/preferenze`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
                       >
                         <Users className="w-4 h-4" aria-hidden />
                         Preferenze
                       </Link>
                       <Link
                         href={`/live/${e.id}?view=analisi`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-neutral-600 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-800"
                       >
                         <BarChart3 className="w-4 h-4" aria-hidden />
                         Analisi

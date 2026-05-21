@@ -24,7 +24,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; hint: string }[] =
 ]
 
 const inputClass =
-  'w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500'
+  'w-full border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500'
 
 export function AccountSettingsForm({ initial }: { initial: Profile }) {
   const [name, setName] = useState(initial.name ?? '')
@@ -97,21 +97,21 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
         <CardBody className="space-y-4">
           <CardTitle>Profilo</CardTitle>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Nome utente
             </label>
             <input
               type="text"
               value={initial.username}
               disabled
-              className="w-full border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-slate-900/60 text-gray-600 dark:text-slate-400"
+              className="w-full border border-gray-200 dark:border-neutral-700 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-neutral-900/60 text-gray-600 dark:text-neutral-400"
             />
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">
               Non modificabile. Per cambiarlo contatta l&apos;amministratore.
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Nome visualizzato
             </label>
             <input
@@ -123,29 +123,29 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
               placeholder="Come comparirà nel menu utente"
             />
           </div>
-          <div className="rounded-lg bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 px-3 py-2 text-sm text-gray-600 dark:text-slate-300 space-y-1">
+          <div className="rounded-lg bg-gray-50 dark:bg-neutral-900/50 border border-gray-100 dark:border-neutral-700 px-3 py-2 text-sm text-gray-600 dark:text-neutral-300 space-y-1">
             <p>
-              <span className="font-medium text-gray-700 dark:text-slate-200">Ruolo:</span> {roleLabel}
+              <span className="font-medium text-gray-700 dark:text-neutral-200">Ruolo:</span> {roleLabel}
             </p>
             {initial.election && (
               <p>
-                <span className="font-medium text-gray-700 dark:text-slate-200">Elezione:</span>{' '}
+                <span className="font-medium text-gray-700 dark:text-neutral-200">Elezione:</span>{' '}
                 {initial.election.name} ({initial.election.commune})
               </p>
             )}
             {initial.list && (
               <p>
-                <span className="font-medium text-gray-700 dark:text-slate-200">Lista associata:</span>{' '}
+                <span className="font-medium text-gray-700 dark:text-neutral-200">Lista associata:</span>{' '}
                 {initial.list.name}
               </p>
             )}
             {initial.allowedSectionIds && initial.allowedSectionIds.length > 0 && (
               <p>
-                <span className="font-medium text-gray-700 dark:text-slate-200">Sezioni assegnate:</span>{' '}
+                <span className="font-medium text-gray-700 dark:text-neutral-200">Sezioni assegnate:</span>{' '}
                 {initial.allowedSectionIds.length} sezioni
               </p>
             )}
-            <p className="text-xs text-gray-500 dark:text-slate-400 pt-1">
+            <p className="text-xs text-gray-500 dark:text-neutral-400 pt-1">
               Ruolo, elezione e sezioni sono gestiti dall&apos;amministratore.
             </p>
           </div>
@@ -155,7 +155,7 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
       <Card>
         <CardBody className="space-y-4">
           <CardTitle>Aspetto</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <p className="text-sm text-gray-500 dark:text-neutral-400">
             Scegli come visualizzare l&apos;interfaccia. Con &quot;Automatico&quot; il tema segue il dispositivo.
           </p>
           <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Tema interfaccia">
@@ -166,8 +166,8 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
                   key={opt.value}
                   className={`cursor-pointer rounded-xl border-2 px-3 py-3 transition-colors ${
                     selected
-                      ? 'border-brand-800 bg-brand-50 dark:bg-brand-950/40 dark:border-brand-600'
-                      : 'border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 hover:border-gray-300 dark:hover:border-slate-500'
+                      ? 'border-brand-800 bg-brand-50 dark:bg-neutral-800 dark:border-brand-500'
+                      : 'border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-500'
                   }`}
                 >
                   <input
@@ -178,10 +178,10 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
                     onChange={() => previewTheme(opt.value)}
                     className="sr-only"
                   />
-                  <span className="block text-sm font-semibold text-gray-900 dark:text-slate-100">
+                  <span className="block text-sm font-semibold text-gray-900 dark:text-white">
                     {opt.label}
                   </span>
-                  <span className="block text-xs text-gray-500 dark:text-slate-400 mt-0.5">{opt.hint}</span>
+                  <span className="block text-xs text-gray-500 dark:text-neutral-400 mt-0.5">{opt.hint}</span>
                 </label>
               )
             })}
@@ -192,11 +192,11 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
       <Card>
         <CardBody className="space-y-4">
           <CardTitle>Cambia password</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <p className="text-sm text-gray-500 dark:text-neutral-400">
             Lascia vuoto se non vuoi modificare la password.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Password attuale
             </label>
             <input
@@ -208,7 +208,7 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Nuova password
             </label>
             <input
@@ -220,7 +220,7 @@ export function AccountSettingsForm({ initial }: { initial: Profile }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
               Conferma nuova password
             </label>
             <input

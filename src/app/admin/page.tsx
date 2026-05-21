@@ -20,16 +20,18 @@ function ElectionCard({
   }
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3 mb-1">
-            <h2 className="font-semibold text-gray-900">{e.name}</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white">{e.name}</h2>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[e.status]}`}>
               {STATUS_LABEL[e.status]}
             </span>
             {e.archived && (
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-700">Archivio</span>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                Archivio
+              </span>
             )}
           </div>
           <p className="text-sm text-gray-500">
@@ -72,8 +74,8 @@ export default async function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Elezioni</h1>
-          <p className="text-gray-500 mt-1">Gestisci le elezioni comunali</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Elezioni</h1>
+          <p className="text-gray-500 dark:text-neutral-400 mt-1">Gestisci le elezioni comunali</p>
         </div>
         <Link
           href="/admin/elections/new"

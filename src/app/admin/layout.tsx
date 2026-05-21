@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         username={session.username}
         displayName={profile?.name}
       />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">{children}</main>
+      <main className="admin-zone flex-1 max-w-7xl mx-auto w-full px-4 py-8">{children}</main>
     </div>
   )
 }

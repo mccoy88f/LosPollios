@@ -61,7 +61,7 @@ export default async function SectionEntryPage({ params }: Props) {
   }))
 
   return (
-    <div className="h-dvh bg-gray-50 dark:bg-slate-950 flex flex-col overflow-hidden">
+    <div className="h-dvh bg-gray-50 dark:bg-neutral-950 flex flex-col overflow-hidden">
       <EntryContextNav electionId={election.id} electionName={election.name} />
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden max-w-4xl mx-auto w-full px-4 py-2 md:py-3">
         <EntrySectionWorkspace

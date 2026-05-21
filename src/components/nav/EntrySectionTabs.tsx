@@ -2,18 +2,13 @@
 
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
+import { getSectionColors } from '@/lib/sectionColors'
 import type { SectionUiStatus } from '@/lib/sectionStatus'
 
 export type EntrySectionTab = {
   id: number
   number: number
   status: SectionUiStatus
-}
-
-const tabStatusClass: Record<SectionUiStatus, string> = {
-  pending: 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50',
-  in_progress: 'border-orange-400 bg-orange-50 text-orange-950 hover:bg-orange-100',
-  closed: 'border-emerald-400 bg-emerald-50 text-emerald-950 hover:bg-emerald-100',
 }
 
 type Props = {
@@ -45,6 +40,7 @@ export function EntrySectionTabs({
       >
         {sections.map(s => {
           const active = s.id === currentSectionId
+          const colors = getSectionColors(s.number)
           return (
             <Link
               key={s.id}
@@ -56,8 +52,9 @@ export function EntrySectionTabs({
               className={cn(
                 'shrink-0 min-w-[3rem] h-10 px-3 rounded-lg border-2 text-sm font-bold tabular-nums',
                 'inline-flex items-center justify-center transition-all',
-                tabStatusClass[s.status],
-                active && 'border-brand-800 bg-brand-800 text-white shadow-sm scale-[1.02]'
+                !active && colors.card,
+                !active && colors.darkCard,
+                active && 'border-brand-800 bg-brand-800 text-white shadow-sm scale-[1.02] dark:border-brand-600 dark:bg-brand-700'
               )}
             >
               {s.number}

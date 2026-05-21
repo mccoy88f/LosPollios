@@ -363,15 +363,15 @@ export function LiveSectionGrid({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-5">
         <div className="flex items-center justify-between mb-1 gap-2">
-          <h3 className="font-semibold text-gray-900">Sezioni</h3>
-          <span className="text-sm text-gray-500 tabular-nums">
+          <h3 className="font-semibold text-gray-900 dark:text-white">Sezioni</h3>
+          <span className="text-sm text-gray-500 dark:text-neutral-400 tabular-nums">
             {counted} / {sections.length} chiuse
           </span>
         </div>
         {clickable && (
-          <p className="text-xs text-gray-500 mb-3">Clicca una sezione per il resoconto</p>
+          <p className="text-xs text-gray-500 dark:text-neutral-400 mb-3">Clicca una sezione per il resoconto</p>
         )}
         <div
           className={
@@ -396,7 +396,7 @@ export function LiveSectionGrid({
                 disabled={!clickable}
                 onClick={clickable ? () => onSelectSection!(s) : undefined}
                 className={cn(
-                  sectionLiveCellClasses(status, hasWarning),
+                  sectionLiveCellClasses(s.number, hasWarning),
                   clickable && 'cursor-pointer hover:ring-2 hover:ring-brand-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
                   isSelected && 'ring-2 ring-brand-800 ring-offset-1'
                 )}
@@ -410,7 +410,7 @@ export function LiveSectionGrid({
           <SectionStatusBadge status="pending" />
           <SectionStatusBadge status="in_progress" />
           <SectionStatusBadge status="closed" />
-          <span className="text-xs text-gray-500 self-center">Anello ambra = da verificare</span>
+          <span className="text-xs text-gray-500 dark:text-neutral-400 self-center">Anello ambra = da verificare</span>
         </div>
       </div>
 

@@ -49,7 +49,7 @@ export default async function EntryIndexPage({ params }: Props) {
   const completed = sections.filter(s => s.listResults.length > 0).length
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
       <EntryContextNav electionId={election.id} electionName={election.name} />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -70,7 +70,7 @@ export default async function EntryIndexPage({ params }: Props) {
               <Link
                 key={s.id}
                 href={`/entry/${electionId}/${s.id}`}
-                className={sectionEntryCardClasses(status)}
+                className={sectionEntryCardClasses(status, s.number)}
               >
                 <div className="text-2xl font-bold tabular-nums">{s.number}</div>
                 <SectionStatusBadge status={status} />

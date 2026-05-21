@@ -13,8 +13,8 @@ export function LiveKpiStrip({
   const { progress, turnout, lastDataUpdateAt } = data
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="grid grid-cols-3 divide-x divide-gray-100">
+    <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm overflow-hidden">
+      <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-neutral-800">
         <KpiCell label="Scrutinio voti" value={`${progress.percentage.toFixed(1)}%`} />
         <KpiCell label="Affluenza" value={formatPercent(turnout.percentage)} />
         <KpiCell
@@ -23,7 +23,7 @@ export function LiveKpiStrip({
         />
       </div>
 
-      <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+      <div className="px-4 py-2 bg-gray-50 dark:bg-neutral-950 border-t border-gray-100 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-neutral-400">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {lastPulse && (
             <span className="inline-flex items-center gap-1">
@@ -49,17 +49,17 @@ export function LiveKpiStrip({
       </div>
 
       <div className="px-4 pb-3 pt-2">
-        <div className="flex justify-between text-xs text-gray-500 mb-1 tabular-nums">
+        <div className="flex justify-between text-xs text-gray-500 dark:text-neutral-400 mb-1 tabular-nums">
           <span>Avanzamento scrutinio</span>
           <span>{progress.percentage.toFixed(1)}%</span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2">
+        <div className="w-full bg-gray-100 dark:bg-neutral-800 rounded-full h-2">
           <div
             className="bg-brand-800 h-2 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, progress.percentage)}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1 tabular-nums">
+        <p className="text-xs text-gray-400 dark:text-neutral-500 mt-1 tabular-nums">
           {formatNumber(progress.scrutinizedVotes)} / {formatNumber(progress.expectedVotes)} voti lista su votanti
         </p>
       </div>
@@ -70,8 +70,8 @@ export function LiveKpiStrip({
 function KpiCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="px-3 py-2.5 text-center min-w-0">
-      <div className="text-base sm:text-lg font-bold text-gray-900 tabular-nums">{value}</div>
-      <div className="text-[10px] sm:text-xs text-gray-500 leading-tight">{label}</div>
+      <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tabular-nums">{value}</div>
+      <div className="text-[10px] sm:text-xs text-gray-500 dark:text-neutral-400 leading-tight">{label}</div>
     </div>
   )
 }

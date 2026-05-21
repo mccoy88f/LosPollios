@@ -43,14 +43,14 @@ export default async function AccountPage() {
           }}
         />
 
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-neutral-700">
           <LogoutButton />
         </div>
 
-        <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-gray-500 dark:text-slate-400">
-          <p className="font-medium text-gray-700 dark:text-slate-200">LosPollios</p>
+        <footer className="mt-8 pt-6 border-t border-gray-200 dark:border-neutral-700 text-center text-sm text-gray-500 dark:text-neutral-400">
+          <p className="font-medium text-gray-700 dark:text-white">LosPollios</p>
           <p className="mt-1">Sviluppato da Antonello Migliorelli</p>
-          <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">Gestione spoglio elezioni amministrative</p>
+          <p className="text-xs text-gray-400 dark:text-neutral-500 mt-2">Gestione spoglio elezioni amministrative</p>
         </footer>
       </main>
     </div>

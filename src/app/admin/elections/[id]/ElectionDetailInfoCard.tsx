@@ -56,15 +56,15 @@ export default function ElectionDetailInfoCard({
     eligibleVotersTotal != null ? eligibleVotersTotal - totalVoters : null
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-5 mb-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-semibold text-gray-900 text-lg">{name}</h2>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h2 className="font-semibold text-gray-900 dark:text-white text-lg">{name}</h2>
+          <p className="text-gray-500 dark:text-neutral-400 text-sm mt-0.5">
             {commune} · {dateLabel}
           </p>
           {archivedNotice && (
-            <p className="text-xs text-slate-600 mt-2 font-medium">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2 font-medium">
               In archivio — visibile solo nella sezione Archivio in amministrazione
             </p>
           )}
@@ -75,7 +75,7 @@ export default function ElectionDetailInfoCard({
             type="button"
             aria-expanded={editing}
             onClick={() => setEditing(e => !e)}
-            className="text-sm border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 px-3 py-1.5 rounded-lg font-medium shadow-sm"
+            className="text-sm border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-800 dark:text-white px-3 py-1.5 rounded-lg font-medium shadow-sm"
           >
             {editing ? 'Chiudi modifica' : 'Modifica'}
           </button>
@@ -93,9 +93,9 @@ export default function ElectionDetailInfoCard({
           ['Votanti reali', actualVoters.toLocaleString('it-IT')],
           ['Liste', listsCount],
         ].map(([label, value]) => (
-          <div key={label as string} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-            <p className="text-xl font-bold text-gray-900">{value}</p>
+          <div key={label as string} className="bg-gray-50 dark:bg-neutral-950 rounded-lg p-3">
+            <p className="text-xs text-gray-500 dark:text-neutral-400 mb-0.5">{label}</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
           </div>
         ))}
       </div>

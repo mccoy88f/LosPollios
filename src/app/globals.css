@@ -11,21 +11,84 @@
 }
 
 html.dark {
-  --color-text: #f1f5f9;
-  --color-text-muted: #94a3b8;
-  --color-surface: #1e293b;
+  --color-text: #fafafa;
+  --color-text-muted: #a3a3a3;
+  --color-surface: #171717;
 }
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100;
+    @apply bg-gray-50 text-gray-900 dark:bg-neutral-950 dark:text-white;
   }
 }
 
 @layer components {
   .page-shell {
-    @apply min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col;
+    @apply min-h-screen bg-gray-50 dark:bg-neutral-950 flex flex-col;
   }
+
+  .surface-card {
+    @apply bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white;
+  }
+}
+
+/* Admin: tema scuro coerente (nero/bianco, no slate/blu) */
+html.dark .admin-zone {
+  color: #fff;
+}
+
+html.dark .admin-zone .bg-white,
+html.dark .admin-zone .bg-white\/80 {
+  background-color: #171717;
+}
+
+html.dark .admin-zone .bg-gray-50,
+html.dark .admin-zone .bg-gray-50\/90,
+html.dark .admin-zone thead.bg-gray-50 {
+  background-color: #0a0a0a;
+}
+
+html.dark .admin-zone .border-gray-100,
+html.dark .admin-zone .border-gray-200,
+html.dark .admin-zone .border-gray-300 {
+  border-color: #404040;
+}
+
+html.dark .admin-zone .text-gray-900,
+html.dark .admin-zone .text-gray-800 {
+  color: #fff;
+}
+
+html.dark .admin-zone .text-gray-700,
+html.dark .admin-zone .text-gray-600 {
+  color: #d4d4d4;
+}
+
+html.dark .admin-zone .text-gray-500,
+html.dark .admin-zone .text-gray-400 {
+  color: #a3a3a3;
+}
+
+html.dark .admin-zone .hover\:bg-gray-50:hover,
+html.dark .admin-zone .hover\:bg-gray-100:hover {
+  background-color: #262626;
+}
+
+html.dark .admin-zone input:not([type='checkbox']):not([type='radio']):not([type='color']),
+html.dark .admin-zone select,
+html.dark .admin-zone textarea {
+  background-color: #171717;
+  border-color: #525252;
+  color: #fff;
+}
+
+html.dark .admin-zone input::placeholder,
+html.dark .admin-zone textarea::placeholder {
+  color: #737373;
+}
+
+html.dark .admin-zone .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #262626;
 }
 
 @layer utilities {

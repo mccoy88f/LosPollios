@@ -97,16 +97,16 @@ export function AppSideMenu({
       <aside
         className={cn(
           'absolute left-0 top-0 bottom-0 w-[min(18.5rem,88vw)]',
-          'bg-white dark:bg-slate-900 shadow-2xl flex flex-col',
+          'bg-white dark:bg-neutral-900 shadow-2xl flex flex-col',
           'animate-slideIn'
         )}
       >
-        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-700 shrink-0">
-          <span className="font-semibold text-gray-900 dark:text-slate-100">Menu</span>
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 dark:border-neutral-700 shrink-0">
+          <span className="font-semibold text-gray-900 dark:text-white">Menu</span>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
+            className="p-2 rounded-lg text-gray-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
             aria-label="Chiudi"
           >
             <X className="w-5 h-5" />
@@ -139,7 +139,7 @@ export function AppSideMenu({
                           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                           active
                             ? 'bg-brand-800 text-white'
-                            : 'text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800'
+                            : 'text-gray-800 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800'
                         )}
                       >
                         <Icon className="w-5 h-5 shrink-0 opacity-90" aria-hidden />
@@ -153,7 +153,7 @@ export function AppSideMenu({
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-gray-200 dark:border-slate-700 p-3 space-y-0.5">
+        <div className="shrink-0 border-t border-gray-200 dark:border-neutral-700 p-3 space-y-0.5">
           <Link
             href="/account"
             onClick={onClose}
@@ -161,7 +161,7 @@ export function AppSideMenu({
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
               pathname === '/account'
                 ? 'bg-brand-800 text-white'
-                : 'text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800'
+                : 'text-gray-800 dark:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800'
             )}
           >
             Il mio account

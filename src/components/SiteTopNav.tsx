@@ -40,7 +40,7 @@ export function SiteTopNav({
         />
       </Suspense>
       {below ? (
-        <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+        <div className="shrink-0 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-700">
           <div className={cn(maxWidthClass, 'mx-auto px-4 py-2')}>{below}</div>
         </div>
       ) : null}
