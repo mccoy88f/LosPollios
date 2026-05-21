@@ -126,7 +126,7 @@ export default function PersonsPage() {
         i suggerimenti usano nome e cognome uguali.
       </p>
 
-      {msg && <div className="bg-blue-50 text-blue-800 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
+      {msg && <div className="bg-brand-50 text-gray-900 text-sm rounded-lg px-4 py-2 mb-4">{msg}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <form onSubmit={createPerson} className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
@@ -233,7 +233,7 @@ export default function PersonsPage() {
                     <button
                       type="button"
                       onClick={() => openTrail(p.id)}
-                      className="text-xs text-indigo-600 hover:underline"
+                      className="text-xs text-accent-600 hover:underline"
                     >
                       {expandId === p.id ? 'Chiudi cronologia' : 'Cronologia'}
                     </button>

@@ -3,11 +3,14 @@ import { getSession } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { SiteTopNav } from '@/components/SiteTopNav'
+import { getPrimaryNavLinks } from '@/lib/navLinks'
+import { getSessionUserProfile } from '@/lib/sessionUser'
 import { Card, CardBody, PageHeader } from '@/components/ui/Card'
 import { BarChart3, ClipboardList, Radio, Settings, Vote } from 'lucide-react'
 
 export default async function HomePage() {
   const session = await getSession()
+  const profile = session ? await getSessionUserProfile(session) : null
   const elections = await prisma.election.findMany({
     where: { status: { not: 'setup' } },
     orderBy: { date: 'desc' },
@@ -19,15 +22,8 @@ export default async function HomePage() {
       <SiteTopNav
         crumbs={[{ label: 'Home' }]}
         username={session?.username}
-        showLogout
-        primaryLinks={
-          session?.role === 'admin'
-            ? [
-                { label: 'Elezioni', href: '/admin' },
-                { label: 'Accessi', href: '/admin/users' },
-              ]
-            : undefined
-        }
+        displayName={profile?.name}
+        primaryLinks={getPrimaryNavLinks(session ?? undefined)}
       />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
@@ -85,7 +81,7 @@ export default async function HomePage() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/live/${e.id}`}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg bg-brand-800 text-white hover:bg-brand-900 transition-colors"
                       >
                         <Radio className="w-4 h-4" aria-hidden />
                         Live

@@ -1,8 +1,5 @@
-'use client'
-
-import Link from 'next/link'
-import { LogoutButton } from '@/components/LogoutButton'
-import { Vote } from 'lucide-react'
+import { AppHeader } from '@/components/nav/AppHeader'
+import { ContextBar } from '@/components/nav/ContextBar'
 
 export type NavCrumb = { label: string; href?: string }
 
@@ -10,13 +7,13 @@ type NavLink = { label: string; href: string }
 
 type Props = {
   crumbs?: NavCrumb[]
-  /** Link principali (es. Elezioni, Dati storici) */
   primaryLinks?: NavLink[]
-  /** Link contestuali a destra (es. Live ↔ Analisi) */
   contextLinks?: NavLink[]
   username?: string | null
-  showLogout?: boolean
+  displayName?: string | null
   maxWidthClass?: string
+  /** Contenuto sotto il breadcrumb (es. tab sezioni entry) */
+  contextBarChildren?: React.ReactNode
 }
 
 export function SiteTopNav({
@@ -24,68 +21,22 @@ export function SiteTopNav({
   primaryLinks,
   contextLinks,
   username,
-  showLogout,
+  displayName,
   maxWidthClass = 'max-w-7xl',
+  contextBarChildren,
 }: Props) {
   return (
-    <nav className="bg-brand-800 text-white shadow">
-      <div className={`${maxWidthClass} mx-auto px-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 min-h-14 py-2`}>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
-          <Link href="/" className="font-bold text-lg flex items-center gap-2 shrink-0 hover:text-brand-100 transition-colors">
-            <Vote className="w-5 h-5" aria-hidden />
-            <span>LosPollios</span>
-          </Link>
-
-          {primaryLinks && primaryLinks.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1 text-sm border-l border-brand-600 pl-4">
-              {primaryLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-brand-200 hover:text-white px-2 py-1 rounded-md hover:bg-brand-700/50 transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {crumbs.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-brand-100 min-w-0">
-              {crumbs.map((c, i) => (
-                <span key={`${c.label}-${i}`} className="flex items-center gap-1.5 min-w-0">
-                  {i > 0 && <span className="text-brand-500 select-none" aria-hidden>/</span>}
-                  {c.href ? (
-                    <Link href={c.href} className="hover:text-white text-brand-200 truncate max-w-[12rem] sm:max-w-xs">
-                      {c.label}
-                    </Link>
-                  ) : (
-                    <span className="text-white font-medium truncate max-w-[14rem] sm:max-w-md">{c.label}</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {contextLinks && contextLinks.length > 0 && (
-            <div className="flex items-center gap-1 text-sm">
-              {contextLinks.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-brand-200 hover:text-white px-2 py-1 rounded-md border border-brand-600 hover:border-brand-400 transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          )}
-          {username ? <span className="text-brand-200 text-sm hidden sm:inline max-w-[10rem] truncate">{username}</span> : null}
-          {showLogout ? <LogoutButton /> : null}
-        </div>
-      </div>
-    </nav>
+    <>
+      <AppHeader
+        primaryLinks={primaryLinks}
+        contextLinks={contextLinks}
+        username={username}
+        displayName={displayName}
+        maxWidthClass={maxWidthClass}
+      />
+      <ContextBar crumbs={crumbs} maxWidthClass={maxWidthClass}>
+        {contextBarChildren}
+      </ContextBar>
+    </>
   )
 }

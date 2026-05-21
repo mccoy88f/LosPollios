@@ -6,7 +6,6 @@ import {
   ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
-import { SiteTopNav } from '@/components/SiteTopNav'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
@@ -151,7 +150,7 @@ function HistoricalComparison({ current, historical }: { current: SeatProjection
   if (!compareData.length) return null
 
   const years = ['Attuale', ...historical.map(h => String(h.year))]
-  const COLORS = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0891b2']
+  const COLORS = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#0891b2']
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -207,48 +206,17 @@ export default function AnalysisDashboard({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <SiteTopNav
-          crumbs={[
-            { label: 'Home', href: '/' },
-            { label: electionName },
-            { label: 'Analisi' },
-          ]}
-          contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
-        />
-        <div className="flex items-center justify-center py-24 text-gray-400">Caricamento...</div>
-      </div>
+      <div className="flex items-center justify-center flex-1 py-24 text-gray-400">Caricamento...</div>
     )
   }
   if (!proj) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <SiteTopNav
-          crumbs={[
-            { label: 'Home', href: '/' },
-            { label: electionName },
-            { label: 'Analisi' },
-          ]}
-          contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
-        />
-        <div className="p-8 text-center text-red-500">Dati non disponibili</div>
-      </div>
-    )
+    return <div className="p-8 text-center text-red-500 flex-1">Dati non disponibili</div>
   }
 
   const councilSeats = typeof proj.totalSeats === 'number' && proj.totalSeats > 0 ? proj.totalSeats : 32
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SiteTopNav
-        crumbs={[
-          { label: 'Home', href: '/' },
-          { label: electionName },
-          { label: 'Analisi e proiezioni' },
-        ]}
-        contextLinks={[{ label: 'Live', href: `/live/${electionId}` }]}
-      />
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
         <Card>
           <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4">
             <div>
@@ -325,7 +293,7 @@ export default function AnalysisDashboard({
                         label={({ percentage }: { percentage: number }) => `${formatPercent(percentage)}`}
                       >
                         {proj.current.coalitions.map((_, i) => (
-                          <Cell key={i} fill={['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c'][i % 5]} />
+                          <Cell key={i} fill={['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea'][i % 5]} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(v: number) => [formatNumber(v), 'Voti']} />
@@ -365,7 +333,7 @@ export default function AnalysisDashboard({
                   <Tooltip formatter={(v: number) => [formatNumber(v), '']} />
                   <Legend wrapperStyle={{ paddingTop: 24 }} />
                   <Bar dataKey="Attuali"    fill="#93c5fd" radius={[3,3,0,0]} />
-                  <Bar dataKey="Proiettati" fill="#2563eb" radius={[3,3,0,0]} />
+                  <Bar dataKey="Proiettati" fill="#063C25" radius={[3,3,0,0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -414,7 +382,6 @@ export default function AnalysisDashboard({
             )}
           </div>
         )}
-      </div>
     </div>
   )
 }

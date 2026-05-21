@@ -77,7 +77,7 @@ export default async function AdminPage() {
         </div>
         <Link
           href="/admin/elections/new"
-          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
+          className="inline-flex items-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-brand-800 text-white hover:bg-brand-900 transition-colors"
         >
           <Plus className="w-4 h-4" aria-hidden />
           Nuova elezione

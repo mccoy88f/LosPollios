@@ -7,7 +7,7 @@ export function BreadcrumbNav({ items }: { items: { label: string; href?: string
         <span key={`${item.label}-${i}`} className="inline-flex items-center gap-x-2">
           {i > 0 ? <span className="text-gray-300 select-none" aria-hidden>/</span> : null}
           {item.href ? (
-            <Link href={item.href} className="text-brand-600 hover:underline">
+            <Link href={item.href} className="text-brand-800 hover:underline">
               {item.label}
             </Link>
           ) : (

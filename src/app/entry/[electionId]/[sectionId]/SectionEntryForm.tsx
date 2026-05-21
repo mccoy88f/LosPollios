@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
 import { Card, CardBody, CardTitle } from '@/components/ui/Card'
 import { NumberStepper } from '@/components/ui/NumberStepper'
+import { buttonClassName } from '@/components/ui/buttonStyles'
 import { cn } from '@/lib/cn'
 import { ArrowLeft, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
@@ -20,6 +21,12 @@ interface Props {
   existingListResults: ListResult[]
   theoreticalVoters: number
   readOnly?: boolean
+  className?: string
+}
+
+function defaultOpenListId(lists: ListData[]): number | null {
+  const withCandidates = lists.find(l => l.candidates.length > 0)
+  return (withCandidates ?? lists[0])?.id ?? null
 }
 
 export default function SectionEntryForm({
@@ -30,13 +37,19 @@ export default function SectionEntryForm({
   existingListResults,
   theoreticalVoters,
   readOnly = false,
+  className,
 }: Props) {
+  const hadTurnout = existingTurnout?.votersActual !== undefined && existingTurnout.votersActual > 0
+
   const [turnout, setTurnout] = useState({
     votersActual: existingTurnout?.votersActual !== undefined ? String(existingTurnout.votersActual) : '',
     ballotsValid: existingTurnout?.ballotsValid !== undefined ? String(existingTurnout.ballotsValid) : '',
     ballotsNull:  existingTurnout?.ballotsNull  !== undefined ? String(existingTurnout.ballotsNull)  : '',
     ballotsBlank: existingTurnout?.ballotsBlank !== undefined ? String(existingTurnout.ballotsBlank) : '',
   })
+
+  const [listsPhase, setListsPhase] = useState(hadTurnout)
+  const [affluenzaExpanded, setAffluenzaExpanded] = useState(!hadTurnout)
 
   const [listVotes, setListVotes] = useState<Record<number, string>>(
     Object.fromEntries(lists.map(l => {
@@ -55,7 +68,9 @@ export default function SectionEntryForm({
     ]))
   )
 
-  const [openListId, setOpenListId] = useState<number | null>(null)
+  const [openListId, setOpenListId] = useState<number | null>(() =>
+    hadTurnout ? defaultOpenListId(lists) : null
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
@@ -66,25 +81,40 @@ export default function SectionEntryForm({
   const needsResaveRef = useRef(false)
 
   function setTurn(k: string, v: string) { setTurnout(t => ({ ...t, [k]: v })) }
-  function setListVote(listId: number, value: string) { setListVotes(m => ({ ...m, [listId]: value })) }
+
+  function openList(listId: number) {
+    setOpenListId(prev => (prev === listId ? prev : listId))
+  }
+
+  function toggleList(listId: number) {
+    setOpenListId(prev => (prev === listId ? null : listId))
+  }
+
+  function setListVote(listId: number, value: string, options?: { open?: boolean }) {
+    if (options?.open !== false) openList(listId)
+    setListVotes(m => ({ ...m, [listId]: value }))
+  }
+
   function setPreference(listId: number, candidateId: number, value: string) {
+    openList(listId)
     setPreferences(m => ({ ...m, [listId]: { ...(m[listId] || {}), [candidateId]: value } }))
   }
 
-  function togglePreferences(listId: number) {
-    if (openListId === listId) {
-      setOpenListId(null)
-      return
-    }
-    setOpenListId(listId)
-    requestAnimationFrame(() => {
-      document.getElementById(`list-panel-${listId}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-    })
+  function continueToLists() {
+    if (turnout.votersActual === '' || Number(turnout.votersActual) < 0) return
+    setListsPhase(true)
+    setAffluenzaExpanded(false)
+    if (openListId == null) setOpenListId(defaultOpenListId(lists))
+  }
+
+  function expandAffluenza() {
+    setAffluenzaExpanded(true)
   }
 
   const totalListVotes = Object.values(listVotes).reduce((s, v) => s + (Number(v) || 0), 0)
   const actualVoters   = Number(turnout.votersActual) || 0
   const validBallots   = Number(turnout.ballotsValid) || 0
+  const canContinue    = turnout.votersActual !== '' && Number(turnout.votersActual) >= 0
 
   function buildPayload() {
     return {
@@ -167,173 +197,239 @@ export default function SectionEntryForm({
     return 'Nessuna modifica registrata.'
   }
 
+  const quadraturaAlert =
+    validBallots > 0 && totalListVotes > 0 ? (
+      <Alert
+        variant={Math.abs(validBallots - totalListVotes) <= 2 ? 'success' : 'warning'}
+        title="Quadratura voti lista"
+      >
+        Totale voti di lista: <strong className="tabular-nums">{totalListVotes.toLocaleString('it-IT')}</strong> su{' '}
+        <strong className="tabular-nums">{validBallots.toLocaleString('it-IT')}</strong> schede valide
+        {Math.abs(validBallots - totalListVotes) > 0 && (
+          <> (differenza: <span className="tabular-nums">{validBallots - totalListVotes}</span>)</>
+        )}
+      </Alert>
+    ) : null
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardBody>
-          <CardTitle className="mb-4">Affluenza</CardTitle>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Votanti reali *
-                {actualVoters > 0 && theoreticalVoters > 0 && (
-                  <span className="text-xs font-normal text-brand-600 ml-1 tabular-nums">
-                    ({((actualVoters / theoreticalVoters) * 100).toFixed(1)}%)
-                  </span>
-                )}
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={turnout.votersActual}
-                onChange={e => setTurn('votersActual', e.target.value)}
-                disabled={readOnly}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 text-lg font-semibold tabular-nums disabled:bg-gray-100"
-                placeholder="0"
-                required
-              />
-            </div>
-            {[['Schede valide', 'ballotsValid'], ['Schede nulle', 'ballotsNull'], ['Schede bianche', 'ballotsBlank']].map(([label, key]) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className={cn('flex flex-col flex-1 min-h-0 gap-3', className)}>
+      {/* Affluenza: espansa prima del passaggio alle liste */}
+      {!listsPhase || affluenzaExpanded ? (
+        <Card className="shrink-0">
+          <CardBody>
+            <CardTitle className="mb-4">Affluenza</CardTitle>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Votanti reali *
+                  {actualVoters > 0 && theoreticalVoters > 0 && (
+                    <span className="text-xs font-normal text-brand-600 ml-1 tabular-nums">
+                      ({((actualVoters / theoreticalVoters) * 100).toFixed(1)}%)
+                    </span>
+                  )}
+                </label>
                 <input
                   type="number"
                   min="0"
-                  value={(turnout as Record<string, string>)[key]}
-                  onChange={e => setTurn(key, e.target.value)}
+                  value={turnout.votersActual}
+                  onChange={e => setTurn('votersActual', e.target.value)}
                   disabled={readOnly}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 tabular-nums disabled:bg-gray-100"
-                  placeholder="—"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 text-lg font-semibold tabular-nums disabled:bg-gray-100"
+                  placeholder="0"
+                  required
                 />
               </div>
-            ))}
-          </div>
-          {validBallots > 0 && totalListVotes > 0 && (
-            <Alert
-              variant={Math.abs(validBallots - totalListVotes) <= 2 ? 'success' : 'warning'}
-              className="mt-4"
-              title="Quadratura voti lista"
-            >
-              Totale voti di lista: <strong className="tabular-nums">{totalListVotes.toLocaleString('it-IT')}</strong> su{' '}
-              <strong className="tabular-nums">{validBallots.toLocaleString('it-IT')}</strong> schede valide
-              {Math.abs(validBallots - totalListVotes) > 0 && (
-                <> (differenza: <span className="tabular-nums">{validBallots - totalListVotes}</span>)</>
-              )}
-            </Alert>
-          )}
-        </CardBody>
-      </Card>
+              {[['Schede valide', 'ballotsValid'], ['Schede nulle', 'ballotsNull'], ['Schede bianche', 'ballotsBlank']].map(([label, key]) => (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={(turnout as Record<string, string>)[key]}
+                    onChange={e => setTurn(key, e.target.value)}
+                    disabled={readOnly}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 tabular-nums disabled:bg-gray-100"
+                    placeholder="—"
+                  />
+                </div>
+              ))}
+            </div>
+            {!listsPhase && (
+              <button
+                type="button"
+                disabled={readOnly || !canContinue}
+                onClick={continueToLists}
+                className={buttonClassName('primary', 'md', 'w-full mt-4')}
+              >
+                Continua ai voti di lista
+              </button>
+            )}
+            {listsPhase && affluenzaExpanded && (
+              <button
+                type="button"
+                onClick={() => setAffluenzaExpanded(false)}
+                className={buttonClassName('secondary', 'sm', 'mt-4')}
+              >
+                Chiudi affluenza
+              </button>
+            )}
+            {!listsPhase && quadraturaAlert && <div className="mt-4">{quadraturaAlert}</div>}
+          </CardBody>
+        </Card>
+      ) : (
+        <button
+          type="button"
+          onClick={expandAffluenza}
+          className="shrink-0 w-full text-left rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm hover:bg-brand-100/80 transition-colors"
+        >
+          <span className="text-brand-950">
+            Affluenza: <strong className="tabular-nums">{actualVoters.toLocaleString('it-IT')}</strong> votanti
+          </span>
+          <span className="text-brand-700/80 ml-2 text-xs">· tocca per modificare</span>
+        </button>
+      )}
 
-      <Card>
-        <CardBody>
-          <div className="flex items-center justify-between mb-4">
-            <CardTitle>Voti di lista</CardTitle>
+      {/* Voti lista: layout a tutta altezza come demo */}
+      {listsPhase && !affluenzaExpanded && (
+        <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
+          <div className="shrink-0 flex items-center justify-between px-4 pt-3 pb-1">
+            <h2 className="font-semibold text-gray-900 text-base">Voti di lista</h2>
             {totalListVotes > 0 && (
               <span className="text-sm text-gray-500 tabular-nums">
                 Totale: <strong className="text-gray-900">{totalListVotes.toLocaleString('it-IT')}</strong>
               </span>
             )}
           </div>
-          <div className={cn('space-y-3', openListId != null && 'relative')}>
+
+          {quadraturaAlert && <div className="shrink-0 px-4 pb-2">{quadraturaAlert}</div>}
+
+          <div
+            className={cn(
+              'flex flex-col flex-1 min-h-0 gap-2 px-3 pb-3',
+              lists.length > 4 ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+            )}
+            role="region"
+            aria-label="Liste elettorali"
+          >
             {lists.map(list => {
               const v = Number(listVotes[list.id]) || 0
               const total = validBallots || totalListVotes
               const pct = total > 0 ? (v / total) * 100 : 0
               const isOpen = openListId === list.id
-              const dimOthers = openListId != null && !isOpen
+              const hasCandidates = list.candidates.length > 0
 
               return (
-                <div
+                <article
                   key={list.id}
                   id={`list-panel-${list.id}`}
                   className={cn(
-                    'border rounded-xl p-3 transition-all',
-                    isOpen ? 'border-indigo-300 shadow-md ring-1 ring-indigo-100 z-10 bg-white' : 'border-gray-100',
-                    dimOthers && 'opacity-50 pointer-events-none'
+                    'flex flex-col shrink-0 rounded-xl border bg-white overflow-hidden min-h-0 transition-shadow',
+                    isOpen
+                      ? 'flex-1 border-indigo-300 shadow-md ring-1 ring-indigo-100'
+                      : 'border-gray-200'
                   )}
                 >
-                  <div className={cn('flex items-center gap-3', isOpen && 'sticky top-0 z-10 bg-white pb-2')}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isOpen}
+                    aria-controls={hasCandidates ? `candidates-${list.id}` : undefined}
+                    className="shrink-0 flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
+                    onClick={e => {
+                      if ((e.target as HTMLElement).closest('[data-list-votes]')) return
+                      toggleList(list.id)
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        toggleList(list.id)
+                      }
+                    }}
+                  >
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: list.color }} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="min-w-0">
-                          <span className="font-medium text-sm text-gray-800">{list.name}</span>
-                          {list.candidateMayor && (
-                            <span className="text-xs text-gray-400 ml-2 hidden sm:inline">{list.candidateMayor}</span>
-                          )}
-                        </div>
-                        {v > 0 && <span className="text-xs text-gray-500 tabular-nums shrink-0">{pct.toFixed(1)}%</span>}
-                      </div>
+                      <span className="block font-semibold text-sm text-gray-900 truncate">{list.name}</span>
+                      {list.candidateMayor && (
+                        <span className="block text-xs text-gray-500 truncate">Sindaco: {list.candidateMayor}</span>
+                      )}
                       {v > 0 && (
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
-                          <div
-                            className="h-1.5 rounded-full transition-all"
-                            style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }}
-                          />
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-1.5 rounded-full transition-all"
+                              style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 tabular-nums shrink-0">{pct.toFixed(1)}%</span>
                         </div>
                       )}
                     </div>
-                    <NumberStepper
-                      value={listVotes[list.id] ?? ''}
-                      onChange={val => setListVote(list.id, val)}
-                      disabled={readOnly}
-                      tone="brand"
-                      aria-label={`Voti lista ${list.name}`}
-                    />
+                    <div data-list-votes className="shrink-0" onClick={e => e.stopPropagation()}>
+                      <NumberStepper
+                        value={listVotes[list.id] ?? ''}
+                        onChange={val => setListVote(list.id, val)}
+                        onActivate={() => openList(list.id)}
+                        disabled={readOnly}
+                        tone="brand"
+                        aria-label={`Voti lista ${list.name}`}
+                      />
+                    </div>
+                    {hasCandidates && (
+                      <ChevronDown
+                        className={cn('w-5 h-5 shrink-0 text-indigo-600 transition-transform', isOpen && 'rotate-180')}
+                        aria-hidden
+                      />
+                    )}
                   </div>
 
-                  {list.candidates.length > 0 && (
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={() => togglePreferences(list.id)}
-                        className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-medium"
-                        aria-expanded={isOpen}
-                      >
-                        <ChevronDown className={cn('w-4 h-4 transition-transform', isOpen && 'rotate-180')} />
-                        Preferenze candidati
-                      </button>
-                      {isOpen && (
-                        <div className="mt-2 max-h-[min(55vh,22rem)] overflow-y-auto overscroll-contain border-t border-indigo-100 pt-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {list.candidates.map(c => (
-                              <div
-                                key={c.id}
-                                className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2"
-                              >
-                                <span className="text-xs text-gray-700 flex-1 min-w-[8rem]">
-                                  {c.order}. {c.lastName} {c.firstName}
-                                </span>
-                                <NumberStepper
-                                  value={preferences[list.id]?.[c.id] ?? ''}
-                                  onChange={val => setPreference(list.id, c.id, val)}
-                                  disabled={readOnly}
-                                  tone="indigo"
-                                  inputClassName="w-16 text-xs"
-                                  className="shrink-0"
-                                  aria-label={`Preferenze ${c.lastName} ${c.firstName}`}
-                                />
-                              </div>
-                            ))}
-                          </div>
+                  {hasCandidates && isOpen && (
+                    <div
+                      id={`candidates-${list.id}`}
+                      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-indigo-50/40 border-t border-indigo-100"
+                      role="region"
+                      aria-label={`Preferenze ${list.name}`}
+                    >
+                      {list.candidates.map(c => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between gap-3 px-3 py-3 border-b border-indigo-100/80 last:border-0"
+                        >
+                          <p className="flex-1 min-w-0 text-sm leading-snug text-gray-800">
+                            <span className="text-gray-500 tabular-nums">{c.order}.</span>{' '}
+                            <strong className="font-semibold text-gray-900">{c.lastName}</strong>{' '}
+                            {c.firstName}
+                          </p>
+                          <NumberStepper
+                            value={preferences[list.id]?.[c.id] ?? ''}
+                            onChange={val => setPreference(list.id, c.id, val)}
+                            onActivate={() => openList(list.id)}
+                            disabled={readOnly}
+                            tone="accent"
+                            inputClassName="w-16 text-sm"
+                            className="shrink-0"
+                            aria-label={`Preferenze ${c.lastName} ${c.firstName}`}
+                          />
                         </div>
-                      )}
+                      ))}
                     </div>
                   )}
-                </div>
+                </article>
               )
             })}
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      )}
 
-      <Alert variant={saveVariant()} title="Stato dati">
+      <Alert variant={saveVariant()} title="Stato dati" className="shrink-0">
         {saveMessage()}
       </Alert>
 
       <Link
         href={`/entry/${electionId}`}
-        className="inline-flex items-center justify-center gap-2 h-11 px-5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+        className={cn(
+          'shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 text-sm font-medium rounded-lg',
+          'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors'
+        )}
       >
         <ArrowLeft className="w-4 h-4" aria-hidden />
         Torna alle sezioni

@@ -47,7 +47,7 @@ function LoginForm() {
     <div className="min-h-[100dvh] w-full box-border bg-gray-50 grid place-items-center p-4 sm:p-6">
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 w-full max-w-sm shrink-0">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-700 mb-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-50 text-brand-800 mb-3">
             <Vote className="w-8 h-8" aria-hidden />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">LosPollios</h1>
@@ -61,7 +61,7 @@ function LoginForm() {
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
               placeholder="username"
               required
               autoComplete="username"
@@ -73,7 +73,7 @@ function LoginForm() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500"
               placeholder="••••••••"
               required
               autoComplete="current-password"
@@ -84,6 +84,9 @@ function LoginForm() {
             {loading ? 'Accesso...' : 'Accedi'}
           </Button>
         </form>
+        <p className="text-center text-xs text-gray-400 mt-8">
+          LosPollios · Antonello Migliorelli
+        </p>
       </div>
     </div>
   )

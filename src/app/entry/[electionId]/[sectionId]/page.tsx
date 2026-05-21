@@ -61,35 +61,34 @@ export default async function SectionEntryPage({ params }: Props) {
   }))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <EntryContextNav
-        username={session.username}
         electionId={election.id}
         electionName={election.name}
-        section={{ number: section.number, name: section.name }}
+        section={{ id: section.id, number: section.number, name: section.name }}
       />
-
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-blue-50 border border-brand-200 rounded-xl p-4 mb-6">
+      <div className="flex-1 min-h-0 flex flex-col max-w-4xl mx-auto w-full px-4 py-4 md:py-6">
+        <div className="shrink-0 bg-brand-50 border border-brand-200 rounded-xl p-4 mb-4">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="font-semibold text-blue-900">Sezione {section.number} {section.name ? `– ${section.name}` : ''}</h2>
-              {section.location && <p className="text-blue-700 text-sm">{section.location}</p>}
+              <h2 className="font-semibold text-gray-900">Sezione {section.number} {section.name ? `– ${section.name}` : ''}</h2>
+              {section.location && <p className="text-gray-600 text-sm">{section.location}</p>}
             </div>
             <div className="text-right">
-              <p className="text-xs text-brand-600">Aventi diritto al voto</p>
-              <p className="text-2xl font-bold text-blue-900">{section.theoreticalVoters.toLocaleString('it-IT')}</p>
+              <p className="text-xs text-accent-700 font-medium">Aventi diritto al voto</p>
+              <p className="text-2xl font-bold text-brand-900 tabular-nums">{section.theoreticalVoters.toLocaleString('it-IT')}</p>
             </div>
           </div>
         </div>
 
         {readOnly && (
-          <Alert variant="warning" title="Sezione chiusa" className="mb-6">
+          <Alert variant="warning" title="Sezione chiusa" className="shrink-0 mb-4">
             L&apos;amministratore ha terminato lo scrutinio su questa sezione: i dati sono in sola lettura.
           </Alert>
         )}
 
         <SectionEntryForm
+          className="flex-1 min-h-0"
           electionId={Number(electionId)}
           sectionId={Number(sectionId)}
           readOnly={readOnly}

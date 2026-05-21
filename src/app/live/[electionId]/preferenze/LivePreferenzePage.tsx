@@ -15,7 +15,6 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { formatNumber, formatPercent } from '@/lib/utils'
-import { SiteTopNav } from '@/components/SiteTopNav'
 
 type MayorHistPoint = {
   year: number
@@ -107,21 +106,7 @@ export default function LivePreferenzePage({
   const listsWithPrefs = data.lists.filter(l => l.candidates.length > 0)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SiteTopNav
-        crumbs={[
-          { label: 'Home', href: '/' },
-          { label: electionName, href: `/live/${electionId}` },
-          { label: 'Preferenze' },
-        ]}
-        contextLinks={[
-          { label: 'Live', href: `/live/${electionId}` },
-          { label: 'Aggiornamenti', href: `/live/${electionId}/aggiornamenti` },
-          { label: 'Analisi', href: `/dashboard/${electionId}` },
-        ]}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+    <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Preferenze candidati</h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -143,7 +128,7 @@ export default function LivePreferenzePage({
               .filter(c => c.votes > 0)
               .map(c => ({ name: c.name, value: c.votes }))
 
-            const pieFills = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0891b2', '#64748b']
+            const pieFills = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#64748b']
 
             return (
               <div key={list.listId} className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
@@ -270,7 +255,6 @@ export default function LivePreferenzePage({
             ← Torna alla live
           </Link>
         </div>
-      </div>
     </div>
   )
 }

@@ -40,8 +40,8 @@ export function TabBar<T extends string>({
             onClick={() => onChange(tab.id)}
             className={cn(
               'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
-              active ? 'bg-brand-700 text-white' : 'text-gray-600 hover:bg-gray-100'
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+              active ? 'bg-brand-800 text-white' : 'text-gray-900 hover:bg-gray-100'
             )}
           >
             {Icon ? <Icon className="w-4 h-4 shrink-0" aria-hidden /> : null}

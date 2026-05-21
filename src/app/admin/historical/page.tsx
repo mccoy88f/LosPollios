@@ -239,7 +239,7 @@ function CouncilCandidatesEditor({
 
   return (
     <div
-      className={`space-y-2 py-1 ${embedded ? '' : 'pl-2 border-l-2 border-indigo-100'}`}
+      className={`space-y-2 py-1 ${embedded ? '' : 'pl-2 border-l-2 border-accent-100'}`}
     >
       <p className="text-[11px] font-medium text-gray-600">
         Preferenze: usa il <strong>+</strong> per +1 come in inserimento sezione. I voti totali della lista sono sulla scheda
@@ -310,7 +310,7 @@ function CouncilCandidatesEditor({
                               },
                             )
                           }
-                          className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50"
+                          className="w-6 h-6 rounded border border-accent-200 text-accent-700 text-xs hover:bg-accent-50"
                           aria-label="Aumenta preferenze di 1"
                         >
                           +
@@ -346,7 +346,7 @@ function CouncilCandidatesEditor({
                       <button
                         type="button"
                         onClick={() => saveEdit()}
-                        className="text-indigo-600 font-medium mr-2"
+                        className="text-accent-600 font-medium mr-2"
                       >
                         Salva
                       </button>
@@ -366,7 +366,7 @@ function CouncilCandidatesEditor({
                           type="button"
                           disabled={locked}
                           onClick={() => bumpPreference(c)}
-                          className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50 disabled:opacity-40"
+                          className="w-6 h-6 rounded border border-accent-200 text-accent-700 text-xs hover:bg-accent-50 disabled:opacity-40"
                           aria-label={`Aumenta preferenze per ${c.lastName}`}
                         >
                           +
@@ -397,7 +397,7 @@ function CouncilCandidatesEditor({
                         type="button"
                         disabled={locked}
                         onClick={() => startEdit(c)}
-                        className="text-indigo-600 font-medium text-[11px] disabled:opacity-40 mr-2"
+                        className="text-accent-600 font-medium text-[11px] disabled:opacity-40 mr-2"
                       >
                         Modifica
                       </button>
@@ -458,7 +458,7 @@ function CouncilCandidatesEditor({
                   preferenceVotes: String((parseInt(f.preferenceVotes, 10) || 0) + 1),
                 }))
               }
-              className="w-6 h-6 rounded border border-indigo-200 text-indigo-700 text-xs hover:bg-indigo-50 disabled:opacity-50"
+              className="w-6 h-6 rounded border border-accent-200 text-accent-700 text-xs hover:bg-accent-50 disabled:opacity-50"
               aria-label="Aumenta preferenze di 1"
             >
               +
@@ -493,7 +493,7 @@ function CouncilCandidatesEditor({
           type="button"
           disabled={locked}
           onClick={() => addOne()}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium"
+          className="bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium"
         >
           Aggiungi candidato
         </button>
@@ -828,7 +828,7 @@ function ExpandedHistoricalElection({
           type="button"
           disabled={mergeBusy}
           onClick={() => mergeFileRef.current?.click()}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
+          className="bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium"
         >
           {mergeBusy ? 'Import…' : 'Reimporta Excel'}
         </button>
@@ -836,7 +836,7 @@ function ExpandedHistoricalElection({
           type="button"
           disabled={listAddBusy || mergeBusy || editingRowId != null}
           onClick={() => addListRow()}
-          className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-800 text-white hover:bg-brand-900 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
           title="Aggiunge una nuova lista nello spoglio con voti, percentuale e seggi (dati macro)"
         >
           {listAddBusy ? '…' : '+ Nuova riga voti lista'}
@@ -945,7 +945,7 @@ function ExpandedHistoricalElection({
             type="button"
             disabled={metaSaving || !meta.name.trim() || !meta.commune.trim()}
             onClick={() => saveMeta()}
-            className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-10 px-4 text-sm gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-800 text-white hover:bg-brand-900 border border-transparent h-10 px-4 text-sm gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {metaSaving ? 'Salvataggio…' : 'Salva dati elezione'}
           </button>
@@ -1017,7 +1017,7 @@ function ExpandedHistoricalElection({
                             const v = ev.target.value
                             await patchMayor(r, v ? parseInt(v, 10) : null)
                           }}
-                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="text-xs border border-gray-200 rounded-lg px-2 py-1 max-w-[200px] focus:outline-none focus:ring-2 focus:ring-accent-500"
                         >
                           <option value="">—</option>
                           {persons.map(p => (
@@ -1028,7 +1028,7 @@ function ExpandedHistoricalElection({
                         </select>
                         <button
                           type="button"
-                          className="text-xs text-indigo-600 font-medium hover:text-indigo-800 whitespace-nowrap"
+                          className="text-xs text-accent-600 font-medium hover:text-accent-800 whitespace-nowrap"
                           onClick={() => suggestMayor(r)}
                         >
                           Suggerisci
@@ -1043,7 +1043,7 @@ function ExpandedHistoricalElection({
                 <button
                   type="button"
                   onClick={() => setExpandCouncilId(expandCouncilId === r.id ? null : r.id)}
-                  className="text-indigo-600 text-sm font-medium hover:text-indigo-800"
+                  className="text-accent-600 text-sm font-medium hover:text-accent-800"
                 >
                   {expandCouncilId === r.id ? 'Chiudi candidati' : 'Candidati'}
                 </button>
@@ -1095,7 +1095,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.listName}
                       onChange={ev => setRowDraft(d => d && { ...d, listName: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
                   </div>
                   <div>
@@ -1103,7 +1103,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.coalition}
                       onChange={ev => setRowDraft(d => d && { ...d, coalition: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
                   </div>
                   <div>
@@ -1111,7 +1111,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.candidateMayor}
                       onChange={ev => setRowDraft(d => d && { ...d, candidateMayor: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
                   </div>
                   <div>
@@ -1119,7 +1119,7 @@ function ExpandedHistoricalElection({
                     <select
                       value={rowDraft.mayorPersonId}
                       onChange={ev => setRowDraft(d => d && { ...d, mayorPersonId: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
                     >
                       <option value="">—</option>
                       {persons.map(p => (
@@ -1149,7 +1149,7 @@ function ExpandedHistoricalElection({
                         min={0}
                         value={rowDraft.votes}
                         onChange={ev => setRowDraft(d => d && { ...d, votes: ev.target.value })}
-                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-accent-500"
                       />
                     </div>
                   </div>
@@ -1158,7 +1158,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.percentage}
                       onChange={ev => setRowDraft(d => d && { ...d, percentage: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-accent-500"
                     />
                   </div>
                   <div>
@@ -1166,7 +1166,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.seats}
                       onChange={ev => setRowDraft(d => d && { ...d, seats: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-accent-500"
                       placeholder="—"
                     />
                   </div>
@@ -1177,7 +1177,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.listLogoUrl}
                       onChange={ev => setRowDraft(d => d && { ...d, listLogoUrl: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-accent-500"
                       placeholder="https://…"
                     />
                   </div>
@@ -1186,7 +1186,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.coalitionLogoUrl}
                       onChange={ev => setRowDraft(d => d && { ...d, coalitionLogoUrl: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-accent-500"
                       placeholder="https://…"
                     />
                   </div>
@@ -1195,7 +1195,7 @@ function ExpandedHistoricalElection({
                     <input
                       value={rowDraft.notes}
                       onChange={ev => setRowDraft(d => d && { ...d, notes: ev.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent-500"
                       placeholder="Opzionale"
                     />
                   </div>
@@ -1226,7 +1226,7 @@ function ExpandedHistoricalElection({
             type="button"
             disabled={listAddBusy || mergeBusy || editingRowId != null}
             onClick={() => addListRow()}
-            className="shrink-0 inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-600 text-white hover:bg-brand-700 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="shrink-0 inline-flex items-center justify-center font-medium rounded-lg transition-colors bg-brand-800 text-white hover:bg-brand-900 border border-transparent h-8 px-3 text-xs gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {listAddBusy ? '…' : '+ Nuova riga voti lista'}
           </button>
@@ -1567,10 +1567,10 @@ export default function HistoricalPage() {
       {isAddMode && importErr && <Alert variant="error" className="mb-4">{importErr}</Alert>}
 
       {isAddMode && (
-      <Card className="mb-6 border-indigo-200 bg-indigo-50/80">
+      <Card className="mb-6 border-accent-200 bg-accent-50/80">
         <CardBody>
-        <CardTitle className="text-indigo-900 mb-2">Importa da Eligendo (Ministero dell&apos;Interno)</CardTitle>
-        <p className="text-sm text-indigo-800 mb-3">
+        <CardTitle className="text-accent-900 mb-2">Importa da Eligendo (Ministero dell&apos;Interno)</CardTitle>
+        <p className="text-sm text-accent-800 mb-3">
           Incolla il link della pagina di risultati comunali dall&apos;{' '}
           <a
             href="https://elezionistorico.interno.gov.it/"
@@ -1586,14 +1586,14 @@ export default function HistoricalPage() {
           destinazione archiviata.
         </p>
         <div className="mb-3">
-          <label className="block text-xs font-medium text-indigo-900 mb-1">Destinazione import</label>
+          <label className="block text-xs font-medium text-accent-900 mb-1">Destinazione import</label>
           <select
             value={storicoDestination}
             onChange={e => {
               setStoricoDestination(e.target.value)
               setEligendoPreview(null)
             }}
-            className="w-full max-w-xl border border-indigo-200 rounded-lg px-3 py-2 text-sm bg-white"
+            className="w-full max-w-xl border border-accent-200 rounded-lg px-3 py-2 text-sm bg-white"
           >
             <option value="new">Nuovo record (tabella storici)</option>
             {archivedElections.map(a => (
@@ -1609,9 +1609,9 @@ export default function HistoricalPage() {
             value={eligendoUrl}
             onChange={e => setEligendoUrl(e.target.value)}
             placeholder="https://elezionistorico.interno.gov.it/index.php?..."
-            className="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm bg-white"
+            className="flex-1 border border-accent-200 rounded-lg px-3 py-2 text-sm bg-white"
           />
-          <Button type="button" disabled={eligendoBusy} onClick={() => previewEligendo()} className="bg-indigo-600 hover:bg-indigo-700 border-transparent">
+          <Button type="button" disabled={eligendoBusy} onClick={() => previewEligendo()} className="bg-accent-600 hover:bg-accent-700 border-transparent">
             {eligendoBusy && !eligendoPreview ? 'Lettura…' : 'Anteprima'}
           </Button>
           {eligendoPreview && (
@@ -1630,7 +1630,7 @@ export default function HistoricalPage() {
           )}
         </div>
         {eligendoPreview && (
-          <div className="mt-4 text-sm text-indigo-900 space-y-2">
+          <div className="mt-4 text-sm text-accent-900 space-y-2">
             {eligendoPreview.macroTarget && !eligendoPreview.macroTarget.canImport && (
               <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
                 {eligendoPreview.macroTarget.reason}
@@ -1639,12 +1639,12 @@ export default function HistoricalPage() {
             <p>
               <strong>{eligendoPreview.name}</strong> · {eligendoPreview.commune} · {eligendoPreview.year}
             </p>
-            <p className="text-xs text-indigo-700 break-all">{eligendoPreview.titleRaw}</p>
+            <p className="text-xs text-accent-700 break-all">{eligendoPreview.titleRaw}</p>
             {(eligendoPreview.affluenza.registeredVoters != null ||
               eligendoPreview.affluenza.turnoutVoters != null ||
               eligendoPreview.affluenza.ballotsBlank != null ||
               eligendoPreview.affluenza.ballotsInvalidInclBlank != null) && (
-              <div className="rounded-lg border border-indigo-100 bg-white px-3 py-2 text-xs text-indigo-900 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+              <div className="rounded-lg border border-accent-100 bg-white px-3 py-2 text-xs text-accent-900 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
                 {eligendoPreview.affluenza.registeredVoters != null && (
                   <span>
                     Elettori: <strong>{eligendoPreview.affluenza.registeredVoters.toLocaleString('it-IT')}</strong>
@@ -1671,7 +1671,7 @@ export default function HistoricalPage() {
                 )}
               </div>
             )}
-            <div className="overflow-x-auto border border-indigo-100 rounded-lg bg-white">
+            <div className="overflow-x-auto border border-accent-100 rounded-lg bg-white">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-gray-500 border-b">
@@ -1741,7 +1741,7 @@ export default function HistoricalPage() {
                 <label className="block text-xs text-gray-500 mb-1">{label}</label>
                 <input type={type} value={(form as Record<string, string>)[key]} onChange={e => setF(key, e.target.value)}
                   placeholder={ph}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500" />
               </div>
             ))}
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
@@ -1760,7 +1760,7 @@ export default function HistoricalPage() {
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-accent-600 hover:bg-accent-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   Importa file Excel
                 </button>
@@ -1777,13 +1777,13 @@ export default function HistoricalPage() {
               <label className="block text-xs text-gray-500 mb-1">Anteprima / modifica testo (una riga per lista)</label>
               <p className="text-xs text-gray-400 mb-1">Formato: NomeLista;Coalizione;CandidatoSindaco;Voti;%Voti;Seggi</p>
               <textarea value={resultLines} onChange={e => setResultLines(e.target.value)} rows={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent-500"
                 placeholder={"Lista Civica;Centro-Sinistra;Mario Rossi;3200;28.5;10\nPartito Blu;Centro-Destra;Anna Verdi;2800;24.9;9"} />
             </div>
             <button
               onClick={save}
               disabled={(storicoDestination === 'new' && (!form.name || !form.commune)) || saving}
-              className="w-full inline-flex items-center justify-center font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 h-11 px-5 text-sm disabled:opacity-70"
+              className="w-full inline-flex items-center justify-center font-medium rounded-lg bg-brand-800 text-white hover:bg-brand-900 h-11 px-5 text-sm disabled:opacity-70"
             >
               {saving ? 'Salvataggio...' : storicoDestination === 'new' ? 'Salva elezione storica' : 'Importa su elezione archiviata'}
             </button>

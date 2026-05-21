@@ -50,11 +50,7 @@ export default async function EntryIndexPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <EntryContextNav
-        username={session.username}
-        electionId={election.id}
-        electionName={election.name}
-      />
+      <EntryContextNav electionId={election.id} electionName={election.name} />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <PageHeader

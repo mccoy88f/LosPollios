@@ -1,11 +1,11 @@
 import { cn } from '@/lib/cn'
 import { Minus, Plus } from 'lucide-react'
 
-type Tone = 'brand' | 'indigo'
+type Tone = 'brand' | 'accent'
 
 const toneBtn: Record<Tone, string> = {
-  brand: 'border-gray-300 text-brand-700 hover:bg-brand-50 disabled:text-gray-400',
-  indigo: 'border-gray-300 text-indigo-700 hover:bg-indigo-50 disabled:text-gray-400',
+  brand: 'border-gray-300 text-brand-800 hover:bg-brand-50 disabled:text-gray-400',
+  accent: 'border-gray-300 text-accent-700 hover:bg-accent-50 disabled:text-gray-400',
 }
 
 export function NumberStepper({
@@ -17,6 +17,7 @@ export function NumberStepper({
   inputClassName,
   className,
   'aria-label': ariaLabel,
+  onActivate,
 }: {
   value: string
   onChange: (value: string) => void
@@ -26,16 +27,19 @@ export function NumberStepper({
   inputClassName?: string
   className?: string
   'aria-label'?: string
+  /** Chiamato su +/− o focus input (es. aprire accordion lista) */
+  onActivate?: () => void
 }) {
   const n = Number(value) || 0
 
   function bump(delta: number) {
+    onActivate?.()
     onChange(String(Math.max(min, n + delta)))
   }
 
   const btnClass = cn(
     'w-10 shrink-0 flex items-center justify-center border-gray-300 transition-colors',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent-500',
     toneBtn[tone]
   )
 
@@ -59,7 +63,11 @@ export function NumberStepper({
         min={min}
         value={value}
         disabled={disabled}
-        onChange={e => onChange(e.target.value)}
+        onFocus={() => onActivate?.()}
+        onChange={e => {
+          onActivate?.()
+          onChange(e.target.value)
+        }}
         className={cn(
           'w-24 text-center font-semibold tabular-nums border-0 focus:ring-0 focus:outline-none py-2',
           'disabled:bg-gray-100 disabled:text-gray-500',

@@ -220,7 +220,7 @@ export default function ListsPage() {
               <button
                 type="button"
                 onClick={() => suggestMayorPerson()}
-                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1"
+                className="text-sm text-accent-600 hover:text-accent-800 font-medium px-2 py-1"
               >
                 Suggerisci da nome sindaco
               </button>
@@ -235,7 +235,7 @@ export default function ListsPage() {
                 {DEFAULT_COLORS.map(c => (
                   <button key={c} onClick={() => setF('color', c)}
                     className="w-5 h-5 rounded-full border-2 transition-all"
-                    style={{ backgroundColor: c, borderColor: form.color === c ? '#1d4ed8' : 'transparent' }} />
+                    style={{ backgroundColor: c, borderColor: form.color === c ? '#E18901' : 'transparent' }} />
                 ))}
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function ListsPage() {
                     {list.shortName && <span className="text-gray-400 text-sm ml-2">({list.shortName})</span>}
                     {list.candidateMayor && <span className="text-gray-500 text-sm ml-3">Sindaco: {list.candidateMayor}</span>}
                     {list.mayorPerson && (
-                      <span className="text-indigo-700 text-xs ml-2 bg-indigo-50 px-2 py-0.5 rounded">
+                      <span className="text-accent-700 text-xs ml-2 bg-accent-50 px-2 py-0.5 rounded">
                         Anagrafica: {list.mayorPerson.lastName} {list.mayorPerson.firstName}
                       </span>
                     )}
@@ -315,7 +315,7 @@ export default function ListsPage() {
                   <button onClick={() => { setEditId(list.id); setForm({ name: list.name, shortName: list.shortName || '', color: list.color, listLogoUrl: list.listLogoUrl || '', coalitionLogoUrl: list.coalitionLogoUrl || '', candidateMayor: list.candidateMayor || '', mayorPersonId: list.mayorPersonId ? String(list.mayorPersonId) : '', coalition: list.coalition || '', order: String(list.order), notes: '' }) }}
                     className="text-brand-600 text-xs hover:text-brand-800 font-medium">Modifica</button>
                   <button onClick={() => setExpandId(expandId === list.id ? null : list.id)}
-                    className="text-indigo-600 text-xs hover:text-indigo-800 font-medium">
+                    className="text-accent-600 text-xs hover:text-accent-800 font-medium">
                     {expandId === list.id ? 'Chiudi' : 'Candidati'}
                   </button>
                   <button onClick={() => deleteList(list.id)} className="text-red-400 text-xs hover:text-red-600 font-medium">Elimina</button>
@@ -352,7 +352,7 @@ export default function ListsPage() {
                               <button
                                 type="button"
                                 onClick={() => suggestCandidatePerson(c, list.id)}
-                                className="text-indigo-600 text-xs whitespace-nowrap"
+                                className="text-accent-600 text-xs whitespace-nowrap"
                               >
                                 Suggerisci
                               </button>
@@ -376,7 +376,7 @@ export default function ListsPage() {
                       </div>
                     ))}
                     <button onClick={() => addCandidate(list.id)} disabled={saving}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-1.5 rounded-lg font-medium">
+                      className="bg-accent-600 hover:bg-accent-700 text-white text-sm px-3 py-1.5 rounded-lg font-medium">
                       + Aggiungi
                     </button>
                   </div>

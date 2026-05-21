@@ -59,7 +59,7 @@ export function LiveMetricsHeader({
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2.5">
             <div
-              className="bg-brand-600 h-2.5 rounded-full transition-all duration-500"
+              className="bg-brand-800 h-2.5 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(100, progress.percentage)}%` }}
             />
           </div>

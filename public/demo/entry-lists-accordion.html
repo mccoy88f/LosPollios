@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Demo — Entry voti lista (LosPollios)</title>
+  <style>
+    :root {
+      --brand-50: #eef6f2;
+      --brand-100: #d5ebe3;
+      --brand-500: #1a6b4a;
+      --brand-600: #0f5238;
+      --brand-700: #084530;
+      --brand-800: #063C25;
+      --accent-500: #E18901;
+      --accent-100: #fdecd4;
+      --accent-200: #f9d5a5;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* Layout pagina: affluenza fissa in alto, liste occupano il resto */
+    .page {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 42rem;
+      margin: 0 auto;
+      background: #fff;
+      border-left: 1px solid var(--gray-200);
+      border-right: 1px solid var(--gray-200);
+    }
+
+    .top-bar {
+      flex-shrink: 0;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--gray-200);
+      background: #fff;
+    }
+    .top-bar h1 { margin: 0; font-size: 1rem; font-weight: 700; }
+    .top-bar p { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--gray-500); }
+
+    /* Affluenza: compatto dopo "continua" */
+    header.top-bar { background: var(--brand-800); color: #fff; }
+    header.top-bar h1, header.top-bar p { color: #fff; }
+    header.top-bar p { opacity: 0.85; }
+    .affluenza {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--brand-50);
+      transition: max-height 0.25s ease;
+      overflow: hidden;
+    }
+    .affluenza--expanded { padding: 1rem; }
+    .affluenza--collapsed {
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+    .affluenza--collapsed .affluenza-form { display: none; }
+    .affluenza-summary { display: none; font-size: 0.8125rem; }
+    .affluenza--collapsed .affluenza-summary { display: block; flex: 1; min-width: 0; }
+    .affluenza-summary strong { color: var(--brand-700); }
+
+    .affluenza-form label { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .affluenza-form input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      border: 1px solid var(--gray-200);
+      border-radius: 0.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .affluenza-form input:focus { outline: 2px solid var(--brand-500); outline-offset: 0; }
+    .btn-continue {
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.65rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--brand-800);
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    .btn-continue:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Zona liste: massima altezza disponibile */
+    .lists-zone {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--gray-50);
+    }
+    .lists-zone-header {
+      flex-shrink: 0;
+      padding: 0.65rem 1rem 0.35rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .lists-zone-header h2 { margin: 0; font-size: 0.9375rem; font-weight: 700; }
+    .lists-zone-header .total { font-size: 0.75rem; color: var(--gray-500); font-variant-numeric: tabular-nums; }
+
+    /* Stack flex: entrambe le intestazioni sempre visibili; quella aperta prende tutto lo spazio */
+    .lists-stack {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0 0.75rem calc(0.5rem + var(--safe-bottom));
+      overflow: hidden;
+    }
+
+    .list-item {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .list-item.is-open {
+      flex: 1;
+      min-height: 0;
+      border-color: var(--accent-200);
+      box-shadow: 0 2px 8px rgba(225, 137, 1, 0.15);
+    }
+
+    .list-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 0.75rem;
+      background: #fff;
+      border-bottom: 1px solid transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .list-item.is-open .list-header {
+      border-bottom-color: var(--accent-100);
+    }
+
+    .list-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .list-meta { flex: 1; min-width: 0; }
+    .list-name {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-mayor {
+      display: block;
+      font-size: 0.6875rem;
+      color: var(--gray-500);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-bar {
+      height: 4px;
+      background: var(--gray-100);
+      border-radius: 999px;
+      margin-top: 0.25rem;
+      overflow: hidden;
+    }
+    .list-bar-fill { height: 100%; border-radius: 999px; transition: width 0.2s; }
+
+    /* Voti lista: sempre visibili, NON dentro l'accordion candidati */
+    .list-votes {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .list-votes button {
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 1px solid var(--accent-200);
+      background: var(--accent-100);
+      color: var(--accent-500);
+      border-radius: 0.5rem;
+      font-size: 1.125rem;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .list-votes button:active { background: var(--brand-100); }
+    .list-votes input {
+      width: 3.25rem;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      border: 1px solid var(--gray-200);
+      border-radius: 0.5rem;
+      padding: 0.35rem 0.2rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .list-votes input:focus { outline: 2px solid var(--accent-500); }
+
+    .chevron {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--accent-500);
+      transition: transform 0.2s;
+    }
+    .list-item.is-open .chevron { transform: rotate(180deg); }
+
+    /* Candidati: solo lista aperta; occupa tutta l'altezza rimanente e scrolla */
+    .list-candidates {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #fef8ed;
+      -webkit-overflow-scrolling: touch;
+    }
+    .list-item.is-open .list-candidates {
+      display: block;
+    }
+
+    .candidate-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid var(--accent-100);
+    }
+    .candidate-row:last-child { border-bottom: none; }
+    .candidate-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.9375rem;
+      line-height: 1.35;
+      color: var(--gray-700);
+    }
+    .candidate-name strong { color: var(--gray-900); font-weight: 600; }
+    .candidate-order { color: var(--gray-500); font-size: 0.8125rem; margin-right: 0.35rem; }
+
+    .hint {
+      flex-shrink: 0;
+      padding: 0.5rem 1rem;
+      font-size: 0.6875rem;
+      color: var(--gray-500);
+      text-align: center;
+      background: #fff;
+      border-top: 1px dashed var(--gray-200);
+    }
+
+    .demo-badge {
+      display: inline-block;
+      margin-left: 0.5rem;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 0.25rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="top-bar">
+      <h1>Sezione 12 — Centro <span class="demo-badge">Demo HTML</span></h1>
+      <p>Comune di Esempio · dopo affluenza, focus su voti lista</p>
+    </header>
+
+    <section class="affluenza affluenza--collapsed" id="affluenza" aria-label="Affluenza">
+      <div class="affluenza-form" id="affluenza-form">
+        <label for="voters">Votanti (affluenza)</label>
+        <input id="voters" type="number" min="0" placeholder="0" value="847" />
+        <button type="button" class="btn-continue" id="btn-continue">Continua ai voti di lista</button>
+      </div>
+      <div class="affluenza-summary" id="affluenza-summary">
+        Affluenza: <strong id="summary-voters">847</strong> votanti
+        <span style="color:var(--gray-500)"> · tocca per modificare</span>
+      </div>
+    </section>
+
+    <section class="lists-zone" id="lists-zone">
+      <div class="lists-zone-header">
+        <h2>Voti di lista</h2>
+        <span class="total">Totale: <strong id="total-votes">0</strong></span>
+      </div>
+
+      <div class="lists-stack" id="lists-stack" role="region" aria-label="Liste elettorali">
+        <!-- Liste generate da JS -->
+      </div>
+
+      <p class="hint">
+        Demo: 2 liste sempre visibili · tap riga = apre a tutta altezza (l’altra si chiude) · +/− apre la lista
+      </p>
+    </section>
+  </div>
+
+  <script>
+    const COGNOMI = [
+      'Rossi', 'Russo', 'Ferrari', 'Esposito', 'Bianchi', 'Romano', 'Colombo', 'Ricci',
+      'Marino', 'Greco', 'Bruno', 'Gallo', 'Conti', 'De Luca', 'Costa', 'Fontana',
+    ]
+    const NOMI = [
+      'Mario', 'Giulia', 'Luca', 'Anna', 'Paolo', 'Sara', 'Andrea', 'Elena',
+      'Marco', 'Chiara', 'Davide', 'Teresa', 'Franco', 'Irene', 'Simone', 'Laura',
+    ]
+
+    function makeCandidates(prefix) {
+      return Array.from({ length: 16 }, (_, i) => ({
+        order: i + 1,
+        last: COGNOMI[i],
+        first: NOMI[(i + prefix) % NOMI.length],
+      }))
+    }
+
+    const LISTS = [
+      {
+        id: 1,
+        name: 'Lista Civica per il Comune',
+        color: '#063C25',
+        mayor: 'Mario Rossi',
+        votes: 312,
+        candidates: makeCandidates(0),
+      },
+      {
+        id: 2,
+        name: 'Partito del Progresso',
+        color: '#dc2626',
+        mayor: 'Giulia Conti',
+        votes: 285,
+        candidates: makeCandidates(3),
+      },
+    ]
+
+    let openListId = 1
+    const state = Object.fromEntries(LISTS.map(l => [l.id, l.votes]))
+    const prefState = {}
+
+    const affluenza = document.getElementById('affluenza')
+    const votersInput = document.getElementById('voters')
+    const btnContinue = document.getElementById('btn-continue')
+    const listsZone = document.getElementById('lists-zone')
+    const listsStack = document.getElementById('lists-stack')
+    const totalEl = document.getElementById('total-votes')
+    const summaryVoters = document.getElementById('summary-voters')
+
+    votersInput.addEventListener('input', () => {
+      btnContinue.disabled = !votersInput.value || Number(votersInput.value) < 0
+    })
+
+    btnContinue.addEventListener('click', () => {
+      affluenza.classList.remove('affluenza--expanded')
+      affluenza.classList.add('affluenza--collapsed')
+      summaryVoters.textContent = Number(votersInput.value).toLocaleString('it-IT')
+      listsZone.hidden = false
+      renderLists()
+    })
+
+    affluenza.addEventListener('click', () => {
+      if (!affluenza.classList.contains('affluenza--collapsed')) return
+      affluenza.classList.add('affluenza--expanded')
+      affluenza.classList.remove('affluenza--collapsed')
+      listsZone.hidden = true
+    })
+
+    function updateTotal() {
+      const t = Object.values(state).reduce((s, v) => s + (Number(v) || 0), 0)
+      totalEl.textContent = t.toLocaleString('it-IT')
+      document.querySelectorAll('.list-item').forEach(el => {
+        const id = Number(el.dataset.listId)
+        const v = Number(state[id]) || 0
+        const pct = t > 0 ? (v / t) * 100 : 0
+        const fill = el.querySelector('.list-bar-fill')
+        if (fill) fill.style.width = Math.min(pct, 100) + '%'
+        const pctLabel = el.querySelector('.list-pct')
+        if (pctLabel) pctLabel.textContent = v > 0 ? pct.toFixed(1) + '%' : ''
+      })
+    }
+
+    function applyOpenState() {
+      document.querySelectorAll('.list-item').forEach(el => {
+        const lid = Number(el.dataset.listId)
+        const isOpen = lid === openListId
+        el.classList.toggle('is-open', isOpen)
+        el.querySelector('.list-header')?.setAttribute('aria-expanded', String(isOpen))
+      })
+    }
+
+    /** Apre questa lista (chiude l’altra). Usato da +/− e al focus sul campo voti. */
+    function openList(id) {
+      if (openListId === id) return
+      openListId = id
+      applyOpenState()
+    }
+
+    /** Tap sulla riga: apre oppure chiude se già aperta. */
+    function toggleList(id) {
+      openListId = openListId === id ? null : id
+      applyOpenState()
+    }
+
+    function setVotes(id, val, options = {}) {
+      const { open = true } = options
+      if (open) openList(id)
+      state[id] = Math.max(0, val)
+      const input = document.querySelector(`[data-votes-input="${id}"]`)
+      if (input) input.value = state[id]
+      updateTotal()
+    }
+
+    function bindListInteractions(root) {
+      root.querySelectorAll('.list-item').forEach(item => {
+        const id = Number(item.dataset.listId)
+        const header = item.querySelector('.list-header')
+        const minus = item.querySelector('[data-vote-minus]')
+        const plus = item.querySelector('[data-vote-plus]')
+        const input = item.querySelector('[data-votes-input]')
+
+        header?.addEventListener('click', e => {
+          if (e.target.closest('.list-votes')) return
+          toggleList(id)
+        })
+        header?.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggleList(id)
+          }
+        })
+
+        minus?.addEventListener('click', e => {
+          e.stopPropagation()
+          setVotes(id, (state[id] || 0) - 1)
+        })
+        plus?.addEventListener('click', e => {
+          e.stopPropagation()
+          setVotes(id, (state[id] || 0) + 1)
+        })
+        input?.addEventListener('click', e => {
+          e.stopPropagation()
+          openList(id)
+        })
+        input?.addEventListener('focus', () => openList(id))
+        input?.addEventListener('change', e => {
+          setVotes(id, parseInt(e.target.value, 10) || 0, { open: true })
+        })
+      })
+    }
+
+    function renderLists() {
+      listsStack.innerHTML = LISTS.map(list => {
+        const v = state[list.id] || 0
+        const hasCandidates = list.candidates.length > 0
+        const isOpen = openListId === list.id
+        return `
+          <article class="list-item${isOpen ? ' is-open' : ''}" data-list-id="${list.id}">
+            <div class="list-header" role="button" tabindex="0" aria-expanded="${isOpen}"
+                 aria-controls="candidates-${list.id}">
+              <span class="list-dot" style="background:${list.color}"></span>
+              <div class="list-meta">
+                <span class="list-name">${list.name}</span>
+                ${list.mayor ? `<span class="list-mayor">Sindaco: ${list.mayor}</span>` : ''}
+                <div class="list-bar"><div class="list-bar-fill" style="width:0%;background:${list.color}"></div></div>
+              </div>
+              <div class="list-votes">
+                <button type="button" data-vote-minus aria-label="Meno voti ${list.name}">−</button>
+                <input type="number" min="0" value="${v}" data-votes-input="${list.id}"
+                  aria-label="Voti ${list.name}" />
+                <button type="button" data-vote-plus aria-label="Più voti ${list.name}">+</button>
+              </div>
+              ${hasCandidates ? `
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>` : ''}
+            </div>
+            ${hasCandidates ? `
+              <div class="list-candidates" id="candidates-${list.id}" role="region" aria-label="Preferenze ${list.name}">
+                ${list.candidates.map(c => `
+                  <div class="candidate-row">
+                    <div class="candidate-name">
+                      <span class="candidate-order">${c.order}.</span>
+                      <strong>${c.last}</strong> ${c.first}
+                    </div>
+                    <div class="list-votes">
+                      <button type="button" tabindex="-1">−</button>
+                      <input type="number" min="0" value="0" style="width:2.75rem;font-size:0.875rem" />
+                      <button type="button" tabindex="-1">+</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </article>
+        `
+      }).join('')
+      bindListInteractions(listsStack)
+      updateTotal()
+    }
+
+    renderLists()
+  </script>
+</body>
+</html>

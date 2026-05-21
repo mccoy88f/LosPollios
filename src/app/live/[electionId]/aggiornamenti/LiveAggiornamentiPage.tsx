@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { SiteTopNav } from '@/components/SiteTopNav'
 import type { ElectionUpdateEvent, ElectionUpdateKind } from '@/lib/electionUpdates'
 
 type UpdatesPayload = {
@@ -30,7 +29,7 @@ function kindBadgeClass(k: ElectionUpdateKind): string {
     case 'affluenza':
       return 'bg-amber-100 text-amber-900'
     case 'voti_lista':
-      return 'bg-blue-100 text-blue-900'
+      return 'bg-accent-100 text-gray-900'
     case 'preferenze':
       return 'bg-violet-100 text-violet-900'
     default:
@@ -108,21 +107,7 @@ export default function LiveAggiornamentiPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SiteTopNav
-        crumbs={[
-          { label: 'Home', href: '/' },
-          { label: electionName, href: `/live/${electionId}` },
-          { label: 'Aggiornamenti' },
-        ]}
-        contextLinks={[
-          { label: 'Live', href: `/live/${electionId}` },
-          { label: 'Preferenze', href: `/live/${electionId}/preferenze` },
-          { label: 'Analisi', href: `/dashboard/${electionId}` },
-        ]}
-      />
-
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Aggiornamenti spoglio</h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -225,7 +210,6 @@ export default function LiveAggiornamentiPage({
             ← Torna alla live
           </Link>
         </p>
-      </div>
     </div>
   )
 }

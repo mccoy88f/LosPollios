@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
+import { ElectionSiteNav } from '@/components/ElectionSiteNav'
 import AnalysisDashboard from './AnalysisDashboard'
 
 type Props = { params: Promise<{ electionId: string }> }
@@ -16,12 +17,27 @@ export default async function DashboardPage({ params }: Props) {
     take: 5,
   })
 
+  const id = Number(electionId)
+
   return (
-    <AnalysisDashboard
-      electionId={Number(electionId)}
-      electionName={election.name}
-      commune={election.commune}
-      historicalElections={historical}
-    />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <ElectionSiteNav
+        crumbs={[
+          { label: 'Home', href: '/' },
+          { label: election.name },
+          { label: 'Analisi' },
+        ]}
+        contextLinks={[
+          { label: 'Live', href: `/live/${id}` },
+          { label: 'Aggiornamenti', href: `/live/${id}/aggiornamenti` },
+        ]}
+      />
+      <AnalysisDashboard
+        electionId={id}
+        electionName={election.name}
+        commune={election.commune}
+        historicalElections={historical}
+      />
+    </div>
   )
 }

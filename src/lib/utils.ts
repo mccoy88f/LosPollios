@@ -30,6 +30,6 @@ export function toElectionDateInputValue(d: string | Date): string {
 
 // Palette colori di default per le liste
 export const DEFAULT_COLORS = [
-  '#2563eb', '#16a34a', '#dc2626', '#ea580c', '#9333ea',
+  '#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea',
   '#0891b2', '#d97706', '#db2777', '#65a30d', '#0d9488',
 ]
