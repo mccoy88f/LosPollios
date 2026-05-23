@@ -166,6 +166,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       id: election.id,
       name: election.name,
       commune: election.commune,
+      year: election.date.getFullYear(),
     },
     lists,
     mayorHistoryByPersonId,

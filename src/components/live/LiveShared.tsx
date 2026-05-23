@@ -577,8 +577,11 @@ export function LivePreferenzePanel({
           <h3 className="font-semibold text-gray-900">
             {compact ? 'Top preferenze' : 'Preferenze candidati (aggregate)'}
           </h3>
-          <Link href={`/live/${electionId}/preferenze`} className="text-sm text-brand-800 hover:underline font-medium">
-            Dettaglio e grafici →
+          <Link
+            href={`/live/${electionId}?view=preferenze`}
+            className="text-sm text-brand-800 hover:underline font-medium"
+          >
+            Preferenze complete e storico →
           </Link>
         </div>
 

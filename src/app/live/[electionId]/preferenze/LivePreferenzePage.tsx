@@ -57,10 +57,61 @@ type ListBlock = {
 }
 
 type DetailPayload = {
-  election: { id: number; name: string; commune: string }
+  election: { id: number; name: string; commune: string; year: number }
   lists: ListBlock[]
   mayorHistoryByPersonId: Record<string, MayorHistPoint[]>
   councilHistoryByPersonId: Record<string, CouncilHistPoint[]>
+}
+
+type TrendRow = {
+  label: string
+  electionName: string
+  listName: string
+  preferenceVotes?: number
+  pctOfListVotes?: number
+  percentage?: number
+}
+
+function sortTrendRows(rows: TrendRow[]): TrendRow[] {
+  return [...rows].sort((a, b) => {
+    const ya = Number(a.label)
+    const yb = Number(b.label)
+    if (Number.isFinite(ya) && Number.isFinite(yb)) return ya - yb
+    return a.label.localeCompare(b.label)
+  })
+}
+
+/** Storico archiviato + punto elezione in corso (preferenze già inserite). */
+function councilTrendRows(
+  historical: CouncilHistPoint[],
+  current: {
+    year: number
+    electionName: string
+    listName: string
+    votes: number
+    pctOfListVotes: number
+  } | null
+): TrendRow[] {
+  const rows: TrendRow[] = historical.map(h => ({
+    label: String(h.year),
+    pctOfListVotes: h.pctOfListVotes,
+    electionName: h.electionName,
+    listName: h.listName,
+    preferenceVotes: h.preferenceVotes,
+  }))
+  if (current && current.votes > 0) {
+    const label = String(current.year)
+    const filtered = rows.filter(r => r.label !== label)
+    filtered.push({
+      label,
+      pctOfListVotes: current.pctOfListVotes,
+      electionName: `${current.electionName} (in corso)`,
+      listName: current.listName,
+      preferenceVotes: current.votes,
+    })
+    return sortTrendRows(filtered)
+  }
+  return sortTrendRows(rows)
 }
 
 function HistoryLineChart({
@@ -141,10 +192,13 @@ export default function LivePreferenzePage({
   electionId,
   electionName,
   commune,
+  embedded = false,
 }: {
   electionId: number
   electionName: string
   commune: string
+  /** Tab nella dashboard live: stesso contenuto del menu Preferenze */
+  embedded?: boolean
 }) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [loading, setLoading] = useState(true)
@@ -195,20 +249,33 @@ export default function LivePreferenzePage({
       const pid = String(c.personId)
       return (
         (data.mayorHistoryByPersonId[pid] ?? []).length > 0 ||
-        (data.councilHistoryByPersonId[pid] ?? []).length > 0
+        (data.councilHistoryByPersonId[pid] ?? []).length > 0 ||
+        c.votes > 0
       )
     })
     return mayorList || candHist
   })
 
   return (
-    <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Preferenze candidati</h1>
-        <p className="text-gray-600 dark:text-neutral-400 text-sm mt-1">
-          {data.election.name} · {commune} — dati aggregati dalle sezioni già inserite.
+    <div
+      className={
+        embedded
+          ? 'space-y-8'
+          : 'flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8'
+      }
+    >
+      {!embedded ? (
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Preferenze candidati</h1>
+          <p className="text-gray-600 dark:text-neutral-400 text-sm mt-1">
+            {data.election.name} · {commune} — dati aggregati dalle sezioni già inserite.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-600 dark:text-neutral-400">
+          {commune} — preferenze aggregate, distribuzione per lista e confronto con lo storico (anagrafica collegata).
         </p>
-      </div>
+      )}
 
       {listsWithCandidates.length === 0 ? (
         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-8 text-center text-gray-500 dark:text-neutral-400">
@@ -253,20 +320,21 @@ export default function LivePreferenzePage({
             const council = data.councilHistoryByPersonId[pid] ?? []
             const mayor = data.mayorHistoryByPersonId[pid] ?? []
 
-            if (council.length > 0) {
+            const councilRows = councilTrendRows(council, {
+              year: data.election.year,
+              electionName: data.election.name,
+              listName: list.listName,
+              votes: c.votes,
+              pctOfListVotes: c.pctOfListVotes,
+            })
+            if (councilRows.length > 0) {
               historyCharts.push(
                 <HistoryLineChart
                   key={`council-${c.candidateId}`}
                   title={c.name}
-                  subtitle="Preferenze storiche (% sui voti di lista)"
+                  subtitle="Preferenze (% sui voti di lista) — storico e elezione in corso"
                   color={list.color}
-                  rows={council.map(h => ({
-                    label: String(h.year),
-                    pctOfListVotes: h.pctOfListVotes,
-                    electionName: h.electionName,
-                    listName: h.listName,
-                    preferenceVotes: h.preferenceVotes,
-                  }))}
+                  rows={councilRows}
                   dataKey="pctOfListVotes"
                   valueLabel="% preferenze"
                   formatValue={v => `${v.toFixed(1)}%`}
@@ -386,17 +454,18 @@ export default function LivePreferenzePage({
 
       {hasAnyHistory && (
         <p className="text-xs text-gray-500 dark:text-neutral-500 max-w-3xl pb-2">
-          I grafici storici usano i collegamenti in <strong>anagrafica</strong> sui dati storici: preferenze archiviate
-          per i candidati al consiglio, quota di <strong>voti di lista</strong> se la stessa persona risulta sindaco di
-          lista in passato. Collega candidati e sindaco in Admin → Dati storici e in Liste &amp; Candidati.
+          I grafici uniscono <strong>storico</strong> (dati archiviati) e <strong>elezione in corso</strong> (preferenze
+          già inserite nello spoglio). Per lo storico servono i collegamenti in anagrafica su Admin → Dati storici.
         </p>
       )}
 
-      <div className="text-center pb-4">
-        <Link href={`/live/${electionId}`} className="text-brand-600 dark:text-brand-400 hover:underline text-sm">
-          ← Torna alla live
-        </Link>
-      </div>
+      {!embedded && (
+        <div className="text-center pb-4">
+          <Link href={`/live/${electionId}`} className="text-brand-600 dark:text-brand-400 hover:underline text-sm">
+            ← Torna alla live
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

@@ -18,6 +18,7 @@ import {
 import type { LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
 import { electionHasCoalitions, normalizeLiveViewParam, type LiveViewId } from '@/lib/liveElection'
 import LiveAggiornamentiPage from '@/app/live/[electionId]/aggiornamenti/LiveAggiornamentiPage'
+import LivePreferenzePage from '@/app/live/[electionId]/preferenze/LivePreferenzePage'
 import { cn } from '@/lib/cn'
 import {
   BarChart3,
@@ -96,6 +97,18 @@ function LiveDashboardInner({
     },
     [router, pathname, searchParams]
   )
+
+  /** Rimuove ?view=coalizioni (o altro) se non applicabile a questa elezione */
+  useEffect(() => {
+    if (!data || viewParam === 'aggiornamenti' || viewParam == null) return
+    const normalized = normalizeLiveViewParam(viewParam)
+    if (normalized && !availableViews.includes(normalized)) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('view')
+      const q = params.toString()
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+    }
+  }, [data, viewParam, availableViews, router, pathname, searchParams])
 
   const fetchData = useCallback(async () => {
     try {
@@ -263,11 +276,11 @@ function LiveDashboardInner({
       )}
 
       {view === 'preferenze' && hasPreferenze && (
-        <LivePreferenzePanel
-          lists={lists}
+        <LivePreferenzePage
+          embedded
           electionId={electionId}
-          selectedCandidateId={selectedCandidateId}
-          onSelectCandidate={id => setSelectedCandidateId(prev => toggleId(prev, id))}
+          electionName={electionName}
+          commune={commune}
         />
       )}
 

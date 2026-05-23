@@ -7,8 +7,11 @@ import {
   BarChart3,
   ClipboardList,
   Database,
+  Grid3X3,
   Home,
+  List,
   LogOut,
+  PieChart,
   Radio,
   Settings,
   Shield,
@@ -34,6 +37,9 @@ const MENU_ICONS: Record<NavMenuIconId, LucideIcon> = {
   user: User,
   database: Database,
   activity: Activity,
+  list: List,
+  grid: Grid3X3,
+  pieChart: PieChart,
 }
 
 export function AppSideMenu({

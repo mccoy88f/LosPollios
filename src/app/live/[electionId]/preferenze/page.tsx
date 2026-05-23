@@ -1,20 +1,12 @@
 import { prisma } from '@/lib/db'
-import { notFound } from 'next/navigation'
-import { ElectionSiteNav } from '@/components/ElectionSiteNav'
-import LivePreferenzePage from './LivePreferenzePage'
+import { notFound, redirect } from 'next/navigation'
 
 type Props = { params: Promise<{ electionId: string }> }
 
+/** Unificato nella live come tab ?view=preferenze */
 export default async function PreferenzeLiveRoute({ params }: Props) {
   const { electionId } = await params
   const election = await prisma.election.findUnique({ where: { id: Number(electionId) } })
   if (!election) notFound()
-  const id = election.id
-
-  return (
-    <div className="page-shell">
-      <ElectionSiteNav electionId={id} electionName={election.name} />
-      <LivePreferenzePage electionId={id} electionName={election.name} commune={election.commune} />
-    </div>
-  )
+  redirect(`/live/${election.id}?view=preferenze`)
 }

@@ -1,5 +1,6 @@
 import { getSession } from '@/lib/auth'
-import { buildAppMenuSections, type ElectionNavContext } from '@/lib/navMenu'
+import { getElectionNavContext } from '@/lib/adminElectionNav'
+import { buildAppMenuSections } from '@/lib/navMenu'
 import { getSessionUserProfile } from '@/lib/sessionUser'
 import { SiteTopNav } from '@/components/SiteTopNav'
 
@@ -20,7 +21,8 @@ export async function ElectionSiteNav({
   const profile = session ? await getSessionUserProfile(session) : null
   if (!session) return null
 
-  const election: ElectionNavContext = { electionId, electionName }
+  const election =
+    (await getElectionNavContext(electionId)) ?? { electionId, electionName }
 
   return (
     <SiteTopNav

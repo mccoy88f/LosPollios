@@ -1,6 +1,14 @@
-/** Almeno una lista con campo «coalizione» compilato in admin */
+/**
+ * Coalizioni «definite» nell’elezione: almeno due liste con il campo coalizione compilato
+ * (una sola lista con etichetta non basta per la vista raggruppata).
+ */
 export function electionHasCoalitions(lists: { coalition: string | null }[]): boolean {
-  return lists.some(l => typeof l.coalition === 'string' && l.coalition.trim() !== '')
+  let withCoalition = 0
+  for (const l of lists) {
+    if (typeof l.coalition === 'string' && l.coalition.trim() !== '') withCoalition++
+    if (withCoalition >= 2) return true
+  }
+  return false
 }
 
 export type LiveViewId =

@@ -1,4 +1,5 @@
 import type { JwtPayload } from '@/lib/auth'
+import { electionHasCoalitions } from '@/lib/liveElection'
 
 /** Id icona risolvibile lato client (no componenti React da server). */
 export type NavMenuIconId =
@@ -13,6 +14,9 @@ export type NavMenuIconId =
   | 'user'
   | 'database'
   | 'activity'
+  | 'list'
+  | 'grid'
+  | 'pieChart'
 
 export type NavMenuItem = {
   label: string
@@ -30,16 +34,26 @@ export type ElectionNavContext = {
   electionId: number
   /** Nome elezione (mai il comune) — mostrato in header e come titolo voce menu */
   electionName: string
+  /** Almeno una lista con coalizione compilata (tab/menu Coalizioni) */
+  hasCoalitions?: boolean
 }
 
-function electionSubItems(electionId: number): NavMenuItem[] {
+function electionSubItems(electionId: number, hasCoalitions = false): NavMenuItem[] {
   const id = electionId
-  return [
-    { label: 'Live', href: `/live/${id}`, icon: 'radio' },
-    { label: 'Aggiornamenti', href: `/live/${id}?view=aggiornamenti`, icon: 'history' },
-    { label: 'Preferenze', href: `/live/${id}/preferenze`, icon: 'users' },
-    { label: 'Analisi', href: `/live/${id}?view=analisi`, icon: 'barChart3' },
+  const items: NavMenuItem[] = [
+    { label: 'Panoramica', href: `/live/${id}`, icon: 'radio' },
+    { label: 'Liste', href: `/live/${id}?view=liste`, icon: 'list' },
+    { label: 'Sezioni', href: `/live/${id}?view=sezioni`, icon: 'grid' },
   ]
+  if (hasCoalitions) {
+    items.push({ label: 'Coalizioni', href: `/live/${id}?view=coalizioni`, icon: 'pieChart' })
+  }
+  items.push(
+    { label: 'Preferenze', href: `/live/${id}?view=preferenze`, icon: 'users' },
+    { label: 'Analisi', href: `/live/${id}?view=analisi`, icon: 'barChart3' },
+    { label: 'Aggiornamenti', href: `/live/${id}?view=aggiornamenti`, icon: 'history' }
+  )
+  return items
 }
 
 /**
@@ -82,7 +96,7 @@ export function buildAppMenuSections(
   if (electionId && electionName) {
     sections.push({
       title: electionName,
-      items: electionSubItems(electionId),
+      items: electionSubItems(electionId, election?.hasCoalitions ?? false),
     })
   }
 

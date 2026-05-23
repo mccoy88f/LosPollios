@@ -104,7 +104,7 @@ export function LiveMetricsHeader({
         {showPreferenzeLink && (
           <div className="pt-1 border-t border-gray-100">
             <Link
-              href={`/live/${electionId}/preferenze`}
+              href={`/live/${electionId}?view=preferenze`}
               className={buttonClassName('primary', 'md')}
             >
               Distribuzione preferenze e confronto storico

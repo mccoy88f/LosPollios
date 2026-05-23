@@ -33,7 +33,7 @@ export default async function ElectionDetailPage({ params }: Props) {
     { href: `/admin/elections/${id}/sections`, icon: Landmark, title: 'Sezioni', description: `${election._count.sections} sezioni configurate` },
     { href: `/admin/elections/${id}/lists`, icon: ClipboardList, title: 'Liste & Candidati', description: `${election._count.lists} liste configurate` },
     { href: `/admin/elections/${id}/users`, icon: Users, title: 'Accessi', description: `${election._count.users} utenti configurati` },
-    { href: `/live/${id}`, icon: BarChart3, title: 'Dashboard Live', description: 'Segui lo spoglio in diretta', external: true },
+    { href: `/live/${id}`, icon: BarChart3, title: 'Panoramica live', description: 'Segui lo spoglio in diretta', external: true },
     { href: `/entry/${id}`, icon: ClipboardPen, title: 'Inserimento dati', description: 'Inserisci i voti per sezione', external: true },
     { href: `/dashboard/${id}`, icon: LineChart, title: 'Analisi & Proiezioni', description: 'Confronti storici e seggi', external: true },
   ]
