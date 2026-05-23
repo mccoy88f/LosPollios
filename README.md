@@ -1,8 +1,23 @@
 # LosPollios
 
+**Versione attuale: 1.0.0**
+
 Applicazione web per **organizzare e seguire lo spoglio** delle **elezioni amministrative** (comunali): si inseriscono i dati sezione per sezione, si vedono i risultati aggiornati in tempo reale e le proiezioni (coalizioni, seggi, soglie).
 
 Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, senza entrare nei dettagli tecnici.
+
+---
+
+## Novità in v1.0.0
+
+- **Backup e ripristino elezione** — dall’area admin di un’elezione puoi scaricare un file JSON completo (sezioni, liste, candidati, dati di spoglio) e ripristinarlo su un’elezione nuova o esistente, con conferma del nome per evitare errori.
+- **Sessioni attive** — in admin vedi chi è loggato (ultima attività, browser, IP) e puoi **disconnettere** un utente; non puoi chiudere la tua sessione corrente da lì.
+- **Cronologia aggiornamenti (live)** — tab **Aggiornamenti** nella dashboard live: storico di affluenza, voti lista e preferenze con data/ora e operatore.
+- **Inserimento dati per l’admin** — l’amministratore accede allo spoglio anche dal menu (contesto elezione) e dalla scheda elezione, come gli operatori.
+- **PWA e icona app** — icone statiche (manifest, splash, favicon); installabile su telefono come prima, con branding coerente.
+- **Tema scuro** — campi e form in area admin più leggibili in modalità scura.
+- **Stato sezioni** — indicatore di completamento corretto (affluenza a zero non conta come “mezzo pieno”; liste senza voti non gonfiano la percentuale).
+- **Versione in footer** — in fondo alle pagine compare `V1.0.0` (allineata a `package.json`).
 
 ---
 
@@ -34,9 +49,10 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
 ### Accesso e limiti operativi
 
 - **Login obbligatorio** su tutte le pagine e le API (eccetto login e logout): senza sessione valida si viene reindirizzati alla pagina di accesso.
+- Ogni accesso crea una **sessione** tracciata sul server; il logout (o la revoca da admin) la invalida. Dopo un aggiornamento importante dell’app, gli utenti con sessioni molto vecchie potrebbero dover **rifare login** una volta.
 - Ogni utente non amministratore è associato a **una sola elezione** alla volta.
 - L’amministratore può **limitare le sezioni** modificabili da un operatore (solo le sezioni assegnate compaiono in inserimento dati; i tentativi su altre sezioni sono bloccati).
-- L’**amministratore** gestisce tutti gli account (creazione, modifica, eliminazione) dall’area admin, anche quelli di altre elezioni.
+- L’**amministratore** gestisce tutti gli account (creazione, modifica, eliminazione) dall’area admin, anche quelli di altre elezioni, e da **Sessioni attive** può vedere chi è connesso e disconnetterlo.
 
 ---
 
@@ -46,13 +62,13 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Ogni persona usa le proprie credenziali (nome utente e password) assegnate dall’amministratore.
 
 - **Area amministrazione**  
-  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa).
+  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: **backup** (download JSON) e **ripristino** (upload con anteprima e conferma del nome). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
 
 - **Inserimento spoglio (entry)**  
   Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati possono essere aggiornati man mano che si ricevono nuove comunicazioni dai seggi.
 
 - **Vista live**  
-  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Mostra avvisi di **coerenza dati** (es. sezioni con affluenza ma senza voti, o viceversa) e lo stato di ogni sezione (da fare, in corso, completa). Sottopagine per **preferenze** e **cronologia aggiornamenti**.
+  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab principali: panoramica risultati, **preferenze**, **analisi** e **Aggiornamenti** (cronologia di ogni modifica con operatore e orario). Mostra avvisi di **coerenza dati** (es. sezioni con affluenza ma senza voti, o viceversa) e lo stato di ogni sezione (da fare, in corso, completa), con percentuale di avanzamento coerente con i dati reali.
 
 - **Dashboard analisi**  
   Visione analitica con schede per **seggi attuali**, **proiezione finale** (estrapolazione sulle sezioni già scrutinate) e **confronto storico** con elezioni passate dello stesso comune.
@@ -80,7 +96,8 @@ Comandi utili:
 | Comando | Uso |
 |---------|-----|
 | `npm run dev` | Sviluppo locale |
-| `npm run build` | Build di produzione |
+| `npm run build` | Build di produzione (include generazione icone PWA) |
+| `npm run generate:icons` | Rigenera PNG/SVG in `public/icons/` da `icon.svg` |
 | `npm run db:push` | Allinea lo schema al DB (sviluppo) |
 | `npm run db:reset` | Reset DB + seed (solo dev) |
 
@@ -88,7 +105,7 @@ In sviluppo serve un file `.env` con almeno `DATABASE_URL` e `JWT_SECRET`.
 
 ### PWA (installazione su telefono)
 
-Il sito espone un **manifest** (`/manifest.webmanifest`), icone **192/512** e un **service worker** (`/sw.js`) per soddisfare i criteri di installazione come app su **Chrome/Android** e migliorare **“Aggiungi alla schermata Home”** su **Safari/iOS** (richiede **HTTPS** in produzione; in locale è ok su `http://localhost`).
+Il sito espone un **manifest** (`/manifest.webmanifest`), icone statiche in `public/icons/` (32, 180, 192, 512 px, generate da `npm run generate:icons`) e un **service worker** (`/sw.js`) per soddisfare i criteri di installazione come app su **Chrome/Android** e migliorare **“Aggiungi alla schermata Home”** su **Safari/iOS** (richiede **HTTPS** in produzione; in locale è ok su `http://localhost`). Nome app: **LosPollios**.
 
 Dopo il deploy, apri il sito dal telefono: dal menu del browser (Chrome: *Installa app* / *Aggiungi a schermata Home*; Safari: *Condividi* → *Aggiungi a Home*).
 
@@ -117,7 +134,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 | **`ADMIN_PASSWORD`** | `admin123` — password iniziale dell'admin; cambiala subito in produzione. |
 | **`ADMIN_NAME`** | `Amministratore` — nome visualizzato per l'utente admin iniziale. |
 
-**Primo avvio Docker:** l’entrypoint esegue `prisma migrate deploy` (con fallback a `db push` se il DB è legacy o alla prima installazione), poi crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza dati demo di elezioni/liste/sezioni.
+**Primo avvio Docker:** l’entrypoint esegue `prisma migrate deploy` (con fallback a `db push` se il DB è legacy o alla prima installazione), applicando anche le migrazioni recenti (es. tabella **sessioni utente**). Poi crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza dati demo di elezioni/liste/sezioni. A ogni **riavvio** del container le migrazioni pendenti vengono applicate automaticamente; non serve eseguirle a mano sul server.
 
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 
@@ -154,4 +171,4 @@ Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres 
 
 ---
 
-*LosPollios — gestione spoglio elezioni amministrative online.*
+*LosPollios v1.0.0 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
