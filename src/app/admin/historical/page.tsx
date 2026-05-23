@@ -25,6 +25,12 @@ function numToInput(n: number | null | undefined) {
   return String(n)
 }
 
+/** Prossimo ordine progressivo (max esistente + 1, oppure 1 se la lista è vuota). */
+function nextHistoricalCandidateOrder(candidates: HistCouncilCandidate[]): number {
+  if (!candidates.length) return 1
+  return Math.max(...candidates.map(c => c.order)) + 1
+}
+
 interface HistCouncilCandidate {
   id: number
   firstName: string
@@ -111,7 +117,7 @@ function CouncilCandidatesEditor({
   const [addForm, setAddForm] = useState({
     firstName: '',
     lastName: '',
-    order: '0',
+    order: String(nextHistoricalCandidateOrder(candidates ?? [])),
     preferenceVotes: '0',
     personId: '',
   })
@@ -126,6 +132,13 @@ function CouncilCandidatesEditor({
   const [busy, setBusy] = useState(false)
 
   const locked = listRowEditing || busy
+
+  useEffect(() => {
+    setAddForm(f => {
+      if (f.firstName.trim() || f.lastName.trim()) return f
+      return { ...f, order: String(nextHistoricalCandidateOrder(candidates ?? [])) }
+    })
+  }, [listResultId, candidates])
 
   function startEdit(c: HistCouncilCandidate) {
     setEditId(c.id)
@@ -162,6 +175,11 @@ function CouncilCandidatesEditor({
       window.alert('Inserire nome e cognome.')
       return
     }
+    const orderParsed = parseInt(addForm.order, 10)
+    const order = Number.isFinite(orderParsed)
+      ? orderParsed
+      : nextHistoricalCandidateOrder(list)
+
     setBusy(true)
     const res = await fetch(`/api/historical/results/${listResultId}/candidates`, {
       method: 'POST',
@@ -169,14 +187,24 @@ function CouncilCandidatesEditor({
       body: JSON.stringify({
         firstName: fn,
         lastName: ln,
-        order: parseInt(addForm.order, 10) || 0,
+        order,
         preferenceVotes: parseInt(addForm.preferenceVotes, 10) || 0,
         personId: addForm.personId === '' ? null : parseInt(addForm.personId, 10),
       }),
     })
     setBusy(false)
     if (res.ok) {
-      setAddForm({ firstName: '', lastName: '', order: '0', preferenceVotes: '0', personId: '' })
+      const nextOrder = Math.max(
+        ...list.map(c => c.order),
+        order,
+      ) + 1
+      setAddForm({
+        firstName: '',
+        lastName: '',
+        order: String(nextOrder),
+        preferenceVotes: '0',
+        personId: '',
+      })
       onReload()
     } else {
       const d = await res.json().catch(() => ({}))

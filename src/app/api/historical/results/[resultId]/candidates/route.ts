@@ -28,7 +28,22 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Nome e cognome obbligatori' }, { status: 400 })
   }
 
-  const order = body.order !== undefined && body.order !== '' ? Number(body.order) : 0
+  let order: number
+  if (body.order !== undefined && body.order !== '') {
+    const requested = Number(body.order)
+    order = Number.isFinite(requested) ? requested : NaN
+  } else {
+    order = NaN
+  }
+  if (!Number.isFinite(order)) {
+    const agg = await prisma.historicalCouncilCandidate.aggregate({
+      where: { listResultId },
+      _max: { order: true },
+    })
+    const max = agg._max.order
+    order = max != null ? max + 1 : 1
+  }
+
   const preferenceVotes =
     body.preferenceVotes !== undefined && body.preferenceVotes !== ''
       ? Math.max(0, Number(body.preferenceVotes) || 0)
@@ -43,7 +58,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       listResultId,
       firstName,
       lastName,
-      order: Number.isFinite(order) ? order : 0,
+      order,
       preferenceVotes,
       personId: personId != null && Number.isFinite(personId) ? personId : null,
     },

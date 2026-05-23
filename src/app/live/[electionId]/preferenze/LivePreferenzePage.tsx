@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import Link from 'next/link'
 import {
   PieChart,
@@ -24,6 +24,14 @@ type MayorHistPoint = {
   votes: number
 }
 
+type CouncilHistPoint = {
+  year: number
+  electionName: string
+  listName: string
+  preferenceVotes: number
+  pctOfListVotes: number
+}
+
 type CandidateRow = {
   candidateId: number
   name: string
@@ -43,6 +51,7 @@ type ListBlock = {
   coalitionLogoUrl?: string | null
   candidateMayor: string | null
   coalition: string | null
+  mayorPersonId: number | null
   listVotes: number
   candidates: CandidateRow[]
 }
@@ -51,6 +60,49 @@ type DetailPayload = {
   election: { id: number; name: string; commune: string }
   lists: ListBlock[]
   mayorHistoryByPersonId: Record<string, MayorHistPoint[]>
+  councilHistoryByPersonId: Record<string, CouncilHistPoint[]>
+}
+
+function HistoryLineChart({
+  title,
+  subtitle,
+  color,
+  rows,
+  dataKey,
+  valueLabel,
+  formatValue,
+}: {
+  title: string
+  subtitle?: string
+  color: string
+  rows: { label: string; electionName: string; listName: string; [key: string]: string | number }[]
+  dataKey: string
+  valueLabel: string
+  formatValue: (v: number) => string
+}) {
+  if (!rows.length) return null
+  return (
+    <div className="bg-gray-50 dark:bg-neutral-950 rounded-lg p-4">
+      <p className="text-sm font-semibold text-gray-800 dark:text-white mb-0.5">{title}</p>
+      {subtitle && <p className="text-xs text-gray-500 dark:text-neutral-400 mb-2">{subtitle}</p>}
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
+          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} domain={[0, 'auto']} tickFormatter={v => formatValue(Number(v))} />
+          <Tooltip
+            formatter={(v: number) => [formatValue(v), valueLabel]}
+            labelFormatter={(_, payload) =>
+              payload?.[0]?.payload
+                ? `${payload[0].payload.electionName} (${payload[0].payload.listName})`
+                : ''
+            }
+          />
+          <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
 }
 
 const PIE_EXTRA = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#78716c']
@@ -133,13 +185,21 @@ export default function LivePreferenzePage({
     )
   }
 
-  const listsWithPrefs = data.lists.filter(l => l.candidates.length > 0)
+  const listsWithCandidates = data.lists.filter(l => l.candidates.length > 0)
 
-  const hasAnyMayorHistory = listsWithPrefs.some(l =>
-    l.candidates.some(
-      c => c.personId != null && (data.mayorHistoryByPersonId[String(c.personId)] ?? []).length > 0
-    )
-  )
+  const hasAnyHistory = listsWithCandidates.some(l => {
+    const mayorList =
+      l.mayorPersonId != null && (data.mayorHistoryByPersonId[String(l.mayorPersonId)] ?? []).length > 0
+    const candHist = l.candidates.some(c => {
+      if (c.personId == null) return false
+      const pid = String(c.personId)
+      return (
+        (data.mayorHistoryByPersonId[pid] ?? []).length > 0 ||
+        (data.councilHistoryByPersonId[pid] ?? []).length > 0
+      )
+    })
+    return mayorList || candHist
+  })
 
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8">
@@ -150,49 +210,90 @@ export default function LivePreferenzePage({
         </p>
       </div>
 
-      {listsWithPrefs.length === 0 ? (
+      {listsWithCandidates.length === 0 ? (
         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 p-8 text-center text-gray-500 dark:text-neutral-400">
-          Nessuna preferenza registrata finora. Inserisci i dati nelle sezioni con candidati e preferenze.
+          Nessun candidato configurato sulle liste. Aggiungili da Admin → Liste &amp; Candidati.
         </div>
       ) : (
-        listsWithPrefs.map(list => {
+        listsWithCandidates.map(list => {
           const pieData = list.candidates
             .filter(c => c.votes > 0)
             .map(c => ({ name: c.name, value: c.votes }))
 
-          const historyCharts = list.candidates
-            .filter(c => c.personId != null)
-            .flatMap(c => {
-              const hist = data.mayorHistoryByPersonId[String(c.personId!)] ?? []
-              if (hist.length === 0) return []
-              const chartRows = hist.map(h => ({
-                label: String(h.year),
-                percentage: h.percentage,
-                electionName: h.electionName,
-                listName: h.listName,
-              }))
-              return [
-                <div key={c.candidateId} className="bg-gray-50 dark:bg-neutral-950 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">{c.name}</p>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} domain={[0, 'auto']} tickFormatter={v => `${v}%`} />
-                      <Tooltip
-                        formatter={(v: number) => [`${v.toFixed(1)}%`, 'Quota lista']}
-                        labelFormatter={(_, payload) =>
-                          payload?.[0]?.payload
-                            ? `${payload[0].payload.electionName} (${payload[0].payload.listName})`
-                            : ''
-                        }
-                      />
-                      <Line type="monotone" dataKey="percentage" stroke={list.color} strokeWidth={2} dot />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>,
-              ]
-            })
+          const listMayorHistory =
+            list.mayorPersonId != null
+              ? data.mayorHistoryByPersonId[String(list.mayorPersonId)] ?? []
+              : []
+
+          const historyCharts: ReactNode[] = []
+
+          if (listMayorHistory.length > 0) {
+            historyCharts.push(
+              <HistoryLineChart
+                key={`mayor-list-${list.listId}`}
+                title={list.candidateMayor ? `Sindaco: ${list.candidateMayor}` : 'Sindaco di lista'}
+                subtitle="Quota lista nelle elezioni passate (anagrafica sindaco)"
+                color={list.color}
+                rows={listMayorHistory.map(h => ({
+                  label: String(h.year),
+                  percentage: h.percentage,
+                  electionName: h.electionName,
+                  listName: h.listName,
+                }))}
+                dataKey="percentage"
+                valueLabel="Quota lista"
+                formatValue={v => `${v.toFixed(1)}%`}
+              />
+            )
+          }
+
+          for (const c of list.candidates) {
+            if (c.personId == null) continue
+            const pid = String(c.personId)
+            const council = data.councilHistoryByPersonId[pid] ?? []
+            const mayor = data.mayorHistoryByPersonId[pid] ?? []
+
+            if (council.length > 0) {
+              historyCharts.push(
+                <HistoryLineChart
+                  key={`council-${c.candidateId}`}
+                  title={c.name}
+                  subtitle="Preferenze storiche (% sui voti di lista)"
+                  color={list.color}
+                  rows={council.map(h => ({
+                    label: String(h.year),
+                    pctOfListVotes: h.pctOfListVotes,
+                    electionName: h.electionName,
+                    listName: h.listName,
+                    preferenceVotes: h.preferenceVotes,
+                  }))}
+                  dataKey="pctOfListVotes"
+                  valueLabel="% preferenze"
+                  formatValue={v => `${v.toFixed(1)}%`}
+                />
+              )
+            }
+
+            if (mayor.length > 0 && list.mayorPersonId !== c.personId) {
+              historyCharts.push(
+                <HistoryLineChart
+                  key={`mayor-cand-${c.candidateId}`}
+                  title={c.name}
+                  subtitle="Quota lista come sindaco (elezioni passate)"
+                  color={list.color}
+                  rows={mayor.map(h => ({
+                    label: String(h.year),
+                    percentage: h.percentage,
+                    electionName: h.electionName,
+                    listName: h.listName,
+                  }))}
+                  dataKey="percentage"
+                  valueLabel="Quota lista"
+                  formatValue={v => `${v.toFixed(1)}%`}
+                />
+              )
+            }
+          }
 
           return (
             <div
@@ -274,9 +375,7 @@ export default function LivePreferenzePage({
 
               {historyCharts.length > 0 && (
                 <div className="border-t border-gray-100 dark:border-neutral-800 pt-4 space-y-4">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300">
-                    Trend storico (quota lista come sindaco)
-                  </h3>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300">Trend storico</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{historyCharts}</div>
                 </div>
               )}
@@ -285,11 +384,11 @@ export default function LivePreferenzePage({
         })
       )}
 
-      {hasAnyMayorHistory && (
+      {hasAnyHistory && (
         <p className="text-xs text-gray-500 dark:text-neutral-500 max-w-3xl pb-2">
-          Il <strong>trend storico</strong>, quando presente, indica la percentuale di <strong>voti di lista</strong> in
-          elezioni passate in cui il candidato risulta collegato in anagrafica come sindaco su dati storici importati —
-          non sono preferenze per candidato archiviate, ma un confronto sulla quota lista.
+          I grafici storici usano i collegamenti in <strong>anagrafica</strong> sui dati storici: preferenze archiviate
+          per i candidati al consiglio, quota di <strong>voti di lista</strong> se la stessa persona risulta sindaco di
+          lista in passato. Collega candidati e sindaco in Admin → Dati storici e in Liste &amp; Candidati.
         </p>
       )}
 

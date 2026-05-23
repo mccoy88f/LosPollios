@@ -44,6 +44,15 @@ const emptyList = {
   notes: '',
 }
 
+function nextCandidateOrder(candidates: Candidate[]): number {
+  if (!candidates.length) return 1
+  return Math.max(...candidates.map(c => c.order)) + 1
+}
+
+function emptyNewCand(candidates: Candidate[]) {
+  return { firstName: '', lastName: '', order: String(nextCandidateOrder(candidates)), gender: '' }
+}
+
 export default function ListsPage() {
   const { id } = useParams<{ id: string }>()
   const [lists, setLists] = useState<ElectionList[]>([])
@@ -54,6 +63,13 @@ export default function ListsPage() {
   const [expandId, setExpandId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [newCand, setNewCand] = useState<Record<number, { firstName: string; lastName: string; order: string; gender: string }>>({})
+  const [editCandId, setEditCandId] = useState<number | null>(null)
+  const [editCandDraft, setEditCandDraft] = useState<{
+    firstName: string
+    lastName: string
+    order: string
+    gender: string
+  } | null>(null)
 
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })) }
 
@@ -67,6 +83,17 @@ export default function ListsPage() {
     setLoading(false)
   }
   useEffect(() => { load() }, [id])
+
+  useEffect(() => {
+    if (expandId == null) return
+    const list = lists.find(l => l.id === expandId)
+    if (!list) return
+    setNewCand(m => {
+      const cur = m[expandId]
+      if (cur?.firstName.trim() || cur?.lastName.trim()) return m
+      return { ...m, [expandId]: { ...(cur ?? emptyNewCand(list.candidates)), order: String(nextCandidateOrder(list.candidates)) } }
+    })
+  }, [expandId, lists])
 
   async function saveList() {
     setSaving(true)
@@ -96,15 +123,29 @@ export default function ListsPage() {
   async function addCandidate(listId: number) {
     const c = newCand[listId]
     if (!c?.firstName || !c?.lastName) return
+    const list = lists.find(l => l.id === listId)
+    const orderParsed = parseInt(c.order, 10)
+    const order = Number.isFinite(orderParsed)
+      ? orderParsed
+      : nextCandidateOrder(list?.candidates ?? [])
+
     setSaving(true)
-    await fetch(`/api/elections/${id}/lists/${listId}/candidates`, {
+    const res = await fetch(`/api/elections/${id}/lists/${listId}/candidates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName: c.firstName, lastName: c.lastName, order: parseInt(c.order) || 0, gender: c.gender || null }),
+      body: JSON.stringify({
+        firstName: c.firstName,
+        lastName: c.lastName,
+        order,
+        gender: c.gender || null,
+      }),
     })
-    setNewCand(m => ({ ...m, [listId]: { firstName: '', lastName: '', order: '', gender: '' } }))
     setSaving(false)
-    load()
+    if (res.ok) {
+      const nextOrder = Math.max(...(list?.candidates ?? []).map(x => x.order), order) + 1
+      setNewCand(m => ({ ...m, [listId]: { firstName: '', lastName: '', order: String(nextOrder), gender: '' } }))
+      load()
+    }
   }
 
   async function deleteCandidate(listId: number, candId: number) {
@@ -132,6 +173,50 @@ export default function ListsPage() {
       body: JSON.stringify({ personId: personId ? parseInt(personId, 10) : null }),
     })
     load()
+  }
+
+  function startEditCandidate(c: Candidate) {
+    setEditCandId(c.id)
+    setEditCandDraft({
+      firstName: c.firstName,
+      lastName: c.lastName,
+      order: String(c.order),
+      gender: c.gender ?? '',
+    })
+  }
+
+  function cancelEditCandidate() {
+    setEditCandId(null)
+    setEditCandDraft(null)
+  }
+
+  async function saveEditCandidate(listId: number) {
+    if (!editCandId || !editCandDraft) return
+    const fn = editCandDraft.firstName.trim()
+    const ln = editCandDraft.lastName.trim()
+    if (!fn || !ln) {
+      window.alert('Nome e cognome obbligatori.')
+      return
+    }
+    setSaving(true)
+    const res = await fetch(`/api/elections/${id}/lists/${listId}/candidates/${editCandId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: fn,
+        lastName: ln,
+        order: parseInt(editCandDraft.order, 10) || 0,
+        gender: editCandDraft.gender.trim() || null,
+      }),
+    })
+    setSaving(false)
+    if (res.ok) {
+      cancelEditCandidate()
+      load()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      window.alert(d.error || 'Salvataggio non riuscito')
+    }
   }
 
   async function suggestCandidatePerson(c: Candidate, listId: number) {
@@ -333,34 +418,111 @@ export default function ListsPage() {
                     <tbody>
                       {list.candidates.map(c => (
                         <tr key={c.id} className="border-b border-gray-50">
-                          <td className="py-1.5 text-gray-400 text-xs">{c.order}</td>
-                          <td className="py-1.5 font-medium">{c.lastName}</td>
-                          <td className="py-1.5">{c.firstName}</td>
-                          <td className="py-1.5 text-gray-400">{c.gender || '—'}</td>
-                          <td className="py-1.5">
-                            <div className="flex flex-wrap items-center gap-1">
-                              <select
-                                value={c.personId ?? ''}
-                                onChange={e => updateCandidatePerson(list.id, c.id, e.target.value)}
-                                className="text-xs border border-gray-200 rounded px-1 py-1 max-w-[140px]"
-                              >
-                                <option value="">—</option>
-                                {persons.map(p => (
-                                  <option key={p.id} value={p.id}>{p.lastName} {p.firstName}</option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => suggestCandidatePerson(c, list.id)}
-                                className="text-accent-600 text-xs whitespace-nowrap"
-                              >
-                                Suggerisci
-                              </button>
-                            </div>
-                          </td>
-                          <td className="py-1.5 text-right">
-                            <button onClick={() => deleteCandidate(list.id, c.id)} className="text-red-400 hover:text-red-600 text-xs">Elimina</button>
-                          </td>
+                          {editCandId === c.id && editCandDraft ? (
+                            <>
+                              <td className="py-1.5">
+                                <input
+                                  value={editCandDraft.order}
+                                  onChange={e =>
+                                    setEditCandDraft(d => d && { ...d, order: e.target.value })
+                                  }
+                                  className="w-12 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                />
+                              </td>
+                              <td className="py-1.5">
+                                <input
+                                  value={editCandDraft.lastName}
+                                  onChange={e =>
+                                    setEditCandDraft(d => d && { ...d, lastName: e.target.value })
+                                  }
+                                  className="w-full min-w-[80px] border border-gray-300 rounded px-1 py-0.5 text-sm"
+                                />
+                              </td>
+                              <td className="py-1.5">
+                                <input
+                                  value={editCandDraft.firstName}
+                                  onChange={e =>
+                                    setEditCandDraft(d => d && { ...d, firstName: e.target.value })
+                                  }
+                                  className="w-full min-w-[80px] border border-gray-300 rounded px-1 py-0.5 text-sm"
+                                />
+                              </td>
+                              <td className="py-1.5">
+                                <input
+                                  value={editCandDraft.gender}
+                                  onChange={e =>
+                                    setEditCandDraft(d => d && { ...d, gender: e.target.value })
+                                  }
+                                  className="w-14 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                  placeholder="M/F"
+                                />
+                              </td>
+                              <td className="py-1.5" colSpan={2}>
+                                <div className="flex flex-wrap gap-2 justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => saveEditCandidate(list.id)}
+                                    disabled={saving}
+                                    className="text-accent-700 text-xs font-medium"
+                                  >
+                                    Salva
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditCandidate}
+                                    className="text-gray-500 text-xs"
+                                  >
+                                    Annulla
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="py-1.5 text-gray-400 text-xs">{c.order}</td>
+                              <td className="py-1.5 font-medium">{c.lastName}</td>
+                              <td className="py-1.5">{c.firstName}</td>
+                              <td className="py-1.5 text-gray-400">{c.gender || '—'}</td>
+                              <td className="py-1.5">
+                                <div className="flex flex-wrap items-center gap-1">
+                                  <select
+                                    value={c.personId ?? ''}
+                                    onChange={e => updateCandidatePerson(list.id, c.id, e.target.value)}
+                                    className="text-xs border border-gray-200 rounded px-1 py-1 max-w-[140px]"
+                                  >
+                                    <option value="">—</option>
+                                    {persons.map(p => (
+                                      <option key={p.id} value={p.id}>
+                                        {p.lastName} {p.firstName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => suggestCandidatePerson(c, list.id)}
+                                    className="text-accent-600 text-xs whitespace-nowrap"
+                                  >
+                                    Suggerisci
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-1.5 text-right whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditCandidate(c)}
+                                  className="text-brand-600 hover:text-brand-800 text-xs font-medium mr-2"
+                                >
+                                  Modifica
+                                </button>
+                                <button
+                                  onClick={() => deleteCandidate(list.id, c.id)}
+                                  className="text-red-400 hover:text-red-600 text-xs"
+                                >
+                                  Elimina
+                                </button>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -370,8 +532,18 @@ export default function ListsPage() {
                     {[['#', 'order', '1', 'w-14'], ['Cognome', 'lastName', 'Rossi', 'w-32'], ['Nome', 'firstName', 'Mario', 'w-32'], ['Sesso', 'gender', 'M/F', 'w-16']].map(([label, key, placeholder, w]) => (
                       <div key={key}>
                         <label className="block text-xs text-gray-400 mb-1">{label}</label>
-                        <input value={(newCand[list.id] || {})[key as keyof typeof newCand[number]] || ''} placeholder={placeholder}
-                          onChange={e => setNewCand(m => ({ ...m, [list.id]: { ...(m[list.id] || { firstName: '', lastName: '', order: '', gender: '' }), [key]: e.target.value } }))}
+                        <input
+                          value={(newCand[list.id] || emptyNewCand(list.candidates))[key as keyof typeof newCand[number]] || ''}
+                          placeholder={placeholder}
+                          onChange={e =>
+                            setNewCand(m => ({
+                              ...m,
+                              [list.id]: {
+                                ...(m[list.id] || emptyNewCand(list.candidates)),
+                                [key]: e.target.value,
+                              },
+                            }))
+                          }
                           className={`border border-gray-300 rounded px-2 py-1.5 text-sm ${w} focus:outline-none focus:ring-1 focus:ring-blue-500`} />
                       </div>
                     ))}

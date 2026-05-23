@@ -40,12 +40,29 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const { firstName, lastName, order, gender } = body
+  const lid = Number(listId)
+
+  let orderNum: number
+  if (order !== undefined && order !== '') {
+    const requested = Number(order)
+    orderNum = Number.isFinite(requested) ? requested : NaN
+  } else {
+    orderNum = NaN
+  }
+  if (!Number.isFinite(orderNum)) {
+    const agg = await prisma.candidate.aggregate({
+      where: { listId: lid },
+      _max: { order: true },
+    })
+    orderNum = agg._max.order != null ? agg._max.order + 1 : 1
+  }
+
   const candidate = await prisma.candidate.create({
     data: {
-      listId: Number(listId),
+      listId: lid,
       firstName: normalizeNamePartDisplay(firstName),
       lastName: normalizeNamePartDisplay(lastName),
-      order: Number(order ?? 0),
+      order: orderNum,
       gender,
     },
   })

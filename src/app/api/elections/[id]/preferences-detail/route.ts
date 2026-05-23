@@ -3,7 +3,23 @@ import prisma from '@/lib/db'
 
 type Params = { params: Promise<{ id: string }> }
 
-/** Dati aggregati preferenze + trend storico (come sindaco su risultati storici, se personId collegata) */
+export type MayorHistPoint = {
+  year: number
+  electionName: string
+  listName: string
+  percentage: number
+  votes: number
+}
+
+export type CouncilHistPoint = {
+  year: number
+  electionName: string
+  listName: string
+  preferenceVotes: number
+  pctOfListVotes: number
+}
+
+/** Dati aggregati preferenze + trend storico (sindaco e candidati consiglio collegati in anagrafica) */
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const electionId = Number(id)
@@ -11,7 +27,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const [election, listResults] = await Promise.all([
     prisma.election.findUnique({
       where: { id: electionId },
-      include: { lists: { orderBy: { order: 'asc' } } },
+      include: {
+        lists: {
+          orderBy: { order: 'asc' },
+          include: { candidates: { orderBy: { order: 'asc' } } },
+        },
+      },
     }),
     prisma.sectionListResult.findMany({
       where: { section: { electionId } },
@@ -32,6 +53,20 @@ export async function GET(_req: NextRequest, { params }: Params) {
     number,
     { candidateId: number; name: string; votes: number; listId: number; personId: number | null; order: number }
   >()
+
+  for (const list of election.lists) {
+    for (const cand of list.candidates) {
+      candidateMap.set(cand.id, {
+        candidateId: cand.id,
+        name: `${cand.firstName} ${cand.lastName}`,
+        votes: 0,
+        listId: list.id,
+        personId: cand.personId ?? null,
+        order: cand.order,
+      })
+    }
+  }
+
   for (const r of listResults) {
     for (const p of r.preferences) {
       const key = p.candidateId
@@ -68,33 +103,40 @@ export async function GET(_req: NextRequest, { params }: Params) {
       coalitionLogoUrl: l.coalitionLogoUrl,
       candidateMayor: l.candidateMayor,
       coalition: l.coalition,
+      mayorPersonId: l.mayorPersonId ?? null,
       listVotes,
       candidates,
     }
   })
 
-  const personIds = [
-    ...new Set(
-      Array.from(candidateMap.values())
-        .map(c => c.personId)
-        .filter((x): x is number => x != null)
-    ),
-  ]
+  const personIdSet = new Set<number>()
+  for (const c of candidateMap.values()) {
+    if (c.personId != null) personIdSet.add(c.personId)
+  }
+  for (const l of election.lists) {
+    if (l.mayorPersonId != null) personIdSet.add(l.mayorPersonId)
+  }
+  const personIds = [...personIdSet]
 
-  const mayorHistoryByPersonId: Record<
-    number,
-    { year: number; electionName: string; listName: string; percentage: number; votes: number }[]
-  > = {}
+  const mayorHistoryByPersonId: Record<string, MayorHistPoint[]> = {}
+  const councilHistoryByPersonId: Record<string, CouncilHistPoint[]> = {}
 
   if (personIds.length > 0) {
-    const histRows = await prisma.historicalListResult.findMany({
-      where: { mayorPersonId: { in: personIds } },
-      include: { election: true },
-      orderBy: { election: { year: 'asc' } },
-    })
+    const [histMayorRows, histCouncilRows] = await Promise.all([
+      prisma.historicalListResult.findMany({
+        where: { mayorPersonId: { in: personIds } },
+        include: { election: true },
+        orderBy: { election: { year: 'asc' } },
+      }),
+      prisma.historicalCouncilCandidate.findMany({
+        where: { personId: { in: personIds } },
+        include: { listResult: { include: { election: true } } },
+        orderBy: { listResult: { election: { year: 'asc' } } },
+      }),
+    ])
 
-    for (const row of histRows) {
-      const pid = row.mayorPersonId!
+    for (const row of histMayorRows) {
+      const pid = String(row.mayorPersonId!)
       if (!mayorHistoryByPersonId[pid]) mayorHistoryByPersonId[pid] = []
       mayorHistoryByPersonId[pid].push({
         year: row.election.year,
@@ -102,6 +144,19 @@ export async function GET(_req: NextRequest, { params }: Params) {
         listName: row.listName,
         percentage: row.percentage,
         votes: row.votes,
+      })
+    }
+
+    for (const row of histCouncilRows) {
+      const pid = String(row.personId!)
+      const listVotes = row.listResult.votes
+      if (!councilHistoryByPersonId[pid]) councilHistoryByPersonId[pid] = []
+      councilHistoryByPersonId[pid].push({
+        year: row.listResult.election.year,
+        electionName: row.listResult.election.name,
+        listName: row.listResult.listName,
+        preferenceVotes: row.preferenceVotes,
+        pctOfListVotes: listVotes > 0 ? (row.preferenceVotes / listVotes) * 100 : 0,
       })
     }
   }
@@ -114,5 +169,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
     },
     lists,
     mayorHistoryByPersonId,
+    councilHistoryByPersonId,
   })
 }
