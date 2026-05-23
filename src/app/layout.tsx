@@ -16,12 +16,15 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'LosPollios – Spoglio Elezioni',
+  title: 'LosPollios',
   description: 'Gestione spoglio elezioni comunali in tempo reale',
   applicationName: 'LosPollios',
   icons: {
-    icon: [{ url: '/icon', type: 'image/png' }],
-    apple: [{ url: '/apple-icon', type: 'image/png' }],
+    icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/icon-180.png', sizes: '180x180', type: 'image/png' }],
   },
   appleWebApp: {
     capable: true,

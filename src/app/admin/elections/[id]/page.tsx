@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import DeleteElectionButton from './DeleteElectionButton'
 import ClearElectionEntryDataButton from './ClearElectionEntryDataButton'
+import ElectionBackupPanel from './ElectionBackupPanel'
 import { getElectionEntryDataCounts } from '@/lib/clearElectionEntryData'
 import ElectionDetailInfoCard from './ElectionDetailInfoCard'
 import { AdminNavCard } from '@/components/ui/AdminNavCard'
@@ -82,6 +83,12 @@ export default async function ElectionDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-10 space-y-4">
+        <Alert variant="info" title="Backup e ripristino">
+          <div className="max-w-2xl">
+            <ElectionBackupPanel electionId={election.id} electionName={election.name} />
+          </div>
+        </Alert>
+
         <Alert variant="error" title="Zona pericolosa">
           <div className="space-y-6 max-w-2xl">
             <div>

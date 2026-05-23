@@ -45,3 +45,38 @@ export function confirmClearEntryDataTwice(params: {
   }
   return true
 }
+
+/** Due conferme prima di sovrascrivere un’elezione con un file di backup. */
+export function confirmRestoreOverwriteTwice(params: {
+  electionName: string
+  backupName: string
+  backupExportedAt: string | null
+  current: { sections: number; turnouts: number; listResults: number; preferences: number }
+  backup: { sections: number; turnouts: number; listResults: number; preferences: number }
+}): boolean {
+  const { electionName, backupName, backupExportedAt, current, backup } = params
+  const when = backupExportedAt
+    ? new Date(backupExportedAt).toLocaleString('it-IT')
+    : 'data sconosciuta'
+
+  if (
+    !window.confirm(
+      `Sovrascrivere «${electionName}» con il backup «${backupName}»?\n\n` +
+        `Backup del: ${when}\n\n` +
+        `Nel database ora: ${current.sections} sezioni, ${current.turnouts} affluenze, ${current.listResults} risultati lista, ${current.preferences} preferenze.\n` +
+        `Nel backup: ${backup.sections} sezioni, ${backup.turnouts} affluenze, ${backup.listResults} risultati lista, ${backup.preferences} preferenze.\n\n` +
+        `Verranno rimosse sezioni, liste, candidati e tutti i dati di inserimento attuali, poi reimportati dal file. Gli utenti collegati non vengono modificati.`
+    )
+  ) {
+    return false
+  }
+
+  if (
+    !window.confirm(
+      `ULTIMA CONFERMA\n\nPer procedere dovrai digitare il nome esatto dell’elezione nel passo successivo.\n\nSovrascrivere «${electionName}»? L’operazione non si può annullare.`
+    )
+  ) {
+    return false
+  }
+  return true
+}

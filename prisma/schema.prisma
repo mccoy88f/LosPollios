@@ -201,6 +201,23 @@ model User {
   createdAt  DateTime      @default(now())
   /** Sezioni consentite per inserimento; vuoto = tutte le sezioni dell'elezione */
   allowedSections UserSection[]
+  sessions          UserSession[]
+}
+
+/** Sessione di login (JWT + cookie); revocabile dall’admin per sloggare da remoto */
+model UserSession {
+  id         String    @id @default(uuid())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+  userAgent  String?
+  ipAddress  String?
+
+  @@index([userId])
+  @@index([revokedAt, expiresAt])
 }
 
 /** Limita un utente entry/viewer a una o più sezioni dell'elezione collegata */

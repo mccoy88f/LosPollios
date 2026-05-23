@@ -15,6 +15,7 @@ import {
   User,
   Users,
   History,
+  Activity,
   X,
   type LucideIcon,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ const MENU_ICONS: Record<NavMenuIconId, LucideIcon> = {
   shield: Shield,
   user: User,
   database: Database,
+  activity: Activity,
 }
 
 export function AppSideMenu({

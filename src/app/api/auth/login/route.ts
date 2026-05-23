@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/db'
 import { signToken, setTokenCookie } from '@/lib/auth'
+import { createUserSession } from '@/lib/userSession'
 import { isThemePreference, setThemeCookie } from '@/lib/theme'
 import { getAllowedSectionIdsForUser } from '@/lib/userAccess'
 
@@ -25,7 +26,10 @@ export async function POST(req: NextRequest) {
   const allowed = await getAllowedSectionIdsForUser(user.id)
   const allowedSectionIds = allowed ?? undefined
 
+  const sessionId = await createUserSession(user.id, req)
+
   const token = await signToken({
+    sessionId,
     userId: user.id,
     username: user.username,
     role: user.role,

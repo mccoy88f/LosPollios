@@ -106,6 +106,7 @@ export async function PATCH(req: NextRequest) {
   const allowedSectionIds = allowed ?? undefined
 
   const token = await signToken({
+    sessionId: session.sessionId,
     userId: updated.id,
     username: updated.username,
     role: updated.role,

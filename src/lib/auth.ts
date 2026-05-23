@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
+import { isUserSessionActive, touchUserSession } from '@/lib/userSession'
 
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'fallback-secret-please-set-env'
@@ -8,6 +9,7 @@ const SECRET = new TextEncoder().encode(
 const COOKIE = 'lospollios_token'
 
 export interface JwtPayload {
+  sessionId: string
   userId: number
   username: string
   role: string
@@ -45,17 +47,32 @@ export async function verifyToken(token: string): Promise<JwtPayload | null> {
   }
 }
 
-export async function getSession(): Promise<JwtPayload | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(COOKIE)?.value
+async function resolveSession(token: string | undefined): Promise<JwtPayload | null> {
   if (!token) return null
-  return verifyToken(token)
+  const payload = await verifyToken(token)
+  if (!payload?.sessionId) return null
+  if (!(await isUserSessionActive(payload.sessionId))) return null
+  void touchUserSession(payload.sessionId).catch(() => {})
+  return payload
 }
 
+export async function getSession(): Promise<JwtPayload | null> {
+  const cookieStore = await cookies()
+  return resolveSession(cookieStore.get(COOKIE)?.value)
+}
+
+/** Solo JWT (middleware Edge): non verifica revoca sessione su DB. */
 export async function getSessionFromRequest(req: NextRequest): Promise<JwtPayload | null> {
   const token = req.cookies.get(COOKIE)?.value
   if (!token) return null
-  return verifyToken(token)
+  const payload = await verifyToken(token)
+  if (!payload?.sessionId) return null
+  return payload
+}
+
+/** JWT + sessione attiva su DB (API e server components). */
+export async function getSessionFromRequestStrict(req: NextRequest): Promise<JwtPayload | null> {
+  return resolveSession(req.cookies.get(COOKIE)?.value)
 }
 
 export function setTokenCookie(token: string) {

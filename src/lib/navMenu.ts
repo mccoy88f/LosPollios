@@ -12,6 +12,7 @@ export type NavMenuIconId =
   | 'shield'
   | 'user'
   | 'database'
+  | 'activity'
 
 export type NavMenuItem = {
   label: string
@@ -91,6 +92,7 @@ export function buildAppMenuSections(
       items: [
         { label: 'Elezioni', href: '/admin', icon: 'settings' },
         { label: 'Accessi utenti', href: '/admin/users', icon: 'shield' },
+        { label: 'Sessioni attive', href: '/admin/sessions', icon: 'activity' },
         { label: 'Anagrafica', href: '/admin/persons', icon: 'user' },
         { label: 'Dati storici', href: '/admin/historical', icon: 'database' },
       ],
