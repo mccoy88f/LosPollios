@@ -87,6 +87,7 @@ export function LiveListRanking({
   selectedListId,
   onSelectList,
   hint,
+  emphasized,
 }: {
   lists: LiveListResult[]
   totalListVotes: number
@@ -96,6 +97,8 @@ export function LiveListRanking({
   selectedListId?: number | null
   onSelectList?: (listId: number) => void
   hint?: string
+  /** Panoramica live: logo e nomi più grandi, voti espliciti sul totale */
+  emphasized?: boolean
 }) {
   const sorted = [...lists].sort((a, b) => b.votes - a.votes)
   const shown = limit != null ? sorted.slice(0, limit) : sorted
@@ -122,9 +125,11 @@ export function LiveListRanking({
           <ListRow
             key={list.listId}
             list={list}
+            totalListVotes={totalListVotes}
             pct={totalListVotes > 0 ? (list.votes / totalListVotes) * 100 : 0}
             selected={selectedListId === list.listId}
             onSelect={onSelectList ? () => onSelectList(list.listId) : undefined}
+            emphasized={emphasized}
           />
         ))}
       </div>
@@ -137,21 +142,36 @@ export function LiveListRanking({
 
 function ListRow({
   list,
+  totalListVotes,
   pct,
   selected,
   onSelect,
+  emphasized = false,
 }: {
   list: LiveListResult
+  totalListVotes: number
   pct: number
   selected?: boolean
   onSelect?: () => void
+  emphasized?: boolean
 }) {
   const interactive = !!onSelect
+  const logoClass = emphasized
+    ? 'w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-lg shrink-0 bg-white border border-gray-100 dark:border-neutral-700'
+    : 'w-8 h-8 object-contain rounded shrink-0 bg-white border border-gray-100 dark:border-neutral-700'
+  const dotClass = emphasized ? 'w-4 h-4 rounded-full shrink-0' : 'w-3 h-3 rounded-full shrink-0'
+  const coalitionLogoClass = emphasized
+    ? 'w-9 h-9 sm:w-10 sm:h-10 object-contain rounded shrink-0 opacity-90'
+    : 'w-6 h-6 object-contain rounded shrink-0 opacity-90'
+  const nameClass = emphasized
+    ? 'font-semibold text-base sm:text-lg text-gray-900 dark:text-white truncate leading-tight'
+    : 'font-medium text-sm text-gray-900 dark:text-white truncate'
+  const barClass = emphasized ? 'h-3' : 'h-2'
 
   return (
     <div className={interactive ? liveSelectableRowClass(!!selected) : undefined}>
       <div
-        className={cn(interactive && 'py-1')}
+        className={cn(interactive && (emphasized ? 'py-2' : 'py-1'))}
         role={interactive ? 'button' : undefined}
         tabIndex={interactive ? 0 : undefined}
         onClick={interactive ? onSelect : undefined}
@@ -166,32 +186,60 @@ function ListRow({
             : undefined
         }
       >
-      <div className="flex items-center justify-between mb-1 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className={cn('flex items-center justify-between gap-3', emphasized ? 'mb-2' : 'mb-1')}>
+        <div className={cn('flex items-center min-w-0', emphasized ? 'gap-3 sm:gap-4' : 'gap-2')}>
           {list.listLogoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={list.listLogoUrl} alt="" className="w-8 h-8 object-contain rounded shrink-0 bg-white border border-gray-100" />
+            <img src={list.listLogoUrl} alt="" className={logoClass} />
           ) : (
-            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: list.color }} />
+            <div className={dotClass} style={{ backgroundColor: list.color }} />
           )}
           {list.coalitionLogoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={list.coalitionLogoUrl} alt="" title="Coalizione" className="w-6 h-6 object-contain rounded shrink-0 opacity-90" />
+            <img src={list.coalitionLogoUrl} alt="" title="Coalizione" className={coalitionLogoClass} />
           ) : null}
-          <span className="font-medium text-sm text-gray-900 truncate">{list.listName}</span>
-          {list.candidateMayor && <span className="text-xs text-gray-400 hidden sm:inline truncate">{list.candidateMayor}</span>}
-          {list.coalition && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded hidden md:inline shrink-0">{list.coalition}</span>
-          )}
+          <div className="min-w-0">
+            <span className={nameClass}>{list.listName}</span>
+            {(list.candidateMayor || list.coalition) && (
+              <p
+                className={cn(
+                  'text-gray-500 dark:text-neutral-400 truncate mt-0.5',
+                  emphasized ? 'text-xs sm:text-sm' : 'text-xs'
+                )}
+              >
+                {list.candidateMayor}
+                {list.candidateMayor && list.coalition && ' · '}
+                {list.coalition}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 tabular-nums">
-          <span className="font-bold text-gray-900">{formatPercent(pct)}</span>
-          <span className="text-sm text-gray-500 w-20 text-right">{formatNumber(list.votes)}</span>
+        <div
+          className={cn(
+            'shrink-0 tabular-nums text-right',
+            emphasized ? 'flex flex-col items-end gap-0.5' : 'flex items-center gap-3'
+          )}
+        >
+          <span
+            className={cn(
+              'font-bold text-gray-900 dark:text-white',
+              emphasized ? 'text-base sm:text-lg' : ''
+            )}
+          >
+            {formatNumber(list.votes)}
+            <span className="font-normal text-gray-500 dark:text-neutral-400">
+              {' '}
+              / {formatNumber(totalListVotes)}
+            </span>
+          </span>
+          <span className={emphasized ? 'text-sm font-medium text-gray-600 dark:text-neutral-300' : 'font-bold text-gray-900 dark:text-white'}>
+            {formatPercent(pct)}
+          </span>
         </div>
       </div>
-      <div className="w-full bg-gray-100 rounded-full h-2">
+      <div className={cn('w-full bg-gray-100 dark:bg-neutral-800 rounded-full', barClass)}>
         <div
-          className="h-2 rounded-full transition-all duration-700"
+          className={cn('rounded-full transition-all duration-700', barClass)}
           style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: list.color }}
         />
       </div>

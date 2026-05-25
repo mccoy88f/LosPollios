@@ -185,7 +185,11 @@ function LiveDashboardInner({
       <LiveKpiStrip data={data} lastPulse={lastPulse} hasWarnings={hasWarnings} />
 
       {showListRanking && (
-        <LiveListRanking {...listRankingProps} limit={view === 'panorama' ? 6 : undefined} />
+        <LiveListRanking
+          {...listRankingProps}
+          limit={view === 'panorama' ? 6 : undefined}
+          emphasized={view === 'panorama'}
+        />
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
