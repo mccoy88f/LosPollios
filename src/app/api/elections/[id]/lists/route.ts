@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       coalitionLogoUrl: coalitionLogoUrl?.trim() || null,
       candidateMayor: normalizeFullNameLabel(candidateMayor),
       mayorPersonId: mayorPersonId != null && mayorPersonId !== '' ? Number(mayorPersonId) : null,
-      coalition,
+      coalition: coalition == null || String(coalition).trim() === '' ? null : String(coalition).trim(),
       order: Number(order ?? 0),
       notes,
     },

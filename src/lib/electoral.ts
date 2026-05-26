@@ -1,5 +1,17 @@
 // Calcoli elettorali per elezioni comunali italiane
 
+/** Testo non vuoto dopo trim; stringa vuota / null → null (evita `'' ?? sindaco` che resta ''). */
+export function nonEmptyTrimmed(s: string | null | undefined): string | null {
+  if (s == null) return null
+  const t = String(s).trim()
+  return t === '' ? null : t
+}
+
+/** Chiave blocco liste: coalizione esplicita, altrimenti sindaco, altrimenti lista sola */
+export function blocKeyForList(list: ListInput): string {
+  return nonEmptyTrimmed(list.coalition) ?? nonEmptyTrimmed(list.candidateMayor) ?? `__${list.listId}`
+}
+
 export interface ListInput {
   listId: number
   listName: string
@@ -60,15 +72,29 @@ export function dHondt(votes: { id: number; votes: number }[], totalSeats: numbe
   return result
 }
 
+/** Etichetta da mostrare per un blocco (coalizione o liste collegate allo stesso sindaco). */
+export function coalitionBlockLabel(lists: ListInput[]): string {
+  const namedCoalitions = [
+    ...new Set(lists.map(l => l.coalition?.trim()).filter((c): c is string => Boolean(c))),
+  ]
+  if (namedCoalitions.length === 1) return namedCoalitions[0]
+  if (namedCoalitions.length > 1) return namedCoalitions.join(' · ')
+  if (lists.length === 1) {
+    const l = lists[0]
+    return l.shortName?.trim() || l.listName
+  }
+  return lists.map(l => l.shortName?.trim() || l.listName).join(' · ')
+}
+
 // Raggruppa liste per coalizione / candidato sindaco
 export function groupCoalitions(lists: ListInput[], totalVotes: number): CoalitionResult[] {
   const map = new Map<string, CoalitionResult>()
 
   for (const list of lists) {
-    const key = list.coalition ?? list.candidateMayor ?? `__${list.listId}`
+    const key = blocKeyForList(list)
     if (!map.has(key)) {
       map.set(key, {
-        coalition: list.coalition ?? list.candidateMayor ?? list.listName,
+        coalition: list.listName,
         candidateMayor: list.candidateMayor,
         totalVotes: 0,
         percentage: 0,
@@ -82,7 +108,11 @@ export function groupCoalitions(lists: ListInput[], totalVotes: number): Coaliti
   }
 
   const coalitions = Array.from(map.values())
-    .map(c => ({ ...c, percentage: totalVotes > 0 ? (c.totalVotes / totalVotes) * 100 : 0 }))
+    .map(c => ({
+      ...c,
+      coalition: coalitionBlockLabel(c.lists),
+      percentage: totalVotes > 0 ? (c.totalVotes / totalVotes) * 100 : 0,
+    }))
     .sort((a, b) => b.totalVotes - a.totalVotes)
 
   if (coalitions.length > 0) coalitions[0].isWinner = true
@@ -100,8 +130,10 @@ export function calculateProjection(
   const coalitions = groupCoalitions(lists, totalVotes)
   const winningCoalition = coalitions[0]
 
+  const electionTypeNorm = String(electionType ?? '').trim().toLowerCase()
+
   const needsRunoff =
-    electionType === 'large' &&
+    electionTypeNorm === 'large' &&
     !!winningCoalition &&
     totalVotes > 0 &&
     winningCoalition.percentage <= 50
@@ -110,7 +142,7 @@ export function calculateProjection(
   let mayorSeats: number
   let oppositionSeats: number
 
-  if (electionType === 'large') {
+  if (electionTypeNorm === 'large') {
     // Minimo 60% dei seggi alla coalizione vincente
     const proportional = totalVotes > 0 ? Math.round(totalSeats * winningCoalition.totalVotes / totalVotes) : 0
     mayorSeats = Math.max(Math.ceil(totalSeats * 0.6), proportional)
@@ -122,7 +154,7 @@ export function calculateProjection(
 
   // Liste idonee (sopra soglia per comuni grandi)
   const isEligible = (l: ListInput) =>
-    electionType === 'large' ? totalVotes > 0 && (l.votes / totalVotes) * 100 >= threshold : true
+    electionTypeNorm === 'large' ? totalVotes > 0 && (l.votes / totalVotes) * 100 >= threshold : true
 
   const winningListIds = new Set(winningCoalition?.lists.map(l => l.listId) ?? [])
 

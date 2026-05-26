@@ -455,8 +455,13 @@ export default function AnalysisPanel({
                         <div className="flex items-center gap-2">
                           {i === 0 && <Crown className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />}
                           <div>
-                            <p className="font-semibold text-sm">{c.candidateMayor || c.coalition}</p>
-                            {c.candidateMayor && <p className="text-xs text-gray-500 dark:text-neutral-400">{c.coalition}</p>}
+                            <p className="font-semibold text-sm">{c.coalition}</p>
+                            {c.candidateMayor &&
+                              c.candidateMayor.trim() !== c.coalition.trim() && (
+                                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                                  Sindaco: {c.candidateMayor}
+                                </p>
+                              )}
                           </div>
                         </div>
                         <div className="text-right">

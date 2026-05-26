@@ -37,7 +37,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(body.mayorPersonId !== undefined && {
         mayorPersonId: body.mayorPersonId === null || body.mayorPersonId === '' ? null : Number(body.mayorPersonId),
       }),
-      ...(body.coalition !== undefined && { coalition: body.coalition }),
+      ...(body.coalition !== undefined && {
+        coalition:
+          body.coalition === null || String(body.coalition).trim() === ''
+            ? null
+            : String(body.coalition).trim(),
+      }),
       ...(body.order !== undefined && { order: Number(body.order) }),
       ...(body.notes !== undefined && { notes: body.notes }),
     },
