@@ -1,12 +1,20 @@
 # LosPollios
 
-**Versione attuale: 1.0.5**
+**Versione attuale: 1.0.6**
 
 Applicazione web per **organizzare e seguire lo spoglio** delle **elezioni amministrative** (comunali): si inseriscono i dati sezione per sezione, si vedono i risultati aggiornati in tempo reale e le proiezioni (coalizioni, seggi, soglie).
 
 Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, senza entrare nei dettagli tecnici.
 
 ---
+
+## Novità in v1.0.6
+
+- **Tabellone pubblico** — pagina fullscreen senza login (affluenza, sezioni, voti lista); attivabile da scheda elezione con link copiabile, intervallo di aggiornamento configurabile e polling leggero (cache server).
+- **Coalizioni in evidenza** — sul tabellone, prime coalizioni/liste più grandi con loghi (come in live); resto compatto sotto.
+- **Spettatori collegati** — conteggio stimato degli utenti simultanei sul tabellone pubblico.
+- **Import Excel accessi** — modello demo scaricabile e import bulk rappresentanti di lista da Gestione accessi.
+- **Credits** — icona GitHub nel footer (repository [mccoy88f/lospollios](https://github.com/mccoy88f/lospollios)).
 
 ## Novità in v1.0.5
 
@@ -214,4 +222,4 @@ Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres 
 
 ---
 
-*LosPollios v1.0.5 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
+*LosPollios v1.0.6 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*

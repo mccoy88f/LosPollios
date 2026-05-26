@@ -5,6 +5,10 @@ const PUBLIC_PAGE_PATHS = ['/login']
 
 const PUBLIC_API_PATHS = ['/api/auth/login']
 
+function isPublicBoardPath(pathname: string): boolean {
+  return pathname.startsWith('/public/') || pathname.startsWith('/api/public/')
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -34,13 +38,17 @@ export async function middleware(req: NextRequest) {
   const session = await getSessionFromRequest(req)
 
   if (pathname.startsWith('/api')) {
-    if (PUBLIC_API_PATHS.some(p => pathname === p)) {
+    if (PUBLIC_API_PATHS.some(p => pathname === p) || isPublicBoardPath(pathname)) {
       return NextResponse.next()
     }
     if (!session) {
       return NextResponse.json({ error: 'Autenticazione richiesta' }, { status: 401 })
     }
     return NextResponse.next()
+  }
+
+  if (isPublicBoardPath(pathname)) {
+    return withPathname()
   }
 
   if (PUBLIC_PAGE_PATHS.some(p => pathname === p)) {

@@ -147,3 +147,258 @@ export async function updateUser(
 export async function deleteUser(userId: number) {
   await prisma.user.delete({ where: { id: userId } })
 }
+
+export type UserImportInput = {
+  username: string
+  password: string
+  name?: string | null
+  role: string
+  listId?: number | null
+  sectionIds?: number[]
+  active?: boolean
+  electionId?: number | null
+}
+
+export type UserImportResult = {
+  created: number
+  errors: { row: number; username: string; message: string }[]
+}
+
+function normLabel(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+export async function importUsers(
+  rows: UserImportInput[],
+  opts?: { startRow?: number }
+): Promise<UserImportResult> {
+  const startRow = opts?.startRow ?? 2
+  const result: UserImportResult = { created: 0, errors: [] }
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]
+    const line = startRow + i
+    try {
+      const user = await createUser({
+        username: row.username,
+        password: row.password,
+        name: row.name,
+        role: row.role,
+        electionId: row.electionId,
+        listId: row.listId,
+        sectionIds: row.sectionIds,
+      })
+      if (row.active === false) {
+        await updateUser(user.id, { active: false })
+      }
+      result.created++
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Errore'
+      result.errors.push({ row: line, username: row.username, message: msg })
+    }
+  }
+
+  return result
+}
+
+export async function resolveImportRowsForElection(
+  electionId: number,
+  parsed: {
+    username: string
+    password: string
+    name: string | null
+    role: string
+    listName: string | null
+    sectionNumbers: number[]
+    active: boolean
+  }[]
+): Promise<{ inputs: UserImportInput[]; errors: { row: number; username: string; message: string }[] }> {
+  const lists = await prisma.electionList.findMany({
+    where: { electionId },
+    select: { id: true, name: true },
+  })
+  const sections = await prisma.section.findMany({
+    where: { electionId },
+    select: { id: true, number: true },
+  })
+  const listByNorm = new Map(lists.map(l => [normLabel(l.name), l.id]))
+  const sectionByNumber = new Map(sections.map(s => [s.number, s.id]))
+
+  const inputs: UserImportInput[] = []
+  const errors: { row: number; username: string; message: string }[] = []
+
+  parsed.forEach((row, i) => {
+    const line = i + 2
+    if (row.role === 'admin') {
+      inputs.push({
+        username: row.username,
+        password: row.password,
+        name: row.name,
+        role: 'admin',
+        electionId: null,
+        listId: null,
+        active: row.active,
+      })
+      return
+    }
+
+    let listId: number | null = null
+    if (row.listName) {
+      const id = listByNorm.get(normLabel(row.listName))
+      if (!id) {
+        errors.push({
+          row: line,
+          username: row.username,
+          message: `Lista «${row.listName}» non trovata in questa elezione.`,
+        })
+        return
+      }
+      listId = id
+    }
+
+    const sectionIds: number[] = []
+    for (const num of row.sectionNumbers) {
+      const sid = sectionByNumber.get(num)
+      if (!sid) {
+        errors.push({
+          row: line,
+          username: row.username,
+          message: `Sezione n. ${num} non trovata.`,
+        })
+        return
+      }
+      sectionIds.push(sid)
+    }
+
+    inputs.push({
+      username: row.username,
+      password: row.password,
+      name: row.name,
+      role: row.role,
+      electionId,
+      listId,
+      sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
+      active: row.active,
+    })
+  })
+
+  return { inputs, errors }
+}
+
+export async function resolveImportRowsGlobal(
+  parsed: {
+    username: string
+    password: string
+    name: string | null
+    role: string
+    listName: string | null
+    sectionNumbers: number[]
+    active: boolean
+    electionLabel: string | null
+  }[]
+): Promise<{ inputs: UserImportInput[]; errors: { row: number; username: string; message: string }[] }> {
+  const elections = await prisma.election.findMany({
+    select: { id: true, name: true, commune: true },
+  })
+  const electionByNorm = new Map<string, number>()
+  for (const e of elections) {
+    electionByNorm.set(normLabel(e.name), e.id)
+    electionByNorm.set(normLabel(`${e.name} (${e.commune})`), e.id)
+    electionByNorm.set(normLabel(e.commune), e.id)
+  }
+
+  const allLists = await prisma.electionList.findMany({
+    select: { id: true, name: true, electionId: true },
+  })
+  const listsByElection = new Map<number, Map<string, number>>()
+  for (const l of allLists) {
+    if (!listsByElection.has(l.electionId)) listsByElection.set(l.electionId, new Map())
+    listsByElection.get(l.electionId)!.set(normLabel(l.name), l.id)
+  }
+
+  const allSections = await prisma.section.findMany({
+    select: { id: true, number: true, electionId: true },
+  })
+  const sectionsByElection = new Map<number, Map<number, number>>()
+  for (const s of allSections) {
+    if (!sectionsByElection.has(s.electionId)) sectionsByElection.set(s.electionId, new Map())
+    sectionsByElection.get(s.electionId)!.set(s.number, s.id)
+  }
+
+  const inputs: UserImportInput[] = []
+  const errors: { row: number; username: string; message: string }[] = []
+
+  parsed.forEach((row, i) => {
+    const line = i + 2
+    if (row.role === 'admin') {
+      inputs.push({
+        username: row.username,
+        password: row.password,
+        name: row.name,
+        role: 'admin',
+        electionId: null,
+        listId: null,
+        active: row.active,
+      })
+      return
+    }
+
+    const label = row.electionLabel?.trim()
+    if (!label) {
+      errors.push({ row: line, username: row.username, message: 'Elezione mancante.' })
+      return
+    }
+    const electionId = electionByNorm.get(normLabel(label))
+    if (!electionId) {
+      errors.push({
+        row: line,
+        username: row.username,
+        message: `Elezione «${label}» non trovata.`,
+      })
+      return
+    }
+
+    let listId: number | null = null
+    if (row.listName) {
+      const listMap = listsByElection.get(electionId)
+      const id = listMap?.get(normLabel(row.listName))
+      if (!id) {
+        errors.push({
+          row: line,
+          username: row.username,
+          message: `Lista «${row.listName}» non trovata nell’elezione indicata.`,
+        })
+        return
+      }
+      listId = id
+    }
+
+    const sectionByNumber = sectionsByElection.get(electionId) ?? new Map()
+    const sectionIds: number[] = []
+    for (const num of row.sectionNumbers) {
+      const sid = sectionByNumber.get(num)
+      if (!sid) {
+        errors.push({
+          row: line,
+          username: row.username,
+          message: `Sezione n. ${num} non trovata nell’elezione indicata.`,
+        })
+        return
+      }
+      sectionIds.push(sid)
+    }
+
+    inputs.push({
+      username: row.username,
+      password: row.password,
+      name: row.name,
+      role: row.role,
+      electionId,
+      listId,
+      sectionIds: sectionIds.length > 0 ? sectionIds : undefined,
+      active: row.active,
+    })
+  })
+
+  return { inputs, errors }
+}

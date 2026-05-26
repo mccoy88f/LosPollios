@@ -7,6 +7,7 @@ import ClearElectionEntryDataButton from './ClearElectionEntryDataButton'
 import ElectionBackupPanel from './ElectionBackupPanel'
 import { getElectionEntryDataCounts } from '@/lib/clearElectionEntryData'
 import ElectionDetailInfoCard from './ElectionDetailInfoCard'
+import ElectionPublicBoardPanel from './ElectionPublicBoardPanel'
 import { AdminNavCard } from '@/components/ui/AdminNavCard'
 import { BarChart3, ClipboardList, ClipboardPen, Landmark, LineChart, Users } from 'lucide-react'
 
@@ -82,6 +83,18 @@ export default async function ElectionDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-10 space-y-3 max-w-2xl">
+        <details className="rounded-xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-900/50 group" open>
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-emerald-950 dark:text-emerald-100 select-none">
+            <span>Tabellone pubblico</span>
+            <span className="text-xs font-normal text-emerald-800/80 dark:text-emerald-200/80 group-open:hidden">
+              espandi
+            </span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 border-t border-emerald-200/80 dark:border-emerald-900/50">
+            <ElectionPublicBoardPanel electionId={election.id} />
+          </div>
+        </details>
+
         <details className="rounded-xl border border-blue-200 bg-blue-50/60 dark:bg-blue-950/20 dark:border-blue-900/50 group">
           <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-blue-950 dark:text-blue-100 select-none">
             <span>Backup e ripristino</span>

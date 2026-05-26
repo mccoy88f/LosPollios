@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { AppLogo } from '@/components/AppLogo'
+import { SiteCredits } from '@/components/SiteCredits'
 import { formFieldClass } from '@/lib/formFieldStyles'
 
 function LoginForm() {
@@ -85,9 +86,9 @@ function LoginForm() {
             {loading ? 'Accesso...' : 'Accedi'}
           </Button>
         </form>
-        <p className="text-center text-xs text-gray-400 mt-8">
-          LosPollios · Antonello Migliorelli
-        </p>
+        <div className="mt-8">
+          <SiteCredits variant="compact" showVersion={false} className="text-gray-400" />
+        </div>
       </div>
     </div>
   )

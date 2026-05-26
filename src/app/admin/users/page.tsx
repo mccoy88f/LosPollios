@@ -13,7 +13,8 @@ export default function AdminUsersPage() {
       </nav>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestione accessi</h1>
       <p className="text-gray-500 text-sm mb-6">
-        Crea, modifica ed elimina tutti gli account. Limita elezione e sezioni per i rappresentanti di lista.
+        Crea, modifica ed elimina tutti gli account. Puoi importare più operatori da Excel con il modello demo.
+        Limita elezione, lista e sezioni per i rappresentanti di lista.
       </p>
       <UserAccessManager showElectionPicker />
     </div>

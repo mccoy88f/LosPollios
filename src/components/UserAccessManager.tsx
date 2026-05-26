@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { confirmDelete } from '@/lib/confirmDelete'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
@@ -8,6 +8,7 @@ import { Card, CardBody, CardTitle } from '@/components/ui/Card'
 import { Drawer } from '@/components/ui/Drawer'
 import { SectionPicker, UserEditFields } from '@/components/UserEditFields'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { downloadAccessExcelTemplate, parseAccessExcel, type AccessParsedRow } from '@/lib/accessExcel'
 import { Pencil, Trash2 } from 'lucide-react'
 
 type Section = { id: number; number: number; name: string | null }
@@ -54,6 +55,14 @@ export function UserAccessManager({
   const [editForm, setEditForm] = useState({ ...emptyForm, password: '', active: true })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [importPreview, setImportPreview] = useState<AccessParsedRow[] | null>(null)
+  const [importParseErrors, setImportParseErrors] = useState<string[]>([])
+  const [importBusy, setImportBusy] = useState(false)
+  const [importResult, setImportResult] = useState<{
+    created: number
+    errors: { row: number; username: string; message: string }[]
+  } | null>(null)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const editingUser = editingId != null ? users.find(u => u.id === editingId) : null
 
@@ -179,6 +188,70 @@ export function UserAccessManager({
     setSaving(false)
   }
 
+  async function onExcelChosen(files: FileList | null) {
+    if (!files?.[0]) return
+    setImportResult(null)
+    setMsg('')
+    try {
+      const buf = await files[0].arrayBuffer()
+      const { rows, errors } = parseAccessExcel(buf, {
+        includeElectionColumn: showElectionPicker && !fixedElectionId,
+      })
+      setImportPreview(rows)
+      setImportParseErrors(errors)
+      if (rows.length === 0 && errors.length === 0) {
+        setMsg('Nessuna riga valida nel file.')
+      }
+    } catch {
+      setImportPreview(null)
+      setImportParseErrors(['Impossibile leggere il file Excel.'])
+    }
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function confirmImport() {
+    if (!importPreview?.length) return
+    setImportBusy(true)
+    setImportResult(null)
+    setMsg('')
+    const url = fixedElectionId
+      ? `/api/elections/${fixedElectionId}/users/import`
+      : '/api/admin/users/import'
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows: importPreview }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setImportResult({ created: data.created, errors: data.errors ?? [] })
+      setImportPreview(null)
+      setImportParseErrors([])
+      setMsg(
+        data.created > 0
+          ? `Importati ${data.created} utent${data.created === 1 ? 'e' : 'i'}${
+              data.errors?.length ? ` (${data.errors.length} righe con errori)` : ''
+            }.`
+          : 'Nessun utente creato.'
+      )
+      void loadUsers()
+    } else {
+      setMsg(data.error || 'Import non riuscito')
+      if (data.errors) setImportResult({ created: 0, errors: data.errors })
+    }
+    setImportBusy(false)
+  }
+
+  function downloadTemplate(withLists: boolean) {
+    const listNames = withLists && lists.length > 0 ? lists.map(l => l.name) : undefined
+    const suffix = fixedElectionId ? `elezione-${fixedElectionId}` : 'globale'
+    downloadAccessExcelTemplate({
+      filename: `lospollios-modello-accessi-${suffix}.xlsx`,
+      includeElectionColumn: showElectionPicker && !fixedElectionId,
+      listNames,
+    })
+  }
+
   async function removeUser(u: UserRow) {
     if (!confirmDelete(`Eliminare l'account "${u.username}"?`)) return
     const url = fixedElectionId ? `/api/elections/${fixedElectionId}/users` : `/api/admin/users/${u.id}`
@@ -199,6 +272,108 @@ export function UserAccessManager({
   return (
     <div className="space-y-6">
       {msg && <Alert variant="info">{msg}</Alert>}
+
+      <Card>
+        <CardBody>
+          <CardTitle className="mb-2">Import da Excel</CardTitle>
+          <p className="text-sm text-gray-500 mb-4">
+            Carica più account in una volta (es. rappresentanti di lista). Scarica il modello demo, compilalo e
+            importalo. Le password nel file sono temporanee: chiedi agli operatori di cambiarle al primo accesso.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button type="button" variant="secondary" size="sm" onClick={() => downloadTemplate(false)}>
+              Scarica modello demo
+            </Button>
+            {effectiveElectionId && lists.length > 0 && (
+              <Button type="button" variant="secondary" size="sm" onClick={() => downloadTemplate(true)}>
+                Modello con nomi liste
+              </Button>
+            )}
+            <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
+              Scegli file Excel
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={e => void onExcelChosen(e.target.files)}
+            />
+          </div>
+
+          {importParseErrors.length > 0 && (
+            <Alert variant="warning" className="mb-4" title="Avvisi sul file">
+              <ul className="list-disc pl-4 text-sm space-y-0.5">
+                {importParseErrors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </Alert>
+          )}
+
+          {importPreview && importPreview.length > 0 && (
+            <div className="rounded-lg border border-gray-200 overflow-hidden mb-4">
+              <p className="text-xs font-medium text-gray-600 bg-gray-50 px-3 py-2 border-b border-gray-200">
+                Anteprima — {importPreview.length} righe da importare
+              </p>
+              <div className="overflow-x-auto max-h-48">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b border-gray-100">
+                      <th className="px-3 py-2">Username</th>
+                      <th className="px-3 py-2">Nome</th>
+                      <th className="px-3 py-2">Ruolo</th>
+                      <th className="px-3 py-2">Lista</th>
+                      <th className="px-3 py-2">Sezioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreview.map((r, i) => (
+                      <tr key={i} className="border-b border-gray-50 last:border-0">
+                        <td className="px-3 py-1.5 font-mono">{r.username}</td>
+                        <td className="px-3 py-1.5">{r.name || '—'}</td>
+                        <td className="px-3 py-1.5">{r.role}</td>
+                        <td className="px-3 py-1.5">{r.listName || '—'}</td>
+                        <td className="px-3 py-1.5">
+                          {r.sectionNumbers.length ? r.sectionNumbers.join(', ') : 'Tutte'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border-t border-gray-200">
+                <Button type="button" size="sm" disabled={importBusy} onClick={() => void confirmImport()}>
+                  {importBusy ? 'Importazione…' : `Conferma import (${importPreview.length})`}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setImportPreview(null)
+                    setImportParseErrors([])
+                  }}
+                >
+                  Annulla
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {importResult && importResult.errors.length > 0 && (
+            <Alert variant="warning" title="Errori in import">
+              <ul className="list-disc pl-4 text-sm space-y-0.5 max-h-32 overflow-y-auto">
+                {importResult.errors.map((e, i) => (
+                  <li key={i}>
+                    Riga {e.row} · {e.username}: {e.message}
+                  </li>
+                ))}
+              </ul>
+            </Alert>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardBody>

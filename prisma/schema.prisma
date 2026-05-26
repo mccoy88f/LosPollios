@@ -31,6 +31,11 @@ model Election {
   turnoutPercent              Float?
   ballotsBlank                Int?
   ballotsInvalidInclBlank     Int?
+  /** Tabellone pubblico (solo affluenza, scrutinio sezioni, voti lista) — URL con token */
+  publicBoardEnabled          Boolean  @default(false)
+  publicBoardToken            String?  @unique
+  /** Intervallo aggiornamento consigliato al client (secondi); cache server uguale */
+  publicBoardRefreshSeconds   Int      @default(60)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -38,6 +43,16 @@ model Election {
   lists        ElectionList[]
   turnouts     SectionTurnout[]
   users        User[]
+}
+
+/** Presenza tabellone pubblico (heartbeat client, conteggio spettatori simultanei) */
+model PublicBoardPresence {
+  clientId    String
+  boardToken  String
+  lastSeenAt  DateTime @updatedAt
+
+  @@id([clientId, boardToken])
+  @@index([boardToken, lastSeenAt])
 }
 
 // ─── Sezione elettorale ───────────────────────────────────────────────────────
