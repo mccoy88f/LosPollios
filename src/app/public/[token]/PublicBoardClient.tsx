@@ -6,8 +6,7 @@ import { SiteCredits } from '@/components/SiteCredits'
 import type { PublicBoardPayload } from '@/lib/publicBoard'
 import { getPublicBoardClientId } from '@/lib/publicBoardClientId'
 import { getSectionFillColor } from '@/lib/sectionColors'
-import type { SectionUiStatus } from '@/lib/sectionStatus'
-import { Users } from 'lucide-react'
+import { AlertTriangle, Users } from 'lucide-react'
 
 const PRESENCE_INTERVAL_MS = 30_000
 
@@ -100,39 +99,54 @@ export default function PublicBoardClient({ token }: { token: string }) {
     minute: '2-digit',
   })
 
-  const statCards = [
-    { label: 'Affluenza', value: `${progress.turnoutPercent.toFixed(1)}%`, sub: progress.totalActualVoters },
-    { label: 'Scrutinio', value: `${progress.scrutinizedPercent.toFixed(1)}%`, sub: progress.totalListVotes },
+  const statCards: { label: string; value: string; sub?: string | null }[] = [
     {
-      label: 'Sez. votanti',
-      value: `${progress.sectionsWithTurnout}/${progress.totalSections}`,
-      sub: null as number | null,
+      label: 'Affluenza',
+      value: `${progress.turnoutPercent.toFixed(1)}%`,
+      sub: `${progress.totalActualVoters.toLocaleString('it-IT')} votanti su ${progress.totalTheoreticalVoters.toLocaleString('it-IT')} iscritti`,
     },
     {
-      label: 'Sez. con voti',
+      label: 'Scrutinio',
+      value: `${progress.scrutinizedPercent.toFixed(1)}%`,
+      sub: `${progress.totalListVotes.toLocaleString('it-IT')} voti di lista scrutinati`,
+    },
+    {
+      label: 'Votanti',
+      value: progress.totalActualVoters.toLocaleString('it-IT'),
+      sub: `su ${progress.totalTheoreticalVoters.toLocaleString('it-IT')} iscritti (aventi diritto)`,
+    },
+    {
+      label: 'Sezioni',
       value: `${progress.sectionsWithVotes}/${progress.totalSections}`,
-      sub: null as number | null,
+      sub: `${progress.sectionsWithTurnout}/${progress.totalSections} con dati affluenza`,
     },
   ]
 
   return (
-    <div className="h-full w-full flex flex-col text-slate-900 overflow-hidden">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5">
+    <div className="h-full w-full flex flex-col text-slate-900 dark:text-slate-100 overflow-hidden">
+      <header className="shrink-0 border-b border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 sm:px-4 sm:py-2.5">
         <div className="flex items-baseline justify-between gap-2 min-w-0">
           <div className="min-w-0">
             <h1 className="font-bold truncate text-[clamp(0.875rem,3.5vw,1.25rem)] leading-tight">
               {election.name}
             </h1>
-            <p className="text-slate-500 truncate text-[clamp(0.65rem,2.5vw,0.8125rem)]">{election.commune}</p>
+            <p className="text-slate-500 dark:text-neutral-400 truncate text-[clamp(0.65rem,2.5vw,0.8125rem)]">{election.commune}</p>
           </div>
-          <div className="shrink-0 text-right text-[clamp(0.55rem,2vw,0.6875rem)] text-slate-400 tabular-nums leading-snug">
-            <p className="inline-flex items-center justify-end gap-1 font-medium text-slate-500">
+          <div className="shrink-0 text-right text-[clamp(0.55rem,2vw,0.6875rem)] text-slate-400 dark:text-neutral-500 tabular-nums leading-snug">
+            <p className="inline-flex items-center justify-end gap-1 font-medium text-slate-500 dark:text-neutral-300">
               <Users className="w-3 h-3 shrink-0" aria-hidden />
               {data.activeViewers === 1 ? '1 collegato' : `${data.activeViewers} collegati`}
             </p>
-            <p>
-              ogni {refreshSeconds}s · {updatedLabel}
-              {error ? ' · ⚠' : ''}
+            <p className="inline-flex items-center justify-end gap-1 flex-wrap">
+              <span>
+                ogni {refreshSeconds}s · {updatedLabel}
+              </span>
+              {error ? (
+                <span className="inline-flex items-center gap-0.5 text-amber-700 dark:text-amber-500" title={error}>
+                  <AlertTriangle className="w-3 h-3 shrink-0" aria-hidden />
+                  <span className="sr-only">Errore ultimo aggiornamento</span>
+                </span>
+              ) : null}
             </p>
           </div>
         </div>
@@ -142,33 +156,33 @@ export default function PublicBoardClient({ token }: { token: string }) {
         {statCards.map(c => (
           <div
             key={c.label}
-            className="bg-white rounded-lg border border-slate-200 px-2 py-1.5 sm:px-2.5 sm:py-2 flex flex-col justify-center min-w-0"
+            className="bg-white dark:bg-neutral-900 rounded-lg border border-slate-200 dark:border-neutral-700 px-2 py-1.5 sm:px-2.5 sm:py-2 flex flex-col justify-center min-w-0"
           >
-            <p className="text-[clamp(0.5rem,1.8vw,0.625rem)] text-slate-500 uppercase tracking-wide truncate">
+            <p className="text-[clamp(0.5rem,1.8vw,0.625rem)] text-slate-500 dark:text-neutral-400 uppercase tracking-wide truncate">
               {c.label}
             </p>
             <p className="font-bold tabular-nums text-[clamp(0.75rem,3vw,1.125rem)] leading-none mt-0.5 truncate">
               {c.value}
             </p>
-            {c.sub != null && (
-              <p className="text-[clamp(0.5rem,1.6vw,0.625rem)] text-slate-400 tabular-nums truncate">
-                {c.sub.toLocaleString('it-IT')}
+            {c.sub != null && c.sub !== '' && (
+              <p className="text-[clamp(0.5rem,1.6vw,0.625rem)] text-slate-400 dark:text-neutral-500 tabular-nums leading-snug mt-0.5 line-clamp-2">
+                {c.sub}
               </p>
             )}
           </div>
         ))}
       </div>
 
-      <main className="flex-1 min-h-0 grid grid-cols-1 grid-rows-2 md:grid-cols-2 md:grid-rows-1 gap-2 px-2 sm:px-3 pb-2 sm:pb-3 overflow-hidden">
-        <section className="min-h-0 flex flex-col overflow-hidden bg-white rounded-lg border border-slate-200">
-          <h2 className="shrink-0 px-2 py-1 text-[clamp(0.55rem,2vw,0.6875rem)] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-100">
+      <main className="flex-1 min-h-0 grid grid-cols-1 grid-rows-2 md:grid-cols-4 md:grid-rows-1 gap-2 px-2 sm:px-3 pb-2 sm:pb-3 overflow-hidden">
+        <section className="min-h-0 flex flex-col overflow-hidden bg-white dark:bg-neutral-900 rounded-lg border border-slate-200 dark:border-neutral-700 md:col-span-3">
+          <h2 className="shrink-0 px-2 py-1 text-[clamp(0.55rem,2vw,0.6875rem)] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wide border-b border-slate-100 dark:border-neutral-700">
             {hasCoalitions ? 'Coalizioni e liste' : 'Voti di lista'}
           </h2>
           <PublicBoardListsPanel lists={lists} totalVoters={progress.totalActualVoters} />
         </section>
 
-        <section className="min-h-0 flex flex-col overflow-hidden bg-white rounded-lg border border-slate-200">
-          <h2 className="shrink-0 px-2 py-1 text-[clamp(0.55rem,2vw,0.6875rem)] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-100">
+        <section className="min-h-0 flex flex-col overflow-hidden bg-white dark:bg-neutral-900 rounded-lg border border-slate-200 dark:border-neutral-700 md:col-span-1">
+          <h2 className="shrink-0 px-2 py-1 text-[clamp(0.55rem,2vw,0.6875rem)] font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wide border-b border-slate-100 dark:border-neutral-700">
             Stato sezioni
           </h2>
           <div
@@ -185,7 +199,7 @@ export default function PublicBoardClient({ token }: { token: string }) {
         </section>
       </main>
 
-      <footer className="shrink-0 border-t border-slate-200 bg-white/90 px-2 py-1">
+      <footer className="shrink-0 border-t border-slate-200 dark:border-neutral-700 bg-white/90 dark:bg-neutral-900 px-2 py-1">
         <SiteCredits variant="compact" />
       </footer>
     </div>
@@ -209,7 +223,6 @@ function sectionGridRows(count: number): number {
 }
 
 function SectionTile({ section }: { section: PublicBoardPayload['sections'][number] }) {
-  const status = section.status as SectionUiStatus
   const fill = getSectionFillColor(section.number)
   const pct = section.scrutinyPercent
   const hasVoters = section.votersActual != null && section.votersActual > 0
@@ -217,7 +230,7 @@ function SectionTile({ section }: { section: PublicBoardPayload['sections'][numb
   return (
     <div
       className={`relative rounded border overflow-hidden flex flex-col justify-center items-center text-center min-h-0 min-w-0 p-0.5 ${
-        section.locked ? 'border-dashed border-slate-300' : 'border-slate-200'
+        section.locked ? 'border-dashed border-slate-300 dark:border-neutral-600' : 'border-slate-200 dark:border-neutral-700'
       }`}
       title={
         hasVoters
@@ -225,28 +238,27 @@ function SectionTile({ section }: { section: PublicBoardPayload['sections'][numb
           : `Sez. ${section.number}`
       }
     >
-      <div
-        className="absolute inset-y-0 left-0 transition-all duration-500 opacity-25"
-        style={{ width: `${pct}%`, backgroundColor: fill }}
-        aria-hidden
-      />
+      {hasVoters && pct > 0 ? (
+        <div
+          className="absolute left-0 right-0 bottom-0 transition-[height] duration-500 opacity-25 pointer-events-none"
+          style={{ height: `${pct}%`, backgroundColor: fill }}
+          aria-hidden
+        />
+      ) : null}
       <div className="relative w-full min-w-0 px-0.5">
         <p className="font-bold tabular-nums text-[clamp(0.55rem,2.2vw,0.75rem)] leading-none">
           {section.number}
         </p>
-        {hasVoters && (
-          <p className="tabular-nums text-[clamp(0.45rem,1.6vw,0.625rem)] text-slate-600 leading-tight mt-0.5 truncate w-full">
-            {section.listVotesSum}/{section.votersActual}
+        {hasVoters && section.votersActual != null ? (
+          <p className="tabular-nums text-[clamp(0.45rem,1.6vw,0.625rem)] text-slate-600 dark:text-neutral-300 leading-tight mt-0.5 truncate w-full">
+            {section.listVotesSum.toLocaleString('it-IT')} / {section.votersActual.toLocaleString('it-IT')}
           </p>
-        )}
-        {hasVoters && pct > 0 && (
-          <p className="tabular-nums text-[clamp(0.4rem,1.4vw,0.5625rem)] text-slate-400 leading-none">
+        ) : null}
+        {hasVoters ? (
+          <p className="tabular-nums text-[clamp(0.4rem,1.4vw,0.5625rem)] text-slate-400 dark:text-neutral-500 leading-none mt-px">
             {pct}%
           </p>
-        )}
-        {status === 'closed' && (
-          <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-emerald-500" aria-label="Chiusa" />
-        )}
+        ) : null}
       </div>
     </div>
   )

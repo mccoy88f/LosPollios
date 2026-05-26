@@ -82,6 +82,7 @@ export function LiveTurnoutCards({
 export function LiveListRanking({
   lists,
   totalVoters,
+  totalListVotes,
   limit,
   showAllLink,
   onShowAll,
@@ -91,32 +92,61 @@ export function LiveListRanking({
   emphasized,
 }: {
   lists: LiveListResult[]
-  /** Votanti reali (affluenza): denominatore per N/totale e percentuali lista */
+  /** Votanti reali (affluenza): denominatore per rapporto globale scrutinio */
   totalVoters: number
+  /** Somma voti di lista scrutinati finora */
+  totalListVotes: number
   limit?: number
   showAllLink?: boolean
   onShowAll?: () => void
   selectedListId?: number | null
   onSelectList?: (listId: number) => void
   hint?: string
-  /** Panoramica live: logo e nomi più grandi, voti espliciti sui votanti */
+  /** Panoramica live: logo e nomi più grandi */
   emphasized?: boolean
 }) {
   const sorted = [...lists].sort((a, b) => b.votes - a.votes)
   const shown = limit != null ? sorted.slice(0, limit) : sorted
   const selectedList = selectedListId != null ? lists.find(l => l.listId === selectedListId) : null
+  const scrutinized = totalListVotes
+  const remaining = Math.max(0, totalVoters - totalListVotes)
 
   if (!lists.length) return null
 
   return (
     <div className="surface-panel p-5">
-      <div className="flex items-center justify-between mb-1 gap-2">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Risultati liste</h3>
-        {showAllLink && sorted.length > (limit ?? 0) && onShowAll && (
-          <button type="button" onClick={onShowAll} className="text-sm text-brand-800 hover:underline font-medium">
-            Vedi tutte →
-          </button>
-        )}
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-2 justify-between mb-1">
+        <h3 className="font-semibold text-gray-900 dark:text-white shrink-0 min-w-0">Risultati liste</h3>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end min-w-[10rem]">
+          <div className="text-xs text-gray-500 dark:text-neutral-400 tabular-nums text-right">
+            <div>
+              Scrutinio:{' '}
+              <span className="font-medium text-gray-800 dark:text-neutral-100">
+                {formatNumber(scrutinized)}
+              </span>
+              {totalVoters > 0 && (
+                <>
+                  {' '}
+                  / {formatNumber(totalVoters)}
+                </>
+              )}
+            </div>
+            {totalVoters > 0 && remaining > 0 && (
+              <div>
+                Mancano{' '}
+                <span className="font-medium text-gray-800 dark:text-neutral-100">
+                  {formatNumber(remaining)}
+                </span>{' '}
+                voti
+              </div>
+            )}
+          </div>
+          {showAllLink && sorted.length > (limit ?? 0) && onShowAll && (
+            <button type="button" onClick={onShowAll} className="text-sm text-brand-800 hover:underline font-medium shrink-0">
+              Vedi tutte →
+            </button>
+          )}
+        </div>
       </div>
       {hint && <p className="text-xs text-gray-500 mb-3">{hint}</p>}
       {!hint && onSelectList && (
@@ -127,8 +157,7 @@ export function LiveListRanking({
           <ListRow
             key={list.listId}
             list={list}
-            totalVoters={totalVoters}
-            pct={totalVoters > 0 ? (list.votes / totalVoters) * 100 : 0}
+            pct={totalListVotes > 0 ? (list.votes / totalListVotes) * 100 : 0}
             selected={selectedListId === list.listId}
             onSelect={onSelectList ? () => onSelectList(list.listId) : undefined}
             emphasized={emphasized}
@@ -144,14 +173,12 @@ export function LiveListRanking({
 
 function ListRow({
   list,
-  totalVoters,
   pct,
   selected,
   onSelect,
   emphasized = false,
 }: {
   list: LiveListResult
-  totalVoters: number
   pct: number
   selected?: boolean
   onSelect?: () => void
@@ -229,12 +256,14 @@ function ListRow({
             )}
           >
             {formatNumber(list.votes)}
-            <span className="font-normal text-gray-500 dark:text-neutral-400">
-              {' '}
-              / {totalVoters > 0 ? formatNumber(totalVoters) : '—'}
-            </span>
           </span>
-          <span className={emphasized ? 'text-sm font-medium text-gray-600 dark:text-neutral-300' : 'font-bold text-gray-900 dark:text-white'}>
+          <span
+            className={
+              emphasized
+                ? 'text-sm font-medium text-gray-600 dark:text-neutral-300'
+                : 'font-bold text-gray-900 dark:text-white'
+            }
+          >
             {formatPercent(pct)}
           </span>
         </div>
@@ -421,7 +450,7 @@ export function LiveSectionGrid({
         <div className="flex items-center justify-between mb-1 gap-2">
           <h3 className="font-semibold text-gray-900 dark:text-white">Sezioni</h3>
           <span className="text-sm text-gray-500 dark:text-neutral-400 tabular-nums">
-            {counted} / {sections.length} chiuse
+            {counted} / {sections.length} con scrutinio terminato
           </span>
         </div>
         {clickable && (
@@ -430,8 +459,8 @@ export function LiveSectionGrid({
         <div
           className={
             compact
-              ? 'grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 gap-1'
-              : 'grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5'
+              ? 'grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-2'
+              : 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2'
           }
         >
           {sections.map(s => {
@@ -462,8 +491,12 @@ export function LiveSectionGrid({
                 )}
               >
                 <SectionLiveProgressFill {...progress} />
-                <span className="relative z-10 font-bold leading-none">{s.number}</span>
-                <SectionProgressMetrics input={progress} compact />
+                <div className="relative z-10 flex flex-col items-center justify-between flex-1 min-h-0 w-full py-0.5">
+                  <span className="font-bold leading-none shrink-0 text-[11px] sm:text-xs tabular-nums">
+                    {s.number}
+                  </span>
+                  <SectionProgressMetrics input={progress} compact variant="live" />
+                </div>
               </button>
             )
           })}
@@ -473,7 +506,7 @@ export function LiveSectionGrid({
           <SectionStatusBadge status="in_progress" />
           <SectionStatusBadge status="closed" />
           <span className="text-xs text-gray-500 dark:text-neutral-400 self-center">
-            Tratteggio = scrutinio terminato · anello ambra = da verificare
+            Tratteggio = scrutinio dichiarato terminato · anello ambra = incongruenze da verificare
           </span>
         </div>
       </div>

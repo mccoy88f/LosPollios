@@ -177,6 +177,7 @@ function LiveDashboardInner({
   const listRankingProps = {
     lists,
     totalVoters,
+    totalListVotes,
     selectedListId,
     onSelectList: (id: number) => setSelectedListId(prev => toggleId(prev, id)),
   }

@@ -18,7 +18,7 @@ export function LiveKpiStrip({
         <KpiCell label="Scrutinio voti" value={`${progress.percentage.toFixed(1)}%`} />
         <KpiCell label="Affluenza" value={formatPercent(turnout.percentage)} />
         <KpiCell
-          label="Sezioni"
+          label="Sezioni con affluenza"
           value={`${progress.sectionsCounted}/${progress.totalSections}`}
         />
       </div>

@@ -127,6 +127,9 @@ export function LiveSectionDetailPanel({
   }, [electionId, sectionId])
 
   const listTotal = data?.lists.reduce((s, l) => s + l.listVotes, 0) ?? 0
+  const votersActual = data?.turnout?.votersActual ?? null
+  const remainingVotes =
+    votersActual != null ? Math.max(0, votersActual - listTotal) : null
 
   return (
     <div className="surface-panel border-2 border-brand-800/20 dark:border-brand-500/40 p-5 shadow-sm">
@@ -165,6 +168,13 @@ export function LiveSectionDetailPanel({
                   }
                 />
                 <Stat label="Voti lista" value={formatNumber(listTotal)} />
+                {remainingVotes != null && (
+                  <Stat
+                    label="Voti da scrutinare"
+                    value={formatNumber(remainingVotes)}
+                    sub={remainingVotes === 0 ? 'Sezione completa' : undefined}
+                  />
+                )}
               </div>
 
               {data.sectionWarnings.length > 0 && (

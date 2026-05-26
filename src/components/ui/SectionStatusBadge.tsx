@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { formatNumber } from '@/lib/utils'
 import { getSectionFillColor } from '@/lib/sectionColors'
 import { sectionScrutinyPercent, sectionScrutinyRatioLabel } from '@/lib/sectionScrutiny'
 import { sectionStatusLabels, type SectionUiStatus } from '@/lib/sectionStatus'
@@ -111,11 +112,42 @@ function SectionProgressFill({
 export function SectionProgressMetrics({
   input,
   compact = false,
+  variant = 'default',
 }: {
   input: SectionProgressInput
   compact?: boolean
+  /** `live`: % prima, poi rapporto scrutinati/votanti, poi voti mancanti (panoramica live). */
+  variant?: 'default' | 'live'
 }) {
   const { ratio, percent } = sectionScrutinyRatioLabel(input.listVotesSum, input.votersActual)
+  const voters = input.votersActual ?? 0
+  const remaining = voters > 0 ? Math.max(0, voters - input.listVotesSum) : null
+
+  if (variant === 'live') {
+    return (
+      <div
+        className={cn(
+          'tabular-nums text-gray-800 dark:text-neutral-100 text-center leading-tight w-full min-w-0 flex flex-col gap-px items-center justify-end',
+          compact ? 'text-[8px] sm:text-[9px]' : 'text-[10px] space-y-0'
+        )}
+      >
+        <div className={cn(compact ? 'font-semibold' : 'font-semibold text-brand-800 dark:text-brand-300')}>
+          {percent}
+        </div>
+        <div className={cn(compact ? 'leading-none opacity-95' : '', 'truncate max-w-full')}>{ratio}</div>
+        {remaining != null && (
+          <div className="leading-none opacity-85">
+            {remaining === 0 ? (
+              <span className="text-emerald-700 dark:text-emerald-400 font-medium">0 rimanenti</span>
+            ) : (
+              <span>{formatNumber(remaining)} rimanenti</span>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
@@ -152,8 +184,8 @@ export function SectionEntryProgressFill(input: SectionProgressInput) {
 export function sectionLiveCellClasses(input: SectionProgressInput): string {
   const empty = !hasVoters(input)
   return cn(
-    'relative overflow-hidden rounded flex flex-col items-center justify-center gap-0.5',
-    'text-xs font-semibold tabular-nums transition-colors min-h-[3.25rem] p-0.5',
+    'relative overflow-hidden rounded flex flex-col items-center justify-between gap-0',
+    'text-xs font-semibold tabular-nums transition-colors w-full min-w-0 aspect-square max-w-none p-1',
     empty
       ? 'bg-gray-300 dark:bg-neutral-700 text-gray-600 dark:text-neutral-400 border border-gray-400/60 dark:border-neutral-600'
       : 'bg-gray-200 dark:bg-neutral-800 text-gray-800 dark:text-white border border-gray-300/80 dark:border-neutral-600',
