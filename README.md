@@ -11,7 +11,8 @@ Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, se
 ## Novità in v2.0.0
 
 - **Coerenza live / tabellone pubblico** — KPI più chiaro (“Sezioni con affluenza” nella live); testi delle percentuali liste sul pubblico distinguono quota **su votanti** vs **su voti lista scrutinati** quando l’affluenza globale non è ancora disponibile; coalizioni nella lista compatta usano lo stesso criterio. Tile sezione sul tabellone: riempimento **dal basso** (come in live), rapporti con migliaia leggibili, **sempre** la percentuale di scrutinio se ci sono votanti.
-- **Tabellone pubblico (admin)** — **Tabellone pubblico** sulla scheda elezione è **sempre espanso** (non più collassabile); **Backup** e **Zona pericolosa** restano ripiegabili e, su desktop (`lg`), stanno nella **seconda colonna** affiancati al tabellone.
+- **Scheda elezione (admin)** — su desktop: **Tabellone pubblico** (sempre visibile) e **Export** affiancati in due colonne; sotto, a tutta larghezza, **Backup e ripristino** e **Zona pericolosa** (entrambi collassabili).
+- **Export report Excel** — dall’area admin, scarica un `.xlsx` multipagina (Info, Liste, Sezioni, preferenze per sezione e totali candidato). Ogni **percentuale** è affiancata ai **valori assoluti** usati nel calcolo (numeratore/denominatore o colonne correlate indicate nelle intestazioni). Solo amministratori.
 - **Accessibilità tabellone** — sulla pagina `/public/[token]` lo zoom della pagina non è più bloccato (viewport più standard).
 - **Versione progetto** — `package.json` portato a **2.0.0** come baseline di questa linea funzionale.
 
@@ -119,7 +120,7 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Ogni persona usa le proprie credenziali (nome utente e password) assegnate dall’amministratore.
 
 - **Area amministrazione**  
-  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: pannello **tabellone pubblico** (sempre visibile); **backup** (download gzip) e **ripristino** (upload con anteprima/conferme); **zona pericolosa** (reset dati inserimento ed elimina elezione) — sul desktop sono in **due colonne** (tabellone a sinistra, backup + zona collassabili a destra). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
+  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: **tabellone pubblico** e **export report Excel** (sezioni, liste, preferenze; percentuali con basi numeriche) affiancati su desktop; sotto **backup** (download gzip) e **ripristino** (upload con anteprima/conferme), poi **zona pericolosa** (reset dati inserimento ed elimina elezione), entrambi ripiegabili. Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
 
 - **Inserimento spoglio (entry)**  
   Elenco delle sezioni; entrando in una sezione si compilano **votanti**, poi **voti per lista** (e preferenze), infine schede **nulle/bianche**. Le **schede valide** sono la somma automatica dei voti di lista. I dati si **salvano in automatico** (votanti e schede nulle/bianche subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).

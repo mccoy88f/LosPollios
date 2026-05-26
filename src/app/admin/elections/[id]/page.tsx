@@ -8,6 +8,7 @@ import ElectionBackupPanel from './ElectionBackupPanel'
 import { getElectionEntryDataCounts } from '@/lib/clearElectionEntryData'
 import ElectionDetailInfoCard from './ElectionDetailInfoCard'
 import ElectionPublicBoardPanel from './ElectionPublicBoardPanel'
+import { ElectionExportPanel } from './ElectionExportPanel'
 import { AdminNavCard } from '@/components/ui/AdminNavCard'
 import { BarChart3, ClipboardList, ClipboardPen, Landmark, LineChart, Users } from 'lucide-react'
 
@@ -82,59 +83,63 @@ export default async function ElectionDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="mt-10 flex flex-col lg:flex-row lg:items-start gap-6 max-w-6xl">
-        <section className="rounded-xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-900/50 lg:flex-1 min-w-0 overflow-hidden">
-          <h2 className="px-4 py-3 font-semibold text-emerald-950 dark:text-emerald-100 border-b border-emerald-200/80 dark:border-emerald-900/50">
-            Tabellone pubblico
-          </h2>
-          <div className="px-4 pb-4 pt-3">
-            <ElectionPublicBoardPanel electionId={election.id} />
+      <div className="mt-10 flex flex-col gap-6 max-w-6xl">
+        <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-900/50 lg:flex-1 min-w-0 overflow-hidden">
+            <h2 className="px-4 py-3 font-semibold text-emerald-950 dark:text-emerald-100 border-b border-emerald-200/80 dark:border-emerald-900/50">
+              Tabellone pubblico
+            </h2>
+            <div className="px-4 pb-4 pt-3">
+              <ElectionPublicBoardPanel electionId={election.id} />
+            </div>
+          </section>
+
+          <div className="lg:flex-1 min-w-0">
+            <ElectionExportPanel electionId={election.id} />
           </div>
-        </section>
-
-        <div className="flex flex-col gap-3 lg:flex-1 min-w-0">
-          <details className="rounded-xl border border-blue-200 bg-blue-50/60 dark:bg-blue-950/20 dark:border-blue-900/50 group">
-            <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-blue-950 dark:text-blue-100 select-none">
-              <span>Backup e ripristino</span>
-              <span className="text-xs font-normal text-blue-800/80 dark:text-blue-200/80 group-open:hidden">
-                espandi
-              </span>
-            </summary>
-            <div className="px-4 pb-4 pt-1 border-t border-blue-200/80 dark:border-blue-900/50">
-              <ElectionBackupPanel electionId={election.id} electionName={election.name} />
-            </div>
-          </details>
-
-          <details className="rounded-xl border border-red-200 bg-red-50/60 dark:bg-red-950/20 dark:border-red-900/50 group min-w-0">
-            <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-red-950 dark:text-red-100 select-none">
-              <span>Zona pericolosa</span>
-              <span className="text-xs font-normal text-red-800/80 dark:text-red-200/80 group-open:hidden">espandi</span>
-            </summary>
-            <div className="px-4 pb-4 pt-1 border-t border-red-200/80 dark:border-red-900/50 space-y-6">
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Azzera dati di inserimento</p>
-                <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
-                  Rimuove affluenze per sezione, voti di lista e preferenze candidato (tutto ciò che si inserisce da{' '}
-                  <strong>/entry</strong>). Restano il tetto comunale, i votanti/aventi diritto a livello elezione, le
-                  sezioni con i loro aventi diritto configurati, liste e candidati.
-                </p>
-                <ClearElectionEntryDataButton
-                  electionId={election.id}
-                  electionName={election.name}
-                  counts={entryDataCounts}
-                />
-              </div>
-              <div className="border-t border-red-200 dark:border-red-900/50 pt-5">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Elimina elezione</p>
-                <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
-                  L&apos;eliminazione è irreversibile. Puoi eliminare un&apos;elezione in qualsiasi stato; i dati collegati
-                  vengono rimossi dal database.
-                </p>
-                <DeleteElectionButton electionId={election.id} electionName={election.name} />
-              </div>
-            </div>
-          </details>
         </div>
+
+        <details className="rounded-xl border border-blue-200 bg-blue-50/60 dark:bg-blue-950/20 dark:border-blue-900/50 group">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-blue-950 dark:text-blue-100 select-none">
+            <span>Backup e ripristino</span>
+            <span className="text-xs font-normal text-blue-800/80 dark:text-blue-200/80 group-open:hidden">
+              espandi
+            </span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 border-t border-blue-200/80 dark:border-blue-900/50">
+            <ElectionBackupPanel electionId={election.id} electionName={election.name} />
+          </div>
+        </details>
+
+        <details className="rounded-xl border border-red-200 bg-red-50/60 dark:bg-red-950/20 dark:border-red-900/50 group min-w-0">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-red-950 dark:text-red-100 select-none">
+            <span>Zona pericolosa</span>
+            <span className="text-xs font-normal text-red-800/80 dark:text-red-200/80 group-open:hidden">espandi</span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 border-t border-red-200/80 dark:border-red-900/50 space-y-6">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Azzera dati di inserimento</p>
+              <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
+                Rimuove affluenze per sezione, voti di lista e preferenze candidato (tutto ciò che si inserisce da{' '}
+                <strong>/entry</strong>). Restano il tetto comunale, i votanti/aventi diritto a livello elezione, le
+                sezioni con i loro aventi diritto configurati, liste e candidati.
+              </p>
+              <ClearElectionEntryDataButton
+                electionId={election.id}
+                electionName={election.name}
+                counts={entryDataCounts}
+              />
+            </div>
+            <div className="border-t border-red-200 dark:border-red-900/50 pt-5">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Elimina elezione</p>
+              <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
+                L&apos;eliminazione è irreversibile. Puoi eliminare un&apos;elezione in qualsiasi stato; i dati collegati
+                vengono rimossi dal database.
+              </p>
+              <DeleteElectionButton electionId={election.id} electionName={election.name} />
+            </div>
+          </div>
+        </details>
       </div>
     </div>
   )
