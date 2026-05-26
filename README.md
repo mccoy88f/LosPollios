@@ -1,12 +1,19 @@
 # LosPollios
 
-**Versione attuale: 1.0.6**
+**Versione attuale: 2.0.0**
 
 Applicazione web per **organizzare e seguire lo spoglio** delle **elezioni amministrative** (comunali): si inseriscono i dati sezione per sezione, si vedono i risultati aggiornati in tempo reale e le proiezioni (coalizioni, seggi, soglie).
 
 Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, senza entrare nei dettagli tecnici.
 
 ---
+
+## Novità in v2.0.0
+
+- **Coerenza live / tabellone pubblico** — KPI più chiaro (“Sezioni con affluenza” nella live); testi delle percentuali liste sul pubblico distinguono quota **su votanti** vs **su voti lista scrutinati** quando l’affluenza globale non è ancora disponibile; coalizioni nella lista compatta usano lo stesso criterio. Tile sezione sul tabellone: riempimento **dal basso** (come in live), rapporti con migliaia leggibili, **sempre** la percentuale di scrutinio se ci sono votanti.
+- **Tabellone pubblico (admin)** — **Tabellone pubblico** sulla scheda elezione è **sempre espanso** (non più collassabile); **Backup** e **Zona pericolosa** restano ripiegabili e, su desktop (`lg`), stanno nella **seconda colonna** affiancati al tabellone.
+- **Accessibilità tabellone** — sulla pagina `/public/[token]` lo zoom della pagina non è più bloccato (viewport più standard).
+- **Versione progetto** — `package.json` portato a **2.0.0** come baseline di questa linea funzionale.
 
 ## Novità in v1.0.6
 
@@ -98,7 +105,7 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
 
 ### Accesso e limiti operativi
 
-- **Login obbligatorio** su tutte le pagine e le API (eccetto login e logout): senza sessione valida si viene reindirizzati alla pagina di accesso.
+- **Login obbligatorio** su tutte le pagine e le API (eccetto login, logout e gli endpoint del **tabellone pubblico** con token): senza sessione valida si viene reindirizzati alla pagina di accesso.
 - Ogni accesso crea una **sessione** tracciata sul server; il logout (o la revoca da admin) la invalida. Dopo un aggiornamento importante dell’app, gli utenti con sessioni molto vecchie potrebbero dover **rifare login** una volta.
 - Ogni utente non amministratore è associato a **una sola elezione** alla volta.
 - L’amministratore può **limitare le sezioni** modificabili da un operatore (solo le sezioni assegnate compaiono in inserimento dati; i tentativi su altre sezioni sono bloccati).
@@ -112,13 +119,16 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Ogni persona usa le proprie credenziali (nome utente e password) assegnate dall’amministratore.
 
 - **Area amministrazione**  
-  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: **backup** (download JSON) e **ripristino** (upload con anteprima e conferma del nome). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
+  Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: pannello **tabellone pubblico** (sempre visibile); **backup** (download gzip) e **ripristino** (upload con anteprima/conferme); **zona pericolosa** (reset dati inserimento ed elimina elezione) — sul desktop sono in **due colonne** (tabellone a sinistra, backup + zona collassabili a destra). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
 
 - **Inserimento spoglio (entry)**  
   Elenco delle sezioni; entrando in una sezione si compilano **votanti**, poi **voti per lista** (e preferenze), infine schede **nulle/bianche**. Le **schede valide** sono la somma automatica dei voti di lista. I dati si **salvano in automatico** (votanti e schede nulle/bianche subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).
 
 - **Vista live**  
   Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab: panoramica, liste, sezioni, coalizioni (solo se almeno due liste hanno il campo coalizione), preferenze (solo se ci sono candidati al consiglio), **analisi** (seggi attuali con regole comunali, proiezione finale sui votanti, confronto con elezioni storiche). **Aggiornamenti** (cronologia con operatore e orario) è un pulsante a destra dei tab, non un tab del menu. I dati si aggiornano anche ogni **4 secondi** oltre agli eventi in tempo reale. In caso di rete instabile o telefono in standby, il collegamento **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra avvisi di **coerenza dati** e lo stato di ogni sezione (`scrutinati / votanti`, completa o chiusa). Gli URL legacy `/dashboard/...`, `/live/.../preferenze` e `/live/.../aggiornamenti` reindirizzano alla live con il tab o la vista corrispondente.
+
+- **Tabellone pubblico (solo lettura)**  
+  Pagina accessibile tramite link con token dall’area admin (**senza login**): panorama affluenza, scrutinio liste, stato sezioni e classifica; fullscreen adatta a schermo e sala. Aggiornamento periodico configurabile dall’admin; stima degli spettatori collegati.
 
 - **Storico (admin)**  
   Gestione di **elezioni storiche** in tabella dedicata: inserimento manuale, import da **Excel** o da link **Eligendo** (Ministero dell’Interno), modifica liste/candidati/preferenze. Si può anche applicare il macro Eligendo a un’**elezione archiviata** (dati operativi) e completarla da admin come un’elezione normale.
@@ -222,4 +232,4 @@ Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres 
 
 ---
 
-*LosPollios v1.0.6 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
+*LosPollios v2.0.0 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
