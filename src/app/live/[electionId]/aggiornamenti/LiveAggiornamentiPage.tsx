@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { ElectionUpdateEvent, ElectionUpdateKind } from '@/lib/electionUpdates'
 import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
 import { useElectionStream } from '@/hooks/useElectionStream'
+import { LIVE_REFRESH_MS } from '@/lib/liveRefresh'
 
 type UpdatesPayload = {
   election: { id: number; name: string; commune: string }
@@ -87,7 +88,7 @@ export default function LiveAggiornamentiPage({
 
   useEffect(() => {
     fetchData()
-    const t = setInterval(fetchData, 30000)
+    const t = setInterval(fetchData, LIVE_REFRESH_MS)
     return () => clearInterval(t)
   }, [electionId, fetchData])
 
@@ -144,7 +145,7 @@ export default function LiveAggiornamentiPage({
               {lastFetchAt ? formatWhen(lastFetchAt.toISOString()) : '—'}
             </p>
             <p className="text-xs text-gray-500 mt-2">
-              Orario dell&apos;ultimo caricamento di questa pagina (anche via stream live o polling ogni 30 s). Non è un dato
+              Orario dell&apos;ultimo caricamento di questa pagina (anche via stream live o aggiornamento ogni circa 4 s). Non è un dato
               di spoglio.
             </p>
           </div>

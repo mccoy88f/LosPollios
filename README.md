@@ -1,12 +1,21 @@
 # LosPollios
 
-**Versione attuale: 1.0.4**
+**Versione attuale: 1.0.5**
 
 Applicazione web per **organizzare e seguire lo spoglio** delle **elezioni amministrative** (comunali): si inseriscono i dati sezione per sezione, si vedono i risultati aggiornati in tempo reale e le proiezioni (coalizioni, seggi, soglie).
 
 Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, senza entrare nei dettagli tecnici.
 
 ---
+
+## Novità in v1.0.5
+
+- **Distribuzione seggi corretta** — il conteggio rispetta le regole comunali italiane (premio maggioranza + D’Hondt). I seggi non vengono più “persi” se l’opposizione non ha liste sopra soglia: il totale assegnato coincide sempre con i seggi in consiglio configurati.
+- **Analisi seggi e proiezione** — proiezione voti finali basata sui **votanti** delle sezioni già scrutinate (non sul numero di sezioni); confronto con **elezioni storiche** per sindaco/coalizione e affiancamento con l’affluenza.
+- **Stato sezioni** — badge con `voti scrutinati / votanti` e percentuale; riempimento proporzionale; tratteggio se la sezione è chiusa; grigio se non ci sono votanti.
+- **Affluenza in inserimento** — ordine **votanti → voti lista → schede nulle/bianche**; le **schede valide** sono calcolate automaticamente come **somma dei voti di lista** (non si digitano a mano).
+- **Live più reattiva** — aggiornamento dati ogni **4 secondi** (oltre agli eventi SSE); percentuali liste su **votanti**; preferenze con voti per sezione al click, ordinamento e trend collassabili.
+- **Admin elezione** — sezioni **Backup e ripristino** e **Zona pericolosa** richiudibili per default.
 
 ## Novità in v1.0.4
 
@@ -52,6 +61,19 @@ Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, se
 
 Il sistema calcola in automatico **percentuali**, **raggruppamenti per coalizione**, **distribuzione dei seggi** (metodo D’Hondt) e indicazioni legate alle **regole previste** per il tipo di comune (ad esempio soglia percentuale e possibile ballottaggio).
 
+### Come si attribuiscono i seggi (in sintesi)
+
+Le liste vengono raggruppate per **coalizione** o, se assente, per **candidato sindaco** (ogni lista con sindaco diverso forma un blocco a sé). Vince il blocco con più voti.
+
+| Tipo comune | Premio al blocco vincente | Resto (opposizione) | Soglia liste |
+|-------------|---------------------------|---------------------|--------------|
+| **Piccolo** (≤15.000 ab.) | circa **⅔** dei seggi | circa **⅓** | nessuna |
+| **Grande** | almeno **60%** dei seggi | il resto | **3%** minimo per entrare nel riparto |
+
+Dentro ogni blocco i seggi si ripartiscono con il metodo **D’Hondt** tra le liste idonee. Il **sindaco** indicato sulla lista serve al raggruppamento e al ballottaggio: **non** è uno dei seggi di consiglio (es. con 16 seggi in consiglio si assegnano 16 consiglieri, non 17).
+
+*Esempio (comune piccolo, 16 seggi):* quattro liste distinte — la prima con ~42% dei voti ottiene **11 seggi** (⅔); le altre tre si dividono **5 seggi** con D’Hondt (es. 4 + 1 + 0 se la più piccola resta sotto i quoti utili).
+
 ---
 
 ## Chi fa cosa: i tipi di utente
@@ -85,10 +107,10 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: **backup** (download JSON) e **ripristino** (upload con anteprima e conferma del nome). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
 
 - **Inserimento spoglio (entry)**  
-  Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati si **salvano in automatico** (affluenza subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).
+  Elenco delle sezioni; entrando in una sezione si compilano **votanti**, poi **voti per lista** (e preferenze), infine schede **nulle/bianche**. Le **schede valide** sono la somma automatica dei voti di lista. I dati si **salvano in automatico** (votanti e schede nulle/bianche subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).
 
 - **Vista live**  
-  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab: panoramica, liste, sezioni, coalizioni (solo se almeno due liste hanno il campo coalizione), preferenze (solo se ci sono candidati al consiglio), **analisi** (seggi attuali, proiezione finale, confronto storico). **Aggiornamenti** (cronologia con operatore e orario) è un pulsante a destra dei tab, non un tab del menu. In caso di rete instabile o telefono in standby, il collegamento in tempo reale **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra anche avvisi di **coerenza dati** e lo stato di ogni sezione (da fare, in corso, completa). Gli URL legacy `/dashboard/...`, `/live/.../preferenze` e `/live/.../aggiornamenti` reindirizzano alla live con il tab o la vista corrispondente.
+  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab: panoramica, liste, sezioni, coalizioni (solo se almeno due liste hanno il campo coalizione), preferenze (solo se ci sono candidati al consiglio), **analisi** (seggi attuali con regole comunali, proiezione finale sui votanti, confronto con elezioni storiche). **Aggiornamenti** (cronologia con operatore e orario) è un pulsante a destra dei tab, non un tab del menu. I dati si aggiornano anche ogni **4 secondi** oltre agli eventi in tempo reale. In caso di rete instabile o telefono in standby, il collegamento **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra avvisi di **coerenza dati** e lo stato di ogni sezione (`scrutinati / votanti`, completa o chiusa). Gli URL legacy `/dashboard/...`, `/live/.../preferenze` e `/live/.../aggiornamenti` reindirizzano alla live con il tab o la vista corrispondente.
 
 - **Storico (admin)**  
   Gestione di **elezioni storiche** in tabella dedicata: inserimento manuale, import da **Excel** o da link **Eligendo** (Ministero dell’Interno), modifica liste/candidati/preferenze. Si può anche applicare il macro Eligendo a un’**elezione archiviata** (dati operativi) e completarla da admin come un’elezione normale.
@@ -192,4 +214,4 @@ Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres 
 
 ---
 
-*LosPollios v1.0.4 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
+*LosPollios v1.0.5 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*

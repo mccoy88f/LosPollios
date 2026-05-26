@@ -21,6 +21,7 @@ import LiveAggiornamentiPage from '@/app/live/[electionId]/aggiornamenti/LiveAgg
 import LivePreferenzePage from '@/app/live/[electionId]/preferenze/LivePreferenzePage'
 import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
 import { useElectionStream } from '@/hooks/useElectionStream'
+import { LIVE_REFRESH_MS } from '@/lib/liveRefresh'
 import { cn } from '@/lib/cn'
 import {
   BarChart3,
@@ -50,11 +51,13 @@ function LiveDashboardInner({
   electionId,
   electionName,
   commune,
+  electionYear,
   historicalElections,
 }: {
   electionId: number
   electionName: string
   commune: string
+  electionYear: number
   historicalElections: HistElection[]
 }) {
   const router = useRouter()
@@ -129,7 +132,7 @@ function LiveDashboardInner({
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 30000)
+    const interval = setInterval(fetchData, LIVE_REFRESH_MS)
     return () => clearInterval(interval)
   }, [electionId, fetchData])
 
@@ -146,8 +149,9 @@ function LiveDashboardInner({
 
   if (!data) return <div className="p-8 text-center text-red-500 flex-1">Elezione non trovata</div>
 
-  const { lists, sectionStatus, dataQuality } = data
+  const { lists, sectionStatus, dataQuality, turnout } = data
   const totalListVotes = lists.reduce((s, l) => s + l.votes, 0)
+  const totalVoters = turnout.totalActual
   const hasWarnings =
     !!dataQuality?.listVotesExceedRegisteredVoters || (dataQuality?.sectionsWithDataWarnings ?? 0) > 0
 
@@ -172,7 +176,7 @@ function LiveDashboardInner({
 
   const listRankingProps = {
     lists,
-    totalListVotes,
+    totalVoters,
     selectedListId,
     onSelectList: (id: number) => setSelectedListId(prev => toggleId(prev, id)),
   }
@@ -246,7 +250,7 @@ function LiveDashboardInner({
         <div className="space-y-6">
           <LiveDataQualityAlert dataQuality={dataQuality} />
           <LiveListRanking {...listRankingProps} />
-          <LiveListBarChart lists={lists} totalListVotes={totalListVotes} />
+          <LiveListBarChart lists={lists} totalVoters={totalVoters} />
         </div>
       )}
 
@@ -274,6 +278,7 @@ function LiveDashboardInner({
           electionId={electionId}
           electionName={electionName}
           commune={commune}
+          electionYear={electionYear}
           historicalElections={historicalElections}
           hasCoalitions={hasCoalitions}
         />
@@ -304,6 +309,7 @@ export default function LiveDashboard(props: {
   electionId: number
   electionName: string
   commune: string
+  electionYear: number
   historicalElections: HistElection[]
 }) {
   return (

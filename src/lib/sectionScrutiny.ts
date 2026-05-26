@@ -8,26 +8,29 @@ export function countSectionListsFilled(
 }
 
 /**
- * Percentuale avanzamento spoglio per singola sezione (0–100).
- * Con 0 votanti: 0% (nessun riempimento). Con votanti > 0: 50% affluenza, poi 50–100% per liste.
+ * Percentuale riempimento sezione: voti di lista scrutinati / votanti (affluenza).
+ * Senza votanti → 0% (cella grigia, nessun riempimento colorato).
  */
 export function sectionScrutinyPercent(
-  locked: boolean,
   votersActual: number | null | undefined,
-  listsFilled: number,
-  totalLists: number
+  listVotesSum: number
 ): number {
-  if (locked) return 100
-
   const voters = votersActual ?? 0
   if (voters <= 0) return 0
+  const votes = Math.max(0, listVotesSum)
+  return Math.min(100, Math.round((votes / voters) * 100))
+}
 
-  const total = Math.max(0, totalLists)
-  const filled = Math.max(0, Math.min(listsFilled, total))
-
-  if (total > 0 && filled >= total) return 100
-  if (filled > 0) {
-    return Math.round(50 + 50 * (filled / total))
+export function sectionScrutinyRatioLabel(
+  listVotesSum: number,
+  votersActual: number | null | undefined
+): { ratio: string; percent: string } {
+  const voters = votersActual ?? 0
+  if (voters <= 0) {
+    return { ratio: '— / —', percent: '—' }
   }
-  return 50
+  return {
+    ratio: `${listVotesSum.toLocaleString('it-IT')} / ${voters.toLocaleString('it-IT')}`,
+    percent: `${sectionScrutinyPercent(votersActual, listVotesSum)}%`,
+  }
 }

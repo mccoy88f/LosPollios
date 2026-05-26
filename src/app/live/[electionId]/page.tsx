@@ -23,6 +23,9 @@ export default async function LivePage({ params }: Props) {
     name: h.name,
     commune: h.commune,
     year: h.year,
+    registeredVoters: h.registeredVoters,
+    turnoutVoters: h.turnoutVoters,
+    turnoutPercent: h.turnoutPercent,
     results: h.results.map(r => ({
       id: r.id,
       listName: r.listName,
@@ -41,6 +44,7 @@ export default async function LivePage({ params }: Props) {
         electionId={id}
         electionName={election.name}
         commune={election.commune}
+        electionYear={election.date.getFullYear()}
         historicalElections={historicalElections}
       />
     </div>

@@ -48,7 +48,6 @@ export default function SectionEntryForm({
 
   const [turnout, setTurnout] = useState({
     votersActual: existingTurnout?.votersActual !== undefined ? String(existingTurnout.votersActual) : '',
-    ballotsValid: existingTurnout?.ballotsValid !== undefined ? String(existingTurnout.ballotsValid) : '',
     ballotsNull:  existingTurnout?.ballotsNull  !== undefined ? String(existingTurnout.ballotsNull)  : '',
     ballotsBlank: existingTurnout?.ballotsBlank !== undefined ? String(existingTurnout.ballotsBlank) : '',
   })
@@ -140,16 +139,17 @@ export default function SectionEntryForm({
   }
 
   const totalListVotes = Object.values(listVotes).reduce((s, v) => s + (Number(v) || 0), 0)
-  const actualVoters   = Number(turnout.votersActual) || 0
-  const validBallots   = Number(turnout.ballotsValid) || 0
-  const canContinue    = turnout.votersActual !== '' && Number(turnout.votersActual) >= 0
+  const actualVoters = Number(turnout.votersActual) || 0
+  /** Schede valide = somma voti lista (calcolata, non digitata a mano). */
+  const computedValidBallots = totalListVotes
+  const canContinue = turnout.votersActual !== '' && Number(turnout.votersActual) >= 0
 
   function buildPayload() {
     return {
       turnout: {
         votersActual: Number(turnout.votersActual) || 0,
-        ...(turnout.ballotsValid !== '' && { ballotsValid: Number(turnout.ballotsValid) }),
-        ...(turnout.ballotsNull  !== '' && { ballotsNull:  Number(turnout.ballotsNull)  }),
+        ballotsValid: computedValidBallots,
+        ...(turnout.ballotsNull !== '' && { ballotsNull: Number(turnout.ballotsNull) }),
         ...(turnout.ballotsBlank !== '' && { ballotsBlank: Number(turnout.ballotsBlank) }),
       },
       lists: lists.map(l => ({
@@ -204,7 +204,7 @@ export default function SectionEntryForm({
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [turnout, readOnly])
+  }, [turnout.votersActual, turnout.ballotsNull, turnout.ballotsBlank, readOnly])
 
   useEffect(() => {
     if (readOnly) return
@@ -248,7 +248,7 @@ export default function SectionEntryForm({
     if (readOnly) return 'Sola lettura — la sezione è chiusa dall\'amministratore.'
     if (saving) return 'Salvataggio automatico in corso…'
     if (dirty) {
-      return 'Modifiche in attesa: affluenza entro pochi istanti; voti lista e preferenze digitati a tastiera dopo circa 4 secondi (o subito con +/− o uscendo dal campo).'
+      return 'Modifiche in attesa: votanti e schede nulle/bianche entro pochi istanti; voti lista e preferenze da tastiera dopo circa 4 secondi (o subito con +/− o uscendo dal campo). Schede valide = somma liste.'
     }
     if (error) return error
     if (lastSavedAt) return `Ultimo salvataggio alle ${lastSavedAt.toLocaleTimeString('it-IT')}`
@@ -256,15 +256,16 @@ export default function SectionEntryForm({
   }
 
   const quadraturaAlert =
-    validBallots > 0 && totalListVotes > 0 ? (
+    actualVoters > 0 && totalListVotes > 0 ? (
       <Alert
-        variant={Math.abs(validBallots - totalListVotes) <= 2 ? 'success' : 'warning'}
-        title="Quadratura voti lista"
+        variant={totalListVotes <= actualVoters ? 'success' : 'warning'}
+        title="Quadratura affluenza"
       >
-        Totale voti di lista: <strong className="tabular-nums">{totalListVotes.toLocaleString('it-IT')}</strong> su{' '}
-        <strong className="tabular-nums">{validBallots.toLocaleString('it-IT')}</strong> schede valide
-        {Math.abs(validBallots - totalListVotes) > 0 && (
-          <> (differenza: <span className="tabular-nums">{validBallots - totalListVotes}</span>)</>
+        Schede valide (somma liste): <strong className="tabular-nums">{totalListVotes.toLocaleString('it-IT')}</strong>
+        {' · '}
+        Votanti: <strong className="tabular-nums">{actualVoters.toLocaleString('it-IT')}</strong>
+        {totalListVotes > actualVoters && (
+          <> — attenzione: i voti lista superano i votanti</>
         )}
       </Alert>
     ) : null
@@ -276,7 +277,7 @@ export default function SectionEntryForm({
         <Card className="shrink-0">
           <CardBody>
             <CardTitle className="mb-4">Affluenza</CardTitle>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Votanti reali *
@@ -297,21 +298,23 @@ export default function SectionEntryForm({
                   required
                 />
               </div>
-              {[['Schede valide', 'ballotsValid'], ['Schede nulle', 'ballotsNull'], ['Schede bianche', 'ballotsBlank']].map(([label, key]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={(turnout as Record<string, string>)[key]}
-                    onChange={e => setTurn(key, e.target.value)}
-                    disabled={readOnly}
-                    className={cn(formFieldClassLg, 'font-normal text-base focus-visible:ring-brand-500')}
-                    placeholder="—"
-                  />
+              {listsPhase && (
+                <div className="flex flex-col justify-end">
+                  <p className="text-sm text-gray-600">
+                    Schede valide{' '}
+                    <span className="text-xs text-gray-500">(calcolate dalla somma liste)</span>
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 tabular-nums mt-1">
+                    {computedValidBallots.toLocaleString('it-IT')}
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
+            {!listsPhase && (
+              <p className="text-xs text-gray-500 mt-3">
+                Dopo i voti di lista le schede valide si calcolano in automatico; nulle e bianche le inserisci in fondo.
+              </p>
+            )}
             {!listsPhase && (
               <button
                 type="button"
@@ -342,6 +345,12 @@ export default function SectionEntryForm({
         >
           <span className="text-brand-950">
             Affluenza: <strong className="tabular-nums">{actualVoters.toLocaleString('it-IT')}</strong> votanti
+            {computedValidBallots > 0 && (
+              <>
+                {' '}
+                · <strong className="tabular-nums">{computedValidBallots.toLocaleString('it-IT')}</strong> schede valide
+              </>
+            )}
           </span>
           <span className="text-brand-700/80 ml-2 text-xs">· tocca per modificare</span>
         </button>
@@ -380,7 +389,7 @@ export default function SectionEntryForm({
           >
             {lists.map(list => {
               const v = Number(listVotes[list.id]) || 0
-              const total = validBallots || totalListVotes
+              const total = computedValidBallots || actualVoters
               const pct = total > 0 ? (v / total) * 100 : 0
               const isOpen = openListId === list.id
               const hasCandidates = list.candidates.length > 0
@@ -505,6 +514,36 @@ export default function SectionEntryForm({
               Tap sulla lista o usa +/− per aprire a tutta altezza · un’altra lista si chiude da sola
             </p>
           )}
+
+          <Card className="shrink-0 mx-3 mb-3">
+            <CardBody className="py-4">
+              <CardTitle className="text-base mb-3">Schede nulle e bianche</CardTitle>
+              <p className="text-xs text-gray-500 mb-3">
+                Inseriscile a fine spoglio, dopo i voti di lista. Le schede valide sono la somma dei voti lista.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {(
+                  [
+                    ['Schede nulle', 'ballotsNull'],
+                    ['Schede bianche', 'ballotsBlank'],
+                  ] as const
+                ).map(([label, key]) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={turnout[key]}
+                      onChange={e => setTurn(key, e.target.value)}
+                      disabled={readOnly}
+                      className={cn(formFieldClassLg, 'font-normal text-base focus-visible:ring-brand-500')}
+                      placeholder="0"
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { calculateProjection, projectFinalVotes } from '@/lib/electoral'
+import { calculateProjection, projectFinalVotesByVoters } from '@/lib/electoral'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -22,6 +22,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const totalSections   = sections.length
   const sectionsCounted = new Set(turnouts.map(t => t.sectionId)).size
+  const totalTheoreticalVoters = sections.reduce((s, sec) => s + sec.theoreticalVoters, 0)
+  const votersCounted = turnouts.reduce((s, t) => s + (t.votersActual ?? 0), 0)
 
   const listVotesMap = new Map<number, number>()
   for (const r of listResults) {
@@ -41,7 +43,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   // Proiezione voti finali
   const projectedLists = listsInput.map(l => ({
     ...l,
-    projectedVotes: projectFinalVotes(l.votes, sectionsCounted, totalSections),
+    projectedVotes: projectFinalVotesByVoters(l.votes, votersCounted, totalTheoreticalVoters),
   }))
 
   // Calcolo seggi su voti attuali
@@ -78,6 +80,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     totalSections,
     sectionsCounted,
     coverage: totalSections > 0 ? (sectionsCounted / totalSections) * 100 : 0,
+    votersCounted,
+    totalTheoreticalVoters,
+    votersCoverage: totalTheoreticalVoters > 0 ? (votersCounted / totalTheoreticalVoters) * 100 : 0,
     /** Seggi totali del consiglio (impostazione elezione), non la somma dei seggi assegnati in proiezione */
     totalSeats: election.totalSeats,
     current: enrich(currentProjection),

@@ -7,12 +7,13 @@ import { cn } from '@/lib/cn'
 import { Alert } from '@/components/ui/Alert'
 import {
   SectionLiveProgressFill,
+  SectionProgressMetrics,
   SectionStatusBadge,
   sectionLiveCellClasses,
 } from '@/components/ui/SectionStatusBadge'
 import { Crown } from 'lucide-react'
 import type { LiveListResult, LiveResultsData, LiveSectionStatus } from '@/components/live/liveTypes'
-import { sectionScrutinyPercent } from '@/lib/sectionScrutiny'
+import { sectionScrutinyRatioLabel } from '@/lib/sectionScrutiny'
 import {
   LiveCandidateSectionsPanel,
   LiveListPreferencesDetail,
@@ -80,7 +81,7 @@ export function LiveTurnoutCards({
 
 export function LiveListRanking({
   lists,
-  totalListVotes,
+  totalVoters,
   limit,
   showAllLink,
   onShowAll,
@@ -90,14 +91,15 @@ export function LiveListRanking({
   emphasized,
 }: {
   lists: LiveListResult[]
-  totalListVotes: number
+  /** Votanti reali (affluenza): denominatore per N/totale e percentuali lista */
+  totalVoters: number
   limit?: number
   showAllLink?: boolean
   onShowAll?: () => void
   selectedListId?: number | null
   onSelectList?: (listId: number) => void
   hint?: string
-  /** Panoramica live: logo e nomi più grandi, voti espliciti sul totale */
+  /** Panoramica live: logo e nomi più grandi, voti espliciti sui votanti */
   emphasized?: boolean
 }) {
   const sorted = [...lists].sort((a, b) => b.votes - a.votes)
@@ -125,8 +127,8 @@ export function LiveListRanking({
           <ListRow
             key={list.listId}
             list={list}
-            totalListVotes={totalListVotes}
-            pct={totalListVotes > 0 ? (list.votes / totalListVotes) * 100 : 0}
+            totalVoters={totalVoters}
+            pct={totalVoters > 0 ? (list.votes / totalVoters) * 100 : 0}
             selected={selectedListId === list.listId}
             onSelect={onSelectList ? () => onSelectList(list.listId) : undefined}
             emphasized={emphasized}
@@ -142,14 +144,14 @@ export function LiveListRanking({
 
 function ListRow({
   list,
-  totalListVotes,
+  totalVoters,
   pct,
   selected,
   onSelect,
   emphasized = false,
 }: {
   list: LiveListResult
-  totalListVotes: number
+  totalVoters: number
   pct: number
   selected?: boolean
   onSelect?: () => void
@@ -229,7 +231,7 @@ function ListRow({
             {formatNumber(list.votes)}
             <span className="font-normal text-gray-500 dark:text-neutral-400">
               {' '}
-              / {formatNumber(totalListVotes)}
+              / {totalVoters > 0 ? formatNumber(totalVoters) : '—'}
             </span>
           </span>
           <span className={emphasized ? 'text-sm font-medium text-gray-600 dark:text-neutral-300' : 'font-bold text-gray-900 dark:text-white'}>
@@ -248,13 +250,13 @@ function ListRow({
   )
 }
 
-export function LiveListBarChart({ lists, totalListVotes }: { lists: LiveListResult[]; totalListVotes: number }) {
+export function LiveListBarChart({ lists, totalVoters }: { lists: LiveListResult[]; totalVoters: number }) {
   const chartData = lists
     .filter(l => l.votes > 0)
     .sort((a, b) => b.votes - a.votes)
     .map(l => ({
       name: l.shortName || l.listName.slice(0, 12),
-      pct: totalListVotes > 0 ? (l.votes / totalListVotes) * 100 : 0,
+      pct: totalVoters > 0 ? (l.votes / totalVoters) * 100 : 0,
       color: l.color,
     }))
 
@@ -438,20 +440,12 @@ export function LiveSectionGrid({
               sectionNumber: s.number,
               locked: s.locked,
               votersActual: s.votersActual,
-              listsFilled: s.listsFilled,
-              totalLists: s.totalLists,
+              listVotesSum: s.listVotesSum,
               hasWarning,
             }
+            const { ratio, percent } = sectionScrutinyRatioLabel(s.listVotesSum, s.votersActual)
             const warn = hasWarning ? s.sectionWarnings!.join('\n') : ''
-            const pct = sectionScrutinyPercent(
-              progress.locked,
-              progress.votersActual,
-              progress.listsFilled,
-              progress.totalLists
-            )
-            const listsHint =
-              s.listsFilled > 0 && s.totalLists > 0 ? `\n${s.listsFilled}/${s.totalLists} liste` : ''
-            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''} · spoglio ${pct}%${listsHint}${s.votersActual != null ? `\n${s.votersActual} votanti` : ''}`
+            const titleBase = `Sezione ${s.number}${s.name ? ` – ${s.name}` : ''} · ${ratio} · ${percent}${s.locked ? ' · terminata' : ''}`
             const title = warn ? `${titleBase}\n\n${warn}` : titleBase
             const isSelected = selectedSectionId === s.id
             return (
@@ -468,7 +462,8 @@ export function LiveSectionGrid({
                 )}
               >
                 <SectionLiveProgressFill {...progress} />
-                <span className="relative z-10">{s.number}</span>
+                <span className="relative z-10 font-bold leading-none">{s.number}</span>
+                <SectionProgressMetrics input={progress} compact />
               </button>
             )
           })}
@@ -477,7 +472,9 @@ export function LiveSectionGrid({
           <SectionStatusBadge status="pending" />
           <SectionStatusBadge status="in_progress" />
           <SectionStatusBadge status="closed" />
-          <span className="text-xs text-gray-500 dark:text-neutral-400 self-center">Anello ambra = da verificare</span>
+          <span className="text-xs text-gray-500 dark:text-neutral-400 self-center">
+            Tratteggio = scrutinio terminato · anello ambra = da verificare
+          </span>
         </div>
       </div>
 

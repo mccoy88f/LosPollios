@@ -8,7 +8,6 @@ import ElectionBackupPanel from './ElectionBackupPanel'
 import { getElectionEntryDataCounts } from '@/lib/clearElectionEntryData'
 import ElectionDetailInfoCard from './ElectionDetailInfoCard'
 import { AdminNavCard } from '@/components/ui/AdminNavCard'
-import { Alert } from '@/components/ui/Alert'
 import { BarChart3, ClipboardList, ClipboardPen, Landmark, LineChart, Users } from 'lucide-react'
 
 type Props = { params: Promise<{ id: string }> }
@@ -82,18 +81,30 @@ export default async function ElectionDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="mt-10 space-y-4">
-        <Alert variant="info" title="Backup e ripristino">
-          <div className="max-w-2xl">
+      <div className="mt-10 space-y-3 max-w-2xl">
+        <details className="rounded-xl border border-blue-200 bg-blue-50/60 dark:bg-blue-950/20 dark:border-blue-900/50 group">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-blue-950 dark:text-blue-100 select-none">
+            <span>Backup e ripristino</span>
+            <span className="text-xs font-normal text-blue-800/80 dark:text-blue-200/80 group-open:hidden">
+              espandi
+            </span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 border-t border-blue-200/80 dark:border-blue-900/50">
             <ElectionBackupPanel electionId={election.id} electionName={election.name} />
           </div>
-        </Alert>
+        </details>
 
-        <Alert variant="error" title="Zona pericolosa">
-          <div className="space-y-6 max-w-2xl">
+        <details className="rounded-xl border border-red-200 bg-red-50/60 dark:bg-red-950/20 dark:border-red-900/50 group">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-red-950 dark:text-red-100 select-none">
+            <span>Zona pericolosa</span>
+            <span className="text-xs font-normal text-red-800/80 dark:text-red-200/80 group-open:hidden">
+              espandi
+            </span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 border-t border-red-200/80 dark:border-red-900/50 space-y-6">
             <div>
-              <p className="text-sm font-semibold text-gray-900 mb-1">Azzera dati di inserimento</p>
-              <p className="text-sm text-gray-700 mb-3">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Azzera dati di inserimento</p>
+              <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
                 Rimuove affluenze per sezione, voti di lista e preferenze candidato (tutto ciò che si inserisce da{' '}
                 <strong>/entry</strong>). Restano il tetto comunale, i votanti/aventi diritto a livello elezione, le
                 sezioni con i loro aventi diritto configurati, liste e candidati.
@@ -104,16 +115,16 @@ export default async function ElectionDetailPage({ params }: Props) {
                 counts={entryDataCounts}
               />
             </div>
-            <div className="border-t border-red-200 pt-5">
-              <p className="text-sm font-semibold text-gray-900 mb-1">Elimina elezione</p>
-              <p className="text-sm text-gray-700 mb-3">
+            <div className="border-t border-red-200 dark:border-red-900/50 pt-5">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Elimina elezione</p>
+              <p className="text-sm text-gray-700 dark:text-neutral-300 mb-3">
                 L&apos;eliminazione è irreversibile. Puoi eliminare un&apos;elezione in qualsiasi stato; i dati collegati
                 vengono rimossi dal database.
               </p>
               <DeleteElectionButton electionId={election.id} electionName={election.name} />
             </div>
           </div>
-        </Alert>
+        </details>
       </div>
     </div>
   )

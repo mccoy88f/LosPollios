@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn'
 import { getSectionFillColor } from '@/lib/sectionColors'
-import { sectionScrutinyPercent } from '@/lib/sectionScrutiny'
+import { sectionScrutinyPercent, sectionScrutinyRatioLabel } from '@/lib/sectionScrutiny'
 import { sectionStatusLabels, type SectionUiStatus } from '@/lib/sectionStatus'
 import { CheckCircle2, Circle, Clock } from 'lucide-react'
 
@@ -54,18 +54,16 @@ export type SectionProgressInput = {
   sectionNumber: number
   locked: boolean
   votersActual: number | null
-  listsFilled: number
-  totalLists: number
+  listVotesSum: number
   hasWarning?: boolean
 }
 
+function hasVoters(input: SectionProgressInput): boolean {
+  return (input.votersActual ?? 0) > 0
+}
+
 function sectionProgressStyle(input: SectionProgressInput) {
-  const pct = sectionScrutinyPercent(
-    input.locked,
-    input.votersActual,
-    input.listsFilled,
-    input.totalLists
-  )
+  const pct = sectionScrutinyPercent(input.votersActual, input.listVotesSum)
   const fill = getSectionFillColor(input.sectionNumber)
   return { pct, fill }
 }
@@ -78,28 +76,70 @@ function SectionProgressFill({
   className?: string
 }) {
   const { pct, fill } = sectionProgressStyle(input)
+  const showFill = hasVoters(input) && pct > 0
+
+  return (
+    <>
+      {showFill && (
+        <div
+          className={cn(
+            'absolute left-0 right-0 bottom-0 transition-[top] duration-500 ease-out pointer-events-none',
+            className
+          )}
+          style={{
+            top: `${100 - pct}%`,
+            backgroundColor: fill,
+          }}
+          aria-hidden
+        />
+      )}
+      {input.locked && (
+        <div
+          className="absolute inset-0 pointer-events-none z-[1] opacity-60 dark:opacity-50"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 6px)',
+          }}
+          aria-hidden
+        />
+      )}
+    </>
+  )
+}
+
+/** Voti scrutinati / votanti e percentuale sotto il numero sezione */
+export function SectionProgressMetrics({
+  input,
+  compact = false,
+}: {
+  input: SectionProgressInput
+  compact?: boolean
+}) {
+  const { ratio, percent } = sectionScrutinyRatioLabel(input.listVotesSum, input.votersActual)
   return (
     <div
       className={cn(
-        'absolute left-0 right-0 bottom-0 transition-[top] duration-500 ease-out pointer-events-none',
-        className
+        'tabular-nums text-gray-700 dark:text-neutral-200 leading-tight',
+        compact ? 'text-[9px] sm:text-[10px] space-y-0' : 'text-xs space-y-0.5'
       )}
-      style={{
-        top: pct <= 0 ? '100%' : `${100 - pct}%`,
-        backgroundColor: fill,
-      }}
-      aria-hidden
-    />
+    >
+      <div className={compact ? 'font-medium' : ''}>{ratio}</div>
+      <div className={cn(compact ? 'opacity-90' : 'font-semibold text-brand-800 dark:text-brand-300')}>
+        {percent}
+      </div>
+    </div>
   )
 }
 
 /** Card sezione entry: barra di riempimento dal basso con colore sezione */
 export function sectionEntryCardClasses(input: SectionProgressInput): string {
+  const empty = !hasVoters(input)
   return cn(
-    'relative overflow-hidden rounded-xl border-2 border-gray-200 dark:border-neutral-700',
-    'p-4 text-center hover:shadow-md transition-all min-h-[5.5rem]',
+    'relative overflow-hidden rounded-xl border-2 p-4 text-center hover:shadow-md transition-all min-h-[6.5rem]',
     'flex flex-col items-center justify-center gap-1',
-    'bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white',
+    empty
+      ? 'bg-gray-300 dark:bg-neutral-700 border-gray-300 dark:border-neutral-600 text-gray-600 dark:text-neutral-300'
+      : 'bg-gray-100 dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white',
     input.hasWarning && 'ring-2 ring-amber-400 ring-offset-1 dark:ring-amber-500 dark:ring-offset-neutral-950'
   )
 }
@@ -110,10 +150,13 @@ export function SectionEntryProgressFill(input: SectionProgressInput) {
 
 /** Cella sezione live: barra di riempimento dal basso */
 export function sectionLiveCellClasses(input: SectionProgressInput): string {
+  const empty = !hasVoters(input)
   return cn(
-    'relative overflow-hidden aspect-square rounded flex items-center justify-center',
-    'text-xs font-semibold tabular-nums transition-colors',
-    'bg-gray-200 dark:bg-neutral-800 text-gray-800 dark:text-white border border-gray-300/80 dark:border-neutral-600',
+    'relative overflow-hidden rounded flex flex-col items-center justify-center gap-0.5',
+    'text-xs font-semibold tabular-nums transition-colors min-h-[3.25rem] p-0.5',
+    empty
+      ? 'bg-gray-300 dark:bg-neutral-700 text-gray-600 dark:text-neutral-400 border border-gray-400/60 dark:border-neutral-600'
+      : 'bg-gray-200 dark:bg-neutral-800 text-gray-800 dark:text-white border border-gray-300/80 dark:border-neutral-600',
     input.hasWarning && 'ring-2 ring-amber-500 ring-offset-1 ring-offset-white dark:ring-offset-neutral-950'
   )
 }

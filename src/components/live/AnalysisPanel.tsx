@@ -13,8 +13,15 @@ import { TabBar } from '@/components/ui/TabBar'
 import { buttonClassName } from '@/components/ui/buttonStyles'
 import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
 import { useElectionStream } from '@/hooks/useElectionStream'
+import { LIVE_REFRESH_MS } from '@/lib/liveRefresh'
 import Link from 'next/link'
 import { Calendar, Crown, Landmark, RefreshCw, TrendingUp } from 'lucide-react'
+import {
+  buildCompareSeries,
+  listHasHistoricalMatch,
+  type HistElectionSnapshot,
+  type HistListRow,
+} from '@/lib/historicalCompare'
 
 export interface HistResult {
   id: number
@@ -30,6 +37,9 @@ export interface HistElection {
   name: string
   commune: string
   year: number
+  registeredVoters: number | null
+  turnoutVoters: number | null
+  turnoutPercent: number | null
   results: HistResult[]
 }
 
@@ -43,6 +53,9 @@ interface ProjectionData {
   totalSections: number
   sectionsCounted: number
   coverage: number
+  votersCounted: number
+  totalTheoreticalVoters: number
+  votersCoverage: number
   /** Seggi totali consiglio (da impostazioni elezione) */
   totalSeats: number
   current:  { seats: SeatProjection[]; coalitions: { coalition: string; candidateMayor?: string; totalVotes: number; percentage: number; lists: unknown[] }[]; needsRunoff: boolean; mayorElected?: string }
@@ -104,87 +117,217 @@ function SeatChart({ seats, totalSeats, title }: { seats: SeatProjection[]; tota
   )
 }
 
-/** Normalizza sindaco / coalizione per confronti stabili */
-function normCompareKey(s: string | null | undefined): string {
-  if (s == null || !String(s).trim()) return ''
-  return String(s).trim().toLowerCase().replace(/\s+/g, ' ')
+function turnoutLabel(
+  registered: number | null | undefined,
+  voters: number | null | undefined,
+  percent: number | null | undefined
+): string {
+  if ((registered ?? 0) <= 0 && (voters ?? 0) <= 0) return 'Affluenza non disponibile'
+  const reg = registered ?? 0
+  const vot = voters ?? 0
+  const pct =
+    percent != null && Number.isFinite(percent)
+      ? percent
+      : reg > 0
+        ? (vot / reg) * 100
+        : null
+  return `Votanti ${formatNumber(vot)} / ${formatNumber(reg)} aventi diritto${pct != null ? ` · ${pct.toFixed(1)}%` : ''}`
 }
 
-/**
- * Accoppia una lista attuale a una riga storico nello stesso anno:
- * 1) stesso candidato sindaco (se valorizzato su entrambi);
- * 2) altrimenti stessa coalizione (se valorizzata sulla lista attuale e sulla riga storica).
- * Nessun match sul solo nome lista.
- */
-function findHistoricalMatch(cur: SeatProjection, results: HistResult[]): HistResult | null {
-  const mayorCur = normCompareKey(cur.candidateMayor)
-  const coalCur = normCompareKey(cur.coalition)
-
-  if (mayorCur) {
-    const byMayor = results.filter(r => normCompareKey(r.candidateMayor) === mayorCur)
-    if (byMayor.length === 1) return byMayor[0]
-    if (byMayor.length > 1 && coalCur) {
-      const byBoth = byMayor.filter(r => normCompareKey(r.coalition) === coalCur)
-      if (byBoth.length >= 1) return byBoth[0]
-    }
-    if (byMayor.length > 1) return byMayor[0]
-  }
-
-  if (coalCur) {
-    const byCoal = results.filter(r => normCompareKey(r.coalition) === coalCur)
-    if (byCoal.length === 1) return byCoal[0]
-    if (byCoal.length > 1 && mayorCur) {
-      const byBoth = byCoal.filter(r => normCompareKey(r.candidateMayor) === mayorCur)
-      if (byBoth.length >= 1) return byBoth[0]
-    }
-    if (byCoal.length >= 1) return byCoal[0]
-  }
-
-  return null
+function TurnoutHeader({
+  registered,
+  voters,
+  percent,
+}: {
+  registered: number | null | undefined
+  voters: number | null | undefined
+  percent: number | null | undefined
+}) {
+  return (
+    <p className="text-xs text-gray-500 dark:text-neutral-400 tabular-nums mb-3">
+      {turnoutLabel(registered, voters, percent)}
+    </p>
+  )
 }
 
-function HistoricalComparison({ current, historical }: { current: SeatProjection[]; historical: HistElection[] }) {
-  if (!historical.length) return null
+function toHistListRow(s: SeatProjection): HistListRow {
+  return {
+    listName: s.listName,
+    coalition: s.coalition ?? null,
+    candidateMayor: s.candidateMayor ?? null,
+    votes: s.votes,
+    percentage: s.percentage,
+    seats: s.seats,
+  }
+}
 
-  const compareData = current
-    .map(cur => {
-      const row: Record<string, unknown> = { listName: cur.listName }
-      row['Attuale'] = parseFloat(cur.percentage.toFixed(1))
-      for (const h of historical) {
-        const r = findHistoricalMatch(cur, h.results)
-        if (r) row[String(h.year)] = r.percentage
-      }
-      return row
-    })
-    .filter(r => {
-      const keys = Object.keys(r).filter(k => k !== 'listName')
-      const hasCurrent = keys.includes('Attuale')
-      const hasAnyHistory = keys.some(k => k !== 'Attuale')
-      return hasCurrent && hasAnyHistory
-    })
+function buildCurrentSnapshot(
+  proj: ProjectionData,
+  electionName: string,
+  electionYear: number
+): HistElectionSnapshot {
+  return {
+    id: 0,
+    name: electionName,
+    year: electionYear,
+    registeredVoters: proj.totalTheoreticalVoters,
+    turnoutVoters: proj.votersCounted,
+    turnoutPercent: proj.votersCoverage,
+    isCurrent: true,
+    results: proj.current.seats.map(toHistListRow),
+  }
+}
 
-  if (!compareData.length) return null
+function toSnapshot(h: HistElection): HistElectionSnapshot {
+  return {
+    id: h.id,
+    name: h.name,
+    year: h.year,
+    registeredVoters: h.registeredVoters,
+    turnoutVoters: h.turnoutVoters,
+    turnoutPercent: h.turnoutPercent,
+    results: h.results.map(r => ({
+      listName: r.listName,
+      coalition: r.coalition,
+      candidateMayor: r.candidateMayor,
+      votes: r.votes,
+      percentage: r.percentage,
+      seats: r.seats,
+    })),
+  }
+}
 
-  const years = ['Attuale', ...historical.map(h => String(h.year))]
-  const COLORS = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#0891b2']
+function ElectionSnapshotCard({ election }: { election: HistElectionSnapshot }) {
+  return (
+    <div className="min-w-[min(100%,280px)] flex-1 surface-panel p-4 flex flex-col">
+      <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-0.5">
+        {election.isCurrent ? 'Elezione attuale' : election.name}
+        <span className="font-normal text-gray-500 dark:text-neutral-400"> ({election.year})</span>
+      </h4>
+      <TurnoutHeader
+        registered={election.registeredVoters}
+        voters={election.turnoutVoters}
+        percent={election.turnoutPercent}
+      />
+      <div className="overflow-x-auto flex-1">
+        <table className="w-full text-sm min-w-[240px]">
+          <thead>
+            <tr className="text-xs text-gray-500 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-800 text-left">
+              <th className="pb-2 pr-2">Lista</th>
+              <th className="pb-2 pr-2">Sindaco / coal.</th>
+              <th className="text-right pb-2">%</th>
+              <th className="text-right pb-2">Seggi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...election.results].sort((a, b) => b.votes - a.votes).map((r, i) => (
+              <tr key={`${r.listName}-${i}`} className="border-b border-gray-50 dark:border-neutral-800 last:border-0">
+                <td className="py-1.5 font-medium text-gray-900 dark:text-white pr-2">{r.listName}</td>
+                <td className="py-1.5 text-xs text-gray-500 dark:text-neutral-400 pr-2 max-w-[8rem] truncate">
+                  {r.candidateMayor || r.coalition || '—'}
+                </td>
+                <td className="py-1.5 text-right tabular-nums">{r.percentage.toFixed(1)}%</td>
+                <td className="py-1.5 text-right font-bold tabular-nums">{r.seats ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+const HIST_COLORS = ['#063C25', '#E18901', '#16a34a', '#dc2626', '#9333ea', '#0891b2']
+
+function HistoricalCompareView({
+  proj,
+  electionName,
+  electionYear,
+  historical,
+  hasCoalitions,
+}: {
+  proj: ProjectionData
+  electionName: string
+  electionYear: number
+  historical: HistElection[]
+  hasCoalitions: boolean
+}) {
+  const current = buildCurrentSnapshot(proj, electionName, electionYear)
+  const histSnapshots = historical.map(toSnapshot)
+  const allElections = [current, ...histSnapshots.sort((a, b) => b.year - a.year)]
+
+  const series = buildCompareSeries(current, histSnapshots, hasCoalitions)
+  const matchedSeries = series.filter(s => s.hasHistoricalMatch && s.points.length >= 2)
+  const unmatchedLists = current.results.filter(
+    r => !listHasHistoricalMatch(r, histSnapshots, hasCoalitions)
+  )
 
   return (
-    <div className="surface-panel p-5">
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Confronto storico – % voti per lista</h3>
-      <p className="text-xs text-gray-500 dark:text-neutral-400 mb-3">
-        Le serie storiche sono accoppiate alla lista attuale solo se coincide il <strong>candidato sindaco</strong>;
-        in assenza di sindaco confrontabile si usa la <strong>coalizione</strong>. Nessun accoppiamento sul solo nome lista.
+    <div className="space-y-6">
+      <p className="text-xs text-gray-500 dark:text-neutral-400 max-w-3xl">
+        Il confronto usa lo stesso <strong>candidato sindaco</strong>
+        {hasCoalitions ? (
+          <> oppure la stessa <strong>coalizione</strong></>
+        ) : null}
+        ; non si accoppia sul solo nome lista. Le percentuali sono calcolate sulla somma dei voti di lista
+        del sindaco o della coalizione in ciascuna elezione.
       </p>
-      <ResponsiveContainer width="100%" height={340}>
-        <BarChart data={compareData} margin={{ top: 8, right: 12, bottom: 100, left: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
-          <XAxis dataKey="listName" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" height={70} />
-          <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
-          <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, '']} />
-          <Legend wrapperStyle={{ paddingTop: 24 }} />
-          {years.map((y, i) => <Bar key={y} dataKey={y} fill={COLORS[i % COLORS.length]} radius={[3, 3, 0, 0]} />)}
-        </BarChart>
-      </ResponsiveContainer>
+
+      {matchedSeries.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white">Trend per sindaco / coalizione</h3>
+          {matchedSeries.map(({ compare, points }) => {
+            const chartData = [{ label: compare.label, ...Object.fromEntries(points.map(p => [p.yearLabel, p.percentage])) }]
+            const yearKeys = points.map(p => p.yearLabel)
+            return (
+              <div key={`${compare.kind}:${compare.key}`} className="surface-panel p-5">
+                <h4 className="text-sm font-medium text-gray-800 dark:text-neutral-200 mb-1">
+                  {compare.kind === 'mayor' ? 'Sindaco' : 'Coalizione'}: {compare.label}
+                </h4>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={chartData} margin={{ top: 8, right: 12, bottom: 8, left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid-stroke)" />
+                    <XAxis dataKey="label" hide />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} domain={[0, 'auto']} />
+                    <Tooltip formatter={(v: number) => [`${Number(v).toFixed(1)}%`, '']} />
+                    <Legend />
+                    {yearKeys.map((y, i) => (
+                      <Bar key={y} dataKey={y} fill={HIST_COLORS[i % HIST_COLORS.length]} radius={[3, 3, 0, 0]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {unmatchedLists.length > 0 && (
+        <Alert variant="info" title="Liste senza corrispondenza storica">
+          <p className="text-sm mb-2">
+            Per le liste sotto non è stato possibile abbinare sindaco o coalizione nello storico. Confronta l’elezione
+            attuale con le altre dello stesso comune nella panoramica affiancata.
+          </p>
+          <ul className="text-sm list-disc pl-5 space-y-0.5">
+            {unmatchedLists.map(r => (
+              <li key={r.listName}>
+                <strong>{r.listName}</strong>
+                {r.candidateMayor ? ` · ${r.candidateMayor}` : ''}
+                {r.coalition ? ` · ${r.coalition}` : ''}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+
+      <div className="space-y-3">
+        <h3 className="font-semibold text-gray-900 dark:text-white">Elezioni a confronto (stesso comune)</h3>
+        <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto pb-2">
+          {allElections.map(el => (
+            <ElectionSnapshotCard key={el.isCurrent ? 'current' : el.id} election={el} />
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -193,6 +336,7 @@ export default function AnalysisPanel({
   electionId,
   electionName,
   commune,
+  electionYear,
   historicalElections,
   hasCoalitions = false,
   embedded = false,
@@ -200,6 +344,7 @@ export default function AnalysisPanel({
   electionId: number
   electionName: string
   commune: string
+  electionYear: number
   historicalElections: HistElection[]
   /** Coalizioni configurate in admin (campo coalition sulle liste) */
   hasCoalitions?: boolean
@@ -222,7 +367,7 @@ export default function AnalysisPanel({
 
   useEffect(() => {
     fetchProj()
-    const t = setInterval(fetchProj, 30000)
+    const t = setInterval(fetchProj, LIVE_REFRESH_MS)
     return () => clearInterval(t)
   }, [electionId, fetchProj])
 
@@ -347,8 +492,8 @@ export default function AnalysisPanel({
         {tab === 'projection' && (
           <div className="space-y-6">
             <Alert variant="info" title="Metodo di proiezione">
-              Basato su <strong>{proj.sectionsCounted} / {proj.totalSections}</strong> sezioni ({proj.coverage.toFixed(1)}%).
-              I voti finali sono estrapolati proporzionalmente dalle sezioni già scrutinate.
+              Basato su votanti: <strong>{proj.votersCounted.toLocaleString('it-IT')} / {proj.totalTheoreticalVoters.toLocaleString('it-IT')}</strong> votanti ({proj.votersCoverage.toFixed(1)}%).
+              Per ogni lista si stima la quota finale proiettando l’andamento delle sezioni già scrutinate sui votanti attesi fino alla fine.
             </Alert>
 
             <SeatChart seats={proj.projected.seats} totalSeats={councilSeats} title="Proiezione seggi – stima voti finali" />
@@ -392,32 +537,13 @@ export default function AnalysisPanel({
                 </CardBody>
               </Card>
             ) : (
-              <>
-                <HistoricalComparison current={proj.current.seats} historical={historicalElections} />
-
-                {/* Historical tables */}
-                {historicalElections.map(h => (
-                  <div key={h.id} className="surface-panel p-5">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{h.name} ({h.year})</h3>
-                    <table className="w-full text-sm">
-                      <thead><tr className="text-xs text-gray-500 dark:text-neutral-400 border-b border-gray-100 dark:border-neutral-800 text-left">
-                        <th className="pb-2">Lista</th><th className="pb-2">Coalizione</th><th className="text-right pb-2">Voti</th><th className="text-right pb-2">%</th><th className="text-right pb-2">Seggi</th>
-                      </tr></thead>
-                      <tbody>
-                        {h.results.map(r => (
-                          <tr key={r.id} className="border-b border-gray-50 dark:border-neutral-800 last:border-0">
-                            <td className="py-1.5 font-medium text-gray-900 dark:text-white">{r.listName}</td>
-                            <td className="py-1.5 text-gray-500 dark:text-neutral-400 text-xs">{r.coalition || '—'}</td>
-                            <td className="py-1.5 text-right">{formatNumber(r.votes)}</td>
-                            <td className="py-1.5 text-right">{r.percentage.toFixed(1)}%</td>
-                            <td className="py-1.5 text-right font-bold">{r.seats ?? '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
-              </>
+              <HistoricalCompareView
+                proj={proj}
+                electionName={electionName}
+                electionYear={electionYear}
+                historical={historicalElections}
+                hasCoalitions={hasCoalitions}
+              />
             )}
           </div>
         )}

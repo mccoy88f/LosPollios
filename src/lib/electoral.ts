@@ -126,16 +126,46 @@ export function calculateProjection(
 
   const winningListIds = new Set(winningCoalition?.lists.map(l => l.listId) ?? [])
 
-  const eligibleWinning = lists
+  const eligibleLists = lists.filter(isEligible).map(l => ({ id: l.listId, votes: l.votes }))
+  if (eligibleLists.length === 0) {
+    return {
+      coalitions,
+      seats: lists.map(l => ({
+        listId: l.listId,
+        listName: l.listName,
+        shortName: l.shortName,
+        color: l.color,
+        votes: l.votes,
+        percentage: totalVotes > 0 ? (l.votes / totalVotes) * 100 : 0,
+        seats: 0,
+        aboveThreshold: false,
+        coalition: l.coalition,
+        candidateMayor: l.candidateMayor,
+      })),
+      totalVotes,
+      winningCoalition,
+      mayorElected: undefined,
+      needsRunoff,
+    }
+  }
+
+  // Preferisci riallocare sempre i seggi rimanenti su liste idonee:
+  // se per soglia o configurazione non c'è opposizione idonea, i seggi non vanno "persi"
+  // ma vengono assegnati alle liste idonee (tipicamente anche quelle della coalizione vincente).
+  let eligibleWinning = lists
     .filter(l => winningListIds.has(l.listId) && isEligible(l))
     .map(l => ({ id: l.listId, votes: l.votes }))
+  if (eligibleWinning.length === 0) eligibleWinning = eligibleLists
 
   const eligibleOpposition = lists
     .filter(l => !winningListIds.has(l.listId) && isEligible(l))
     .map(l => ({ id: l.listId, votes: l.votes }))
 
   const winningSeats = dHondt(eligibleWinning, mayorSeats)
-  const oppositionSeatsMap = dHondt(eligibleOpposition, oppositionSeats)
+  const oppositionSeatsMap =
+    oppositionSeats > 0
+      ? dHondt(eligibleOpposition.length > 0 ? eligibleOpposition : eligibleWinning, oppositionSeats)
+      : new Map<number, number>()
 
   const seats: SeatProjection[] = lists
     .map(l => ({
@@ -164,12 +194,13 @@ export function calculateProjection(
   }
 }
 
-// Proiezione voti finali in base alle sezioni scrutinate
-export function projectFinalVotes(
+// Proiezione voti finali in base ai votanti (affluenza) delle sezioni già scrutinate.
+export function projectFinalVotesByVoters(
   currentVotes: number,
-  sectionsCounted: number,
-  totalSections: number
+  votersCounted: number,
+  totalTheoreticalVoters: number
 ): number {
-  if (sectionsCounted === 0) return 0
-  return Math.round(currentVotes * (totalSections / sectionsCounted))
+  const vc = votersCounted ?? 0
+  if (vc <= 0 || totalTheoreticalVoters <= 0) return 0
+  return Math.round(currentVotes * (totalTheoreticalVoters / vc))
 }

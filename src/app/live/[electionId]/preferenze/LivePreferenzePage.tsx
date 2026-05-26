@@ -15,8 +15,11 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { formatNumber } from '@/lib/utils'
+import { cn } from '@/lib/cn'
+import { LiveCandidateSectionsPanel } from '@/components/live/LiveDetailPanels'
 import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
 import { useElectionStream } from '@/hooks/useElectionStream'
+import { LIVE_REFRESH_MS } from '@/lib/liveRefresh'
 
 type MayorHistPoint = {
   year: number
@@ -63,6 +66,16 @@ type DetailPayload = {
   lists: ListBlock[]
   mayorHistoryByPersonId: Record<string, MayorHistPoint[]>
   councilHistoryByPersonId: Record<string, CouncilHistPoint[]>
+}
+
+type CandidateSort = 'preferences' | 'alphabetical'
+
+function sortCandidates(candidates: CandidateRow[], sort: CandidateSort): CandidateRow[] {
+  const copy = [...candidates]
+  if (sort === 'alphabetical') {
+    return copy.sort((a, b) => a.name.localeCompare(b.name, 'it') || b.votes - a.votes)
+  }
+  return copy.sort((a, b) => b.votes - a.votes || a.order - b.order || a.name.localeCompare(b.name, 'it'))
 }
 
 type TrendRow = {
@@ -204,6 +217,8 @@ export default function LivePreferenzePage({
 }) {
   const [data, setData] = useState<DetailPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [candidateSort, setCandidateSort] = useState<CandidateSort>('preferences')
+  const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -219,7 +234,7 @@ export default function LivePreferenzePage({
 
   useEffect(() => {
     fetchData()
-    const t = setInterval(fetchData, 30000)
+    const t = setInterval(fetchData, LIVE_REFRESH_MS)
     return () => clearInterval(t)
   }, [electionId, fetchData])
 
@@ -362,6 +377,12 @@ export default function LivePreferenzePage({
             }
           }
 
+          const sortedCandidates = sortCandidates(list.candidates, candidateSort)
+          const selectedInList =
+            selectedCandidateId != null
+              ? sortedCandidates.find(c => c.candidateId === selectedCandidateId)
+              : null
+
           return (
             <div
               key={list.listId}
@@ -420,7 +441,38 @@ export default function LivePreferenzePage({
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">Dettaglio</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300">Dettaglio</h3>
+                    <div className="inline-flex rounded-lg border border-gray-200 dark:border-neutral-700 overflow-hidden text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setCandidateSort('preferences')}
+                        className={cn(
+                          'px-2.5 py-1 font-medium transition-colors',
+                          candidateSort === 'preferences'
+                            ? 'bg-brand-800 text-white'
+                            : 'bg-white dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                        )}
+                      >
+                        Per preferenze
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCandidateSort('alphabetical')}
+                        className={cn(
+                          'px-2.5 py-1 font-medium transition-colors border-l border-gray-200 dark:border-neutral-700',
+                          candidateSort === 'alphabetical'
+                            ? 'bg-brand-800 text-white'
+                            : 'bg-white dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                        )}
+                      >
+                        A–Z
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-neutral-400 mb-2">
+                    Clicca un candidato per vedere le preferenze sezione per sezione.
+                  </p>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left text-xs text-gray-500 dark:text-neutral-400 border-b border-gray-200 dark:border-neutral-700">
@@ -429,22 +481,48 @@ export default function LivePreferenzePage({
                       </tr>
                     </thead>
                     <tbody>
-                      {list.candidates.map(c => (
-                        <tr key={c.candidateId} className="border-b border-gray-50 dark:border-neutral-800">
+                      {sortedCandidates.map(c => (
+                        <tr
+                          key={c.candidateId}
+                          className={cn(
+                            'border-b border-gray-50 dark:border-neutral-800 cursor-pointer transition-colors',
+                            selectedCandidateId === c.candidateId
+                              ? 'bg-brand-50 dark:bg-brand-950/40'
+                              : 'hover:bg-gray-50 dark:hover:bg-neutral-800/60'
+                          )}
+                          onClick={() =>
+                            setSelectedCandidateId(prev =>
+                              prev === c.candidateId ? null : c.candidateId
+                            )
+                          }
+                        >
                           <td className="py-2 pr-2 text-gray-900 dark:text-white">{c.name}</td>
                           <td className="py-2 text-right font-medium tabular-nums">{formatNumber(c.votes)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  {selectedInList && (
+                    <LiveCandidateSectionsPanel
+                      electionId={electionId}
+                      candidateId={selectedInList.candidateId}
+                      candidateName={selectedInList.name}
+                      onClose={() => setSelectedCandidateId(null)}
+                    />
+                  )}
                 </div>
               </div>
 
               {historyCharts.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-neutral-800 pt-4 space-y-4">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300">Trend storico</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{historyCharts}</div>
-                </div>
+                <details className="border-t border-gray-100 dark:border-neutral-800 pt-4 group">
+                  <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-neutral-300 list-none flex items-center justify-between gap-2 select-none">
+                    <span>Trend storico</span>
+                    <span className="text-xs font-normal text-gray-500 dark:text-neutral-400">
+                      {historyCharts.length} grafici · clicca per aprire
+                    </span>
+                  </summary>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">{historyCharts}</div>
+                </details>
               )}
             </div>
           )
