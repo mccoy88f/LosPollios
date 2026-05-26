@@ -19,6 +19,8 @@ import type { LiveResultsData, LiveSectionStatus } from '@/components/live/liveT
 import { electionHasCoalitions, normalizeLiveViewParam, type LiveViewId } from '@/lib/liveElection'
 import LiveAggiornamentiPage from '@/app/live/[electionId]/aggiornamenti/LiveAggiornamentiPage'
 import LivePreferenzePage from '@/app/live/[electionId]/preferenze/LivePreferenzePage'
+import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
+import { useElectionStream } from '@/hooks/useElectionStream'
 import { cn } from '@/lib/cn'
 import {
   BarChart3,
@@ -123,15 +125,12 @@ function LiveDashboardInner({
     setLoading(false)
   }, [electionId])
 
+  const streamStatus = useElectionStream(electionId, fetchData)
+
   useEffect(() => {
     fetchData()
-    const evtSource = new EventSource(`/api/elections/${electionId}/stream`)
-    evtSource.onmessage = () => fetchData()
     const interval = setInterval(fetchData, 30000)
-    return () => {
-      evtSource.close()
-      clearInterval(interval)
-    }
+    return () => clearInterval(interval)
   }, [electionId, fetchData])
 
   if (loading) {
@@ -182,6 +181,7 @@ function LiveDashboardInner({
 
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-4">
+      <LiveStreamStatusBanner status={streamStatus} />
       <LiveKpiStrip data={data} lastPulse={lastPulse} hasWarnings={hasWarnings} />
 
       {showListRanking && (

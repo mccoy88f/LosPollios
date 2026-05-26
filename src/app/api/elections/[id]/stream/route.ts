@@ -13,18 +13,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send initial keepalive
-      controller.enqueue(encoder.encode(': keepalive\n\n'))
+      const ping = () => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'ping' })}\n\n`))
+      }
+
+      ping()
 
       const sub = sseSubscribe(electionId, data => {
         const msg = `data: ${JSON.stringify(data)}\n\n`
         controller.enqueue(encoder.encode(msg))
       })
 
-      // Keepalive every 25s to prevent proxy timeouts
+      // Ping ogni 25s: proxy timeout + rilevamento connessione lato client
       const timer = setInterval(() => {
         try {
-          controller.enqueue(encoder.encode(': keepalive\n\n'))
+          ping()
         } catch {
           clearInterval(timer)
           sub.close()

@@ -13,6 +13,11 @@ interface Candidate { id: number; firstName: string; lastName: string; order: nu
 interface ListData { id: number; name: string; color: string; candidateMayor: string | null; candidates: Candidate[] }
 interface ListResult { listId: number; listVotes: number; preferences: { candidateId: number; votes: number }[] }
 
+/** Affluenza (campi testo) */
+const AUTO_SAVE_MS = 500
+/** Voti lista e preferenze digitati a tastiera */
+const TYPED_NUMERIC_SAVE_MS = 4000
+
 interface Props {
   electionId: number
   sectionId: number
@@ -73,8 +78,10 @@ export default function SectionEntryForm({
   const [error, setError] = useState('')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [dirty, setDirty] = useState(false)
-  const firstRenderRef = useRef(true)
+  const firstTurnoutRenderRef = useRef(true)
+  const firstTypedRenderRef = useRef(true)
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typedSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inFlightRef = useRef(false)
   const needsResaveRef = useRef(false)
 
@@ -99,6 +106,26 @@ export default function SectionEntryForm({
   function setPreference(listId: number, candidateId: number, value: string) {
     openList(listId)
     setPreferences(m => ({ ...m, [listId]: { ...(m[listId] || {}), [candidateId]: value } }))
+  }
+
+  function scheduleSave(delayMs: number) {
+    if (readOnly) return
+    setDirty(true)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(() => {
+      void persistData()
+    }, delayMs)
+  }
+
+  function flushSaveSoon() {
+    scheduleSave(AUTO_SAVE_MS)
+  }
+
+  function flushTypedNow() {
+    if (typedSaveTimeoutRef.current) clearTimeout(typedSaveTimeoutRef.current)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    setDirty(true)
+    void persistData()
   }
 
   function continueToLists() {
@@ -169,17 +196,39 @@ export default function SectionEntryForm({
 
   useEffect(() => {
     if (readOnly) return
-    if (firstRenderRef.current) {
-      firstRenderRef.current = false
+    if (firstTurnoutRenderRef.current) {
+      firstTurnoutRenderRef.current = false
+      return
+    }
+    scheduleSave(AUTO_SAVE_MS)
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [turnout, readOnly])
+
+  useEffect(() => {
+    if (readOnly) return
+    if (firstTypedRenderRef.current) {
+      firstTypedRenderRef.current = false
       return
     }
     setDirty(true)
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(() => { void persistData() }, 500)
-    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }
-  }, [turnout, listVotes, preferences, readOnly])
+    if (typedSaveTimeoutRef.current) clearTimeout(typedSaveTimeoutRef.current)
+    typedSaveTimeoutRef.current = setTimeout(() => {
+      void persistData()
+    }, TYPED_NUMERIC_SAVE_MS)
+    return () => {
+      if (typedSaveTimeoutRef.current) clearTimeout(typedSaveTimeoutRef.current)
+    }
+  }, [listVotes, preferences, readOnly])
 
-  useEffect(() => () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current) }, [])
+  useEffect(
+    () => () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      if (typedSaveTimeoutRef.current) clearTimeout(typedSaveTimeoutRef.current)
+    },
+    []
+  )
 
   const listFocusMode = listsPhase && !affluenzaExpanded && openListId != null
 
@@ -198,8 +247,10 @@ export default function SectionEntryForm({
   function saveMessage() {
     if (readOnly) return 'Sola lettura — la sezione è chiusa dall\'amministratore.'
     if (saving) return 'Salvataggio automatico in corso…'
+    if (dirty) {
+      return 'Modifiche in attesa: affluenza entro pochi istanti; voti lista e preferenze digitati a tastiera dopo circa 4 secondi (o subito con +/− o uscendo dal campo).'
+    }
     if (error) return error
-    if (dirty) return 'Modifiche in attesa di salvataggio…'
     if (lastSavedAt) return `Ultimo salvataggio alle ${lastSavedAt.toLocaleTimeString('it-IT')}`
     return 'Nessuna modifica registrata.'
   }
@@ -390,6 +441,11 @@ export default function SectionEntryForm({
                       <NumberStepper
                         value={listVotes[list.id] ?? ''}
                         onChange={val => setListVote(list.id, val)}
+                        onStep={val => {
+                          setListVote(list.id, val)
+                          flushSaveSoon()
+                        }}
+                        onBlurCommit={flushTypedNow}
                         onActivate={() => openList(list.id)}
                         disabled={readOnly}
                         tone="brand"
@@ -424,6 +480,11 @@ export default function SectionEntryForm({
                           <NumberStepper
                             value={preferences[list.id]?.[c.id] ?? ''}
                             onChange={val => setPreference(list.id, c.id, val)}
+                            onStep={val => {
+                              setPreference(list.id, c.id, val)
+                              flushSaveSoon()
+                            }}
+                            onBlurCommit={flushTypedNow}
                             onActivate={() => openList(list.id)}
                             disabled={readOnly}
                             tone="accent"

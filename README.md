@@ -1,12 +1,32 @@
 # LosPollios
 
-**Versione attuale: 1.0.0**
+**Versione attuale: 1.0.4**
 
 Applicazione web per **organizzare e seguire lo spoglio** delle **elezioni amministrative** (comunali): si inseriscono i dati sezione per sezione, si vedono i risultati aggiornati in tempo reale e le proiezioni (coalizioni, seggi, soglie).
 
 Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, senza entrare nei dettagli tecnici.
 
 ---
+
+## Novità in v1.0.4
+
+- **Salvataggio automatico più intelligente** — voti **lista** e **preferenze** digitati a tastiera si salvano dopo **4 secondi** dall’ultima modifica; con i pulsanti **+ / −** o uscendo dal campo il salvataggio è **immediato**. L’**affluenza** resta con salvataggio rapido (~mezzo secondo).
+- **Collegamento live più robusto** — la vista live si **riconnette in automatico** dopo interruzioni di rete o quando il telefono torna attivo; un **avviso** indica se la riconnessione è in corso o se conviene ricaricare la pagina.
+
+## Novità in v1.0.3
+
+- **Panoramica live** — voti mostrati come `N / totale`, logo e nomi liste più leggibili.
+
+## Novità in v1.0.2
+
+- **Menu live allineato ai tab** — Panoramica, Liste, Sezioni, Coalizioni (solo se ≥2 liste hanno coalizione), Preferenze, Analisi; **Aggiornamenti** resta accessibile dal pulsante dedicato.
+- **Preferenze unificate** — stessa esperienza del tab Preferenze anche da URL dedicato; trend con punto dell’anno in corso.
+- **Coalizioni** — tab visibile solo quando ha senso (almeno due liste con campo coalizione compilato).
+
+## Novità in v1.0.1
+
+- **Ordine progressivo candidati** — in elezione attiva e nello storico.
+- **Preferenze nello storico** — collegamento anagrafiche e candidati consiglio storici.
 
 ## Novità in v1.0.0
 
@@ -17,7 +37,7 @@ Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, se
 - **PWA e icona app** — icone statiche (manifest, splash, favicon); installabile su telefono come prima, con branding coerente.
 - **Tema scuro** — campi e form in area admin più leggibili in modalità scura.
 - **Stato sezioni** — indicatore di completamento corretto (affluenza a zero non conta come “mezzo pieno”; liste senza voti non gonfiano la percentuale).
-- **Versione in footer** — in fondo alle pagine compare `V1.0.0` (allineata a `package.json`).
+- **Versione in footer** — in fondo alle pagine compare la versione (allineata a `package.json`).
 
 ---
 
@@ -65,10 +85,10 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Creazione e modifica dell’elezione, sezioni, liste e candidati, gestione degli accessi, stato dell’elezione (es. preparazione, attiva, chiusa). Dalla scheda di un’elezione: **backup** (download JSON) e **ripristino** (upload con anteprima e conferma del nome). Menu globali: **Sessioni attive**, **Dati storici**, anagrafica persone.
 
 - **Inserimento spoglio (entry)**  
-  Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati possono essere aggiornati man mano che si ricevono nuove comunicazioni dai seggi.
+  Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati si **salvano in automatico** (affluenza subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).
 
 - **Vista live**  
-  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab principali: panoramica risultati, **preferenze**, **analisi** e **Aggiornamenti** (cronologia di ogni modifica con operatore e orario). Mostra avvisi di **coerenza dati** (es. sezioni con affluenza ma senza voti, o viceversa) e lo stato di ogni sezione (da fare, in corso, completa), con percentuale di avanzamento coerente con i dati reali.
+  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab principali: panoramica, liste, sezioni, coalizioni (se applicabile), **preferenze**, **analisi**; **Aggiornamenti** (cronologia con operatore e orario) dal pulsante dedicato. In caso di rete instabile o telefono in standby, il collegamento in tempo reale **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra anche avvisi di **coerenza dati** e lo stato di ogni sezione (da fare, in corso, completa).
 
 - **Dashboard analisi**  
   Visione analitica con schede per **seggi attuali**, **proiezione finale** (estrapolazione sulle sezioni già scrutinate) e **confronto storico** con elezioni passate dello stesso comune.
@@ -112,7 +132,7 @@ Dopo il deploy, apri il sito dal telefono: dal menu del browser (Chrome: *Instal
 ### Database server, concorrenza e “live”
 
 - **Scritture/letture:** PostgreSQL gestisce bene più operatori che inseriscono sezioni in parallelo.
-- **Tempo reale (SSE):** quando i risultati cambiano, l’app invia un evento tramite **`pg_notify`** sul canale `lospollios_election_sse`; ogni istanza Node che serve la vista live fa **`LISTEN`** sullo stesso database. Così le notifiche funzionano anche con **più repliche** dell’app dietro un load balancer, purché condividano lo **stesso Postgres**. Il payload NOTIFY ha un limite (~8 KB): aggiornamenti molto grandi potrebbero non essere propagati (caso raro in uso normale).
+- **Tempo reale (SSE):** quando i risultati cambiano, l’app invia un evento tramite **`pg_notify`** sul canale `lospollios_election_sse`; ogni istanza Node che serve la vista live fa **`LISTEN`** sullo stesso database. Così le notifiche funzionano anche con **più repliche** dell’app dietro un load balancer, purché condividano lo **stesso Postgres**. Il payload NOTIFY ha un limite (~8 KB): aggiornamenti molto grandi potrebbero non essere propagati (caso raro in uso normale). Il client invia **ping** periodici e, su mobile, **riconnette** quando torna la rete o la scheda diventa di nuovo visibile.
 - **Qualità dati:** l’API risultati segnala anomalie (sezione “con dati” solo con affluenza a zero, progresso voti distorto, ecc.) e la UI live le mostra in evidenza.
 
 ### Docker e Portainer
@@ -171,4 +191,4 @@ Senza `-e DATABASE_URL=...` in Docker Compose viene usato il DB server Postgres 
 
 ---
 
-*LosPollios v1.0.0 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*
+*LosPollios v1.0.4 — gestione spoglio elezioni amministrative online. Creato da Antonello Migliorelli.*

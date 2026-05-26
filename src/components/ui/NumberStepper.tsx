@@ -13,6 +13,8 @@ const toneBtn: Record<Tone, string> = {
 export function NumberStepper({
   value,
   onChange,
+  onStep,
+  onBlurCommit,
   min = 0,
   disabled,
   tone = 'brand',
@@ -23,6 +25,10 @@ export function NumberStepper({
 }: {
   value: string
   onChange: (value: string) => void
+  /** +/−: salvataggio più rapido rispetto alla digitazione manuale */
+  onStep?: (value: string) => void
+  /** Uscita dal campo: commit immediato (es. dopo debounce preferenze) */
+  onBlurCommit?: () => void
   min?: number
   disabled?: boolean
   tone?: Tone
@@ -36,7 +42,9 @@ export function NumberStepper({
 
   function bump(delta: number) {
     onActivate?.()
-    onChange(String(Math.max(min, n + delta)))
+    const next = String(Math.max(min, n + delta))
+    if (onStep) onStep(next)
+    else onChange(next)
   }
 
   const btnClass = cn(
@@ -73,6 +81,7 @@ export function NumberStepper({
           onActivate?.()
           onChange(e.target.value)
         }}
+        onBlur={() => onBlurCommit?.()}
         className={cn(
           'w-24 text-center font-semibold tabular-nums border-0 focus:ring-0 focus:outline-none py-2',
           'bg-transparent text-gray-900 dark:text-white',

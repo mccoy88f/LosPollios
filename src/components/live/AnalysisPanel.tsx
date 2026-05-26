@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardBody } from '@/components/ui/Card'
 import { TabBar } from '@/components/ui/TabBar'
 import { buttonClassName } from '@/components/ui/buttonStyles'
+import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
+import { useElectionStream } from '@/hooks/useElectionStream'
 import Link from 'next/link'
 import { Calendar, Crown, Landmark, RefreshCw, TrendingUp } from 'lucide-react'
 
@@ -216,12 +218,12 @@ export default function AnalysisPanel({
     setLoading(false)
   }, [electionId])
 
+  const streamStatus = useElectionStream(electionId, fetchProj)
+
   useEffect(() => {
     fetchProj()
-    const es = new EventSource(`/api/elections/${electionId}/stream`)
-    es.onmessage = fetchProj
     const t = setInterval(fetchProj, 30000)
-    return () => { es.close(); clearInterval(t) }
+    return () => clearInterval(t)
   }, [electionId, fetchProj])
 
   if (loading) {
@@ -237,6 +239,7 @@ export default function AnalysisPanel({
 
   return (
     <div className={embedded ? 'space-y-4' : 'flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6'}>
+      <LiveStreamStatusBanner status={streamStatus} />
         {embedded ? (
           <div className="surface-panel px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-gray-600 dark:text-neutral-300">

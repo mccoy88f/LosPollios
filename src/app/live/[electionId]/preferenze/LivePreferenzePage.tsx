@@ -15,6 +15,8 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { formatNumber } from '@/lib/utils'
+import { LiveStreamStatusBanner } from '@/components/live/LiveStreamStatusBanner'
+import { useElectionStream } from '@/hooks/useElectionStream'
 
 type MayorHistPoint = {
   year: number
@@ -213,16 +215,12 @@ export default function LivePreferenzePage({
     setLoading(false)
   }, [electionId])
 
+  const streamStatus = useElectionStream(electionId, fetchData)
+
   useEffect(() => {
     fetchData()
-    const es = new EventSource(`/api/elections/${electionId}/stream`)
-    es.onmessage = () => fetchData()
-    es.onerror = () => es.close()
     const t = setInterval(fetchData, 30000)
-    return () => {
-      es.close()
-      clearInterval(t)
-    }
+    return () => clearInterval(t)
   }, [electionId, fetchData])
 
   if (loading) {
@@ -264,6 +262,7 @@ export default function LivePreferenzePage({
           : 'flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-8'
       }
     >
+      <LiveStreamStatusBanner status={streamStatus} />
       {!embedded ? (
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Preferenze candidati</h1>
