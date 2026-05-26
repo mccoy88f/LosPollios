@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build: docker build -t lospollios .
-# SQLite su volume /data — configurare JWT_SECRET in Portainer o compose.
+# PostgreSQL nello stack docker-compose — configurare JWT_SECRET in Portainer o compose.
 
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat openssl

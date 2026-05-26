@@ -32,9 +32,9 @@ Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, se
 
 - **Backup e ripristino elezione** — dall’area admin di un’elezione puoi scaricare un file JSON completo (sezioni, liste, candidati, dati di spoglio) e ripristinarlo su un’elezione nuova o esistente, con conferma del nome per evitare errori.
 - **Sessioni attive** — in admin vedi chi è loggato (ultima attività, browser, IP) e puoi **disconnettere** un utente; non puoi chiudere la tua sessione corrente da lì.
-- **Cronologia aggiornamenti (live)** — tab **Aggiornamenti** nella dashboard live: storico di affluenza, voti lista e preferenze con data/ora e operatore.
+- **Cronologia aggiornamenti (live)** — vista **Aggiornamenti** nella live: storico di affluenza, voti lista e preferenze con data/ora e operatore.
 - **Inserimento dati per l’admin** — l’amministratore accede allo spoglio anche dal menu (contesto elezione) e dalla scheda elezione, come gli operatori.
-- **PWA e icona app** — icone statiche (manifest, splash, favicon); installabile su telefono come prima, con branding coerente.
+- **PWA e icona app** — icone PNG/SVG versionate in `public/icons/`, manifest e favicon; installabile su telefono con branding coerente.
 - **Tema scuro** — campi e form in area admin più leggibili in modalità scura.
 - **Stato sezioni** — indicatore di completamento corretto (affluenza a zero non conta come “mezzo pieno”; liste senza voti non gonfiano la percentuale).
 - **Versione in footer** — in fondo alle pagine compare la versione (allineata a `package.json`).
@@ -47,7 +47,7 @@ Questa pagina spiega **cosa fa il sistema dal punto di vista di chi lo usa**, se
 - **Definire sezioni elettorali** e, per ciascuna, dati utili (numero sezione, nome, luogo, aventi diritto al voto per sezione).
 - **Definire le liste** in corsa, con colori, coalizioni, candidato sindaco e **candidati al consiglio** (con eventuali preferenze da registrare nello spoglio).
 - **Raccogliere lo spoglio**: per ogni sezione si inseriscono affluenza (votanti, schede valide, nulle, bianche) e i **voti per lista** (e le preferenze ai candidati, se previste).
-- **Vedere l’andamento**: una vista “live” mostra l’evoluzione dei risultati mentre arrivano i dati; una **dashboard di analisi** aiuta a leggere aggregati e proiezioni.
+- **Vedere l’andamento**: la **vista live** mostra l’evoluzione dei risultati mentre arrivano i dati, con tab per analisi, preferenze e proiezioni.
 - **Consultare elezioni passate**: è possibile tenere uno **storico** con risultati di elezioni già concluse, separato dalle elezioni “operative” del giorno del voto.
 
 Il sistema calcola in automatico **percentuali**, **raggruppamenti per coalizione**, **distribuzione dei seggi** (metodo D’Hondt) e indicazioni legate alle **regole previste** per il tipo di comune (ad esempio soglia percentuale e possibile ballottaggio).
@@ -62,7 +62,7 @@ L’amministratore crea gli account collegati a un’elezione. Esistono **tre ru
 |--------|------------|
 | **Amministratore** | Configura elezioni, sezioni, liste, candidati e utenti. Accede all’area di gestione riservata agli amministratori. |
 | **Inserimento dati** | Inserisce e aggiorna i dati di spoglio (affluenza e voti) **per le sezioni** dell’elezione a cui è abilitato. Può lavorare su tutte le liste di quella sezione: in fase di creazione utente si può opzionalmente **associare una lista** (utile per organizzazione o trasparenza), ma non limita da sola i campi modificabili nello spoglio. |
-| **Solo visualizzazione** | Account pensato per chi deve **solo consultare**; **non** può usare le schermate di inserimento dati. |
+| **Solo visualizzazione** | Account pensato per chi deve **solo consultare** (vista live e home); **non** può inserire o modificare lo spoglio. |
 
 Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema impedisce di accedere all’inserimento di un’altra elezione se non si è autorizzati.
 
@@ -88,10 +88,7 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
   Elenco delle sezioni; entrando in una sezione si compilano affluenza e risultati per lista (e preferenze). I dati si **salvano in automatico** (affluenza subito; voti lista e preferenze da tastiera dopo circa 4 secondi, oppure subito con +/− o uscendo dal campo). Utilizzabile anche da telefono (PWA).
 
 - **Vista live**  
-  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab principali: panoramica, liste, sezioni, coalizioni (se applicabile), **preferenze**, **analisi**; **Aggiornamenti** (cronologia con operatore e orario) dal pulsante dedicato. In caso di rete instabile o telefono in standby, il collegamento in tempo reale **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra anche avvisi di **coerenza dati** e lo stato di ogni sezione (da fare, in corso, completa).
-
-- **Dashboard analisi**  
-  Visione analitica con schede per **seggi attuali**, **proiezione finale** (estrapolazione sulle sezioni già scrutinate) e **confronto storico** con elezioni passate dello stesso comune.
+  Pagina pensata per **seguire i risultati in aggiornamento** durante lo spoglio. Tab: panoramica, liste, sezioni, coalizioni (solo se almeno due liste hanno il campo coalizione), preferenze (solo se ci sono candidati al consiglio), **analisi** (seggi attuali, proiezione finale, confronto storico). **Aggiornamenti** (cronologia con operatore e orario) è un pulsante a destra dei tab, non un tab del menu. In caso di rete instabile o telefono in standby, il collegamento in tempo reale **tenta la riconnessione da solo**; se resta interrotto a lungo compare un avviso per ricaricare la pagina. Mostra anche avvisi di **coerenza dati** e lo stato di ogni sezione (da fare, in corso, completa). Gli URL legacy `/dashboard/...`, `/live/.../preferenze` e `/live/.../aggiornamenti` reindirizzano alla live con il tab o la vista corrispondente.
 
 - **Storico (admin)**  
   Gestione di **elezioni storiche** in tabella dedicata: inserimento manuale, import da **Excel** o da link **Eligendo** (Ministero dell’Interno), modifica liste/candidati/preferenze. Si può anche applicare il macro Eligendo a un’**elezione archiviata** (dati operativi) e completarla da admin come un’elezione normale.
@@ -102,7 +99,7 @@ Gli utenti “inserimento dati” sono legati a **un’elezione**; il sistema im
 
 1. L’**amministratore** ha già creato l’elezione, sezioni, liste e utenti (o li completa in corsa se servono modifiche).
 2. Gli operatori con ruolo **inserimento dati** entrano e caricano i dati **sezione per sezione**.
-3. Chi segue l’esito usa la **vista live** e, se serve, la **dashboard**.
+3. Chi segue l’esito usa la **vista live** (tab Analisi, Preferenze, ecc.).
 4. A elezione conclusa, si può aggiornare lo **stato** dell’elezione e usare o aggiornare lo **storico** per consultazioni future.
 
 ---
@@ -116,16 +113,19 @@ Comandi utili:
 | Comando | Uso |
 |---------|-----|
 | `npm run dev` | Sviluppo locale |
-| `npm run build` | Build di produzione (include generazione icone PWA) |
-| `npm run generate:icons` | Rigenera PNG/SVG in `public/icons/` da `icon.svg` |
+| `npm run build` | Build di produzione (Prisma + Next.js; rigenera le icone in modo idempotente) |
+| `npm run generate:icons` | Rigenera PNG e `icon.svg` in `public/icons/` da `src/lib/appIconSvg.ts` (solo se cambi il logo) |
 | `npm run db:push` | Allinea lo schema al DB (sviluppo) |
+| `npm run db:seed` | Popola dati di esempio (solo dev, dopo push schema) |
 | `npm run db:reset` | Reset DB + seed (solo dev) |
 
 In sviluppo serve un file `.env` con almeno `DATABASE_URL` e `JWT_SECRET`.
 
 ### PWA (installazione su telefono)
 
-Il sito espone un **manifest** (`/manifest.webmanifest`), icone statiche in `public/icons/` (32, 180, 192, 512 px, generate da `npm run generate:icons`) e un **service worker** (`/sw.js`) per soddisfare i criteri di installazione come app su **Chrome/Android** e migliorare **“Aggiungi alla schermata Home”** su **Safari/iOS** (richiede **HTTPS** in produzione; in locale è ok su `http://localhost`). Nome app: **LosPollios**.
+Il sito espone un **manifest** (`/manifest.webmanifest`), **icone già presenti nel repository** in `public/icons/` (32, 180, 192, 512 px + `icon.svg`) e `public/favicon.png`, più un **service worker** (`/sw.js`) per l’installazione come app su **Chrome/Android** e **“Aggiungi alla schermata Home”** su **Safari/iOS** (richiede **HTTPS** in produzione; in locale è ok su `http://localhost`). Nome app: **LosPollios**.
+
+Per cambiare il logo esegui `npm run generate:icons` (legge la definizione in `src/lib/appIconSvg.ts` e aggiorna i file in `public/icons/`). Non serve rigenerarle a ogni deploy se non modifichi il branding.
 
 Dopo il deploy, apri il sito dal telefono: dal menu del browser (Chrome: *Installa app* / *Aggiungi a schermata Home*; Safari: *Condividi* → *Aggiungi a Home*).
 
@@ -164,6 +164,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
    POSTGRES_DB=lospollios
    POSTGRES_USER=lospollios
    POSTGRES_PASSWORD=metti-una-password-forte
+   # Se omesso in Compose il default interno è lospollios_change_me — cambialo in produzione
    # opzionale: override completo DB app
    # APP_DATABASE_URL=postgresql://user:pass@host:5432/dbname?schema=public
    ADMIN_USERNAME=admin
@@ -174,7 +175,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 
 2. Avvio: `docker compose up -d --build` — l’interfaccia è sulla **porta 3522** (vedi sotto).
 
-**Portainer (Stacks da Git):** nello stack, apri **Environment** e imposta almeno `POSTGRES_PASSWORD` e `JWT_SECRET` (opzionali `POSTGRES_USER/POSTGRES_DB`); il DB server parte nello stesso stack. Questo compose e` configurato per **build locale dal repository** (nessun pull dell'immagine app). In Portainer lascia disattivato "Pull latest image". Porta esposta: **3522** (`3522:3000`).
+**Portainer (Stacks da Git):** nello stack, apri **Environment** e imposta almeno `POSTGRES_PASSWORD` e `JWT_SECRET` (opzionali `POSTGRES_USER` / `POSTGRES_DB`); il DB server parte nello stesso stack. Questo compose è configurato per **build locale dal repository** (`pull_policy: never` sull’app). In Portainer lascia disattivato “Pull latest image”. Porta esposta: **3522** (`3522:3000`).
 
 Dopo `docker compose up`, apri **http://localhost:3522** (o `http://<host>:3522` sul server).
 
