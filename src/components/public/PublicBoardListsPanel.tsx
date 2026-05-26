@@ -7,6 +7,7 @@ import {
   type PublicBoardCoalitionBlock,
 } from '@/lib/publicBoardGrouping'
 import { cn } from '@/lib/cn'
+import { listPrimaryLabel } from '@/lib/listDisplay'
 
 type ListInput = {
   listId: number
@@ -37,18 +38,7 @@ function listPercentSubtitle(
 }
 
 function displayListLabel(list: Pick<PublicBoardListItem, 'shortName' | 'name'>): string {
-  const short = list.shortName?.trim()
-  if (short) return short
-  const words = list.name
-    .split(/\s+/)
-    .map(w => w.trim())
-    .filter(Boolean)
-  if (words.length === 0) return list.name
-  if (words.length === 1) return words[0].slice(0, 12).toUpperCase()
-  return words
-    .slice(0, 4)
-    .map(w => w[0]?.toUpperCase() ?? '')
-    .join('')
+  return listPrimaryLabel(list.name, list.shortName)
 }
 
 export function PublicBoardListsPanel({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
+import { listPrimaryLabel } from '@/lib/listDisplay'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/cn'
 import type { LiveListResult } from '@/components/live/liveTypes'
@@ -33,7 +34,7 @@ export function LiveListPreferencesDetail({
     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2 mb-3">
         <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Preferenze · {list.listName}
+          Preferenze · {listPrimaryLabel(list.listName, list.shortName)}
         </h4>
         <LivePanelClose onClose={onClose} />
       </div>
@@ -81,6 +82,7 @@ type SectionDetailPayload = {
   lists: {
     listId: number
     listName: string
+    shortName?: string | null
     color: string
     listVotes: number
     candidates: { candidateId: number; name: string; votes: number }[]
@@ -197,7 +199,9 @@ export function LiveSectionDetailPanel({
                               className="w-2.5 h-2.5 rounded-full shrink-0"
                               style={{ backgroundColor: list.color }}
                             />
-                            <span className="font-medium text-sm text-gray-900">{list.listName}</span>
+                            <span className="font-medium text-sm text-gray-900">
+                              {listPrimaryLabel(list.listName, list.shortName)}
+                            </span>
                           </div>
                           <span className="font-bold text-sm tabular-nums">{formatNumber(list.listVotes)}</span>
                         </div>

@@ -14,6 +14,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
+import { listPrimaryLabel } from '@/lib/listDisplay'
 import { formatNumber } from '@/lib/utils'
 import { cn } from '@/lib/cn'
 import { LiveCandidateSectionsPanel } from '@/components/live/LiveDetailPanels'
@@ -396,7 +397,9 @@ export default function LivePreferenzePage({
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: list.color }} />
                 )}
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{list.listName}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {listPrimaryLabel(list.listName, list.shortName)}
+                  </h2>
                   <p className="text-xs text-gray-500 dark:text-neutral-400">
                     Voti di lista: <strong>{formatNumber(list.listVotes)}</strong>
                     {list.candidateMayor && <> · Sindaco: {list.candidateMayor}</>}

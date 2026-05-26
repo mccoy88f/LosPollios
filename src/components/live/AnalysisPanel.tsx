@@ -199,7 +199,7 @@ function toSnapshot(h: HistElection): HistElectionSnapshot {
 
 function ElectionSnapshotCard({ election }: { election: HistElectionSnapshot }) {
   return (
-    <div className="min-w-[min(100%,280px)] flex-1 surface-panel p-4 flex flex-col">
+    <div className="min-w-0 surface-panel p-4 flex flex-col h-full">
       <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-0.5">
         {election.isCurrent ? 'Elezione attuale' : election.name}
         <span className="font-normal text-gray-500 dark:text-neutral-400"> ({election.year})</span>
@@ -322,7 +322,7 @@ function HistoricalCompareView({
 
       <div className="space-y-3">
         <h3 className="font-semibold text-gray-900 dark:text-white">Elezioni a confronto (stesso comune)</h3>
-        <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allElections.map(el => (
             <ElectionSnapshotCard key={el.isCurrent ? 'current' : el.id} election={el} />
           ))}

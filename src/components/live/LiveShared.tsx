@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { listPrimaryLabel, listSiglaSubtitle } from '@/lib/listDisplay'
 import { formatNumber, formatPercent } from '@/lib/utils'
 import { cn } from '@/lib/cn'
 import { Alert } from '@/components/ui/Alert'
@@ -196,6 +197,8 @@ function ListRow({
     ? 'font-semibold text-base sm:text-lg text-gray-900 dark:text-white truncate leading-tight'
     : 'font-medium text-sm text-gray-900 dark:text-white truncate'
   const barClass = emphasized ? 'h-3' : 'h-2'
+  const primaryName = listPrimaryLabel(list.listName, list.shortName)
+  const siglaSub = listSiglaSubtitle(list.listName, list.shortName)
 
   return (
     <div className={interactive ? liveSelectableRowClass(!!selected) : undefined}>
@@ -228,8 +231,8 @@ function ListRow({
             <img src={list.coalitionLogoUrl} alt="" title="Coalizione" className={coalitionLogoClass} />
           ) : null}
           <div className="min-w-0">
-            <span className={nameClass}>{list.listName}</span>
-            {(list.candidateMayor || list.coalition) && (
+            <span className={nameClass}>{primaryName}</span>
+            {(list.candidateMayor || list.coalition || siglaSub) && (
               <p
                 className={cn(
                   'text-gray-500 dark:text-neutral-400 truncate mt-0.5',
@@ -237,8 +240,9 @@ function ListRow({
                 )}
               >
                 {list.candidateMayor}
-                {list.candidateMayor && list.coalition && ' · '}
+                {list.candidateMayor && (list.coalition || siglaSub) && ' · '}
                 {list.coalition}
+                {!list.coalition && siglaSub}
               </p>
             )}
           </div>
@@ -284,7 +288,7 @@ export function LiveListBarChart({ lists, totalVoters }: { lists: LiveListResult
     .filter(l => l.votes > 0)
     .sort((a, b) => b.votes - a.votes)
     .map(l => ({
-      name: l.shortName || l.listName.slice(0, 12),
+      name: listPrimaryLabel(l.listName, l.shortName).slice(0, 18),
       pct: totalVoters > 0 ? (l.votes / totalVoters) * 100 : 0,
       color: l.color,
     }))
@@ -738,7 +742,9 @@ export function LivePreferenzePanel({
                 <div key={list.listId}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: list.color }} />
-                    <h4 className="text-sm font-semibold text-gray-700">{list.listName}</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      {listPrimaryLabel(list.listName, list.shortName)}
+                    </h4>
                     <span className="text-xs text-gray-400">Σ {formatNumber(prefTotal)}</span>
                   </div>
                   <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
