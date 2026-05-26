@@ -184,7 +184,7 @@ Già configurata nel `docker-compose.yml` (puoi sovrascriverle):
 | **`ADMIN_PASSWORD`** | `admin123` — password iniziale dell'admin; cambiala subito in produzione. |
 | **`ADMIN_NAME`** | `Amministratore` — nome visualizzato per l'utente admin iniziale. |
 
-**Primo avvio Docker:** l’entrypoint esegue `prisma migrate deploy` (con fallback a `db push` se il DB è legacy o alla prima installazione), applicando anche le migrazioni recenti (es. tabella **sessioni utente**). Poi crea automaticamente **solo l’utente admin iniziale** (se non esiste), senza dati demo di elezioni/liste/sezioni. A ogni **riavvio** del container le migrazioni pendenti vengono applicate automaticamente; non serve eseguirle a mano sul server.
+**Primo avvio Docker:** l’entrypoint esegue `prisma migrate deploy` con la CLI inclusa nell’immagine (non quella globale di sistema). Se il database esisteva già senza storico migrazioni (errore **P3005**), allinea lo schema con `db push`, registra le migrazioni come già applicate (*baseline*) e ripete `migrate deploy`. Poi crea **solo l’utente admin iniziale** (se non esiste). A ogni riavvio le migrazioni pendenti vengono applicate automaticamente.
 
 **Come impostare `JWT_SECRET` con Docker Compose** (dalla cartella del progetto):
 
