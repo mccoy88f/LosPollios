@@ -45,9 +45,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modu
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
-RUN apk add --no-cache wget
-
-USER nextjs
+# Migrazioni all'avvio (entrypoint come root); app Next.js con su-exec nextjs
+RUN npm install -g prisma@6.19.3
+RUN apk add --no-cache wget su-exec
 
 EXPOSE 3000
 

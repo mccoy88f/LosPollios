@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-# CLI Prisma locale (utente nextjs non può scrivere in /usr/local/lib/node_modules)
+# CLI Prisma globale (installata in immagine come root, dipendenze complete)
 PRISMA() {
-  node ./node_modules/prisma/build/index.js "$@"
+  prisma "$@"
 }
 
 # Default al DB server Postgres preconfigurato nello stack docker-compose
@@ -67,4 +67,4 @@ echo "[lospollios] Bootstrap admin iniziale..."
 node ./scripts/bootstrap-admin.cjs
 
 echo "[lospollios] Avvio Next.js su 0.0.0.0:${PORT:-3000}..."
-exec node server.js
+exec su-exec nextjs node server.js
